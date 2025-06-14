@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: voidtracks-postgres
+    environment:
+      POSTGRES_USER: voiduser
+      POSTGRES_PASSWORD: voidpassword
+      POSTGRES_DB: voidtracksdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - voidtracks
+
+  backend:
+    build: ./voidtracks-backend
+    container_name: voidtracks-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - ./voidtracks-backend:/app
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - voidtracks
+
+  # Resto invariato
+  frontend:
+    build:
+      context: ./voidtracks-frontend
+    container_name: voidtracks-frontend
+    ports:
+      - "80:80"
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+    depends_on:
+      - backend
+    networks:
+      - voidtracks
+
+  redis:
+    image: redis:6-alpine
+    container_name: voidtracks-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - voidtracks
+
+volumes:
+  pgdata:
+
+networks:
+  voidtracks:
