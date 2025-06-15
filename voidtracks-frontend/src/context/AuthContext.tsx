@@ -4,8 +4,9 @@ import type { ReactNode } from 'react';
 interface AuthContextType {
   user: string | null;         // username o altro identificativo
   token: string | null;        // JWT token
+  tokens: number;              // tokens utente da DB, default 0
   isLoggedIn: boolean;
-  login: (username: string, token: string) => void;
+  login: (username: string, token: string, tokens: number) => void;
   logout: () => void;
 }
 
@@ -18,36 +19,43 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [tokens, setTokens] = useState<number>(0);
 
-  // Calcolo semplice: isLoggedIn è true se user e token esistono
   const isLoggedIn = !!user && !!token;
 
-  // Al montaggio verifica se c’è token salvato in localStorage
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
+    const savedTokens = localStorage.getItem('tokens');
+    console.log('Loaded from localStorage:', { savedToken, savedUser, savedTokens });
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(savedUser);
+      setTokens(savedTokens ? Number(savedTokens) : 0);
     }
   }, []);
 
-  const login = (username: string, token: string) => {
+  const login = (username: string, token: string, tokensCount: number) => {
     setUser(username);
     setToken(token);
+    setTokens(tokensCount);
     localStorage.setItem('token', token);
     localStorage.setItem('user', username);
+    localStorage.setItem('tokens', tokensCount.toString());
+    console.log('Saved to localStorage:', { username, token, tokensCount });
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
+    setTokens(0);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('tokens');
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoggedIn, login, logout }}>
+    <AuthContext.Provider value={{ user, token, tokens, isLoggedIn, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

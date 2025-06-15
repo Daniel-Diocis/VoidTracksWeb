@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-//import icon from '../assets/iconEmoji.png';
+// import icon from '../assets/iconEmoji.png';
 
 function Navbar() {
   const auth = useContext(AuthContext);
@@ -9,7 +9,7 @@ function Navbar() {
 
   if (!auth) return null;
 
-  const { isLoggedIn, logout } = auth;
+  const { isLoggedIn, logout, user, tokens } = auth;
 
   const handleLogout = () => {
     logout();
@@ -19,16 +19,26 @@ function Navbar() {
   return (
     <nav className="flex justify-between items-center p-4 bg-zinc-900 text-white max-w-7xl mx-auto">
       <div className="flex items-center gap-2 font-bold text-2xl">
+        {/* Se vuoi aggiungere un'icona, decommenta la riga sotto */}
+        {/* <img src={icon} alt="Icona VoidTracks" className="h-6 w-6 mr-2" /> */}
         VoidTracks
+        {isLoggedIn && tokens !== undefined && (
+          <span className="ml-4 text-sm font-normal text-cyan-400">
+            Tokens: {tokens}
+          </span>
+        )}
       </div>
       <div className="flex gap-4">
         {isLoggedIn ? (
-          <button
-            onClick={handleLogout}
-            className="bg-red-600 px-4 py-2 rounded hover:bg-red-700"
-          >
-            Logout
-          </button>
+          <>
+            <span className="self-center text-sm">Benvenuto, {user}</span>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 px-4 py-2 rounded hover:bg-red-700"
+            >
+              Logout
+            </button>
+          </>
         ) : (
           <>
             <Link to="/login" className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">

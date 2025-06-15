@@ -32,8 +32,31 @@ function Login() {
       const data = await res.json();
       localStorage.setItem('token', data.token);
 
-      // Aggiorna lo stato globale nel contesto (puoi passare username o altro)
-      auth?.login(username, data.token);
+      // Chiamata per ottenere i dati utente, compresi i tokens numerici
+      const userRes = await fetch(`${API_URL}/auth/private`, {
+        headers: {
+          Authorization: `Bearer ${data.token}`,
+        },
+      });
+
+      if (!userRes.ok) {
+        setError('Errore nel recupero dei dati utente');
+        return;
+      }
+
+      const userData = await userRes.json();
+
+      // Dopo questa riga, appena ricevuti i dati userData:
+      console.log('Dati ricevuti da /auth/private:', userData);
+
+      // Poi appena prima di chiamare login:
+      console.log('Username:', username);
+      console.log('Token JWT:', data.token);
+      console.log('Tokens numerici utente:', userData.user.tokens);
+
+      // Chiamata al contesto
+      auth?.login(username, data.token, userData.user.tokens);
+      console.log('Calling login with:', username, data.token, userData.user.tokens);
 
       // Redirect o azione post login
       navigate('/');

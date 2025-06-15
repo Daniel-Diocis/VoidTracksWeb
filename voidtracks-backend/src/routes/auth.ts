@@ -25,12 +25,14 @@ router.post('/register', async (req: Request, res: Response) => {
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(password, saltRounds);
 
-    await User.create({
+    const newUser = await User.create({
       username,
       password_hash,
       tokens: 10,
       role: 'user',
     });
+    console.log('Utente creato:', newUser.toJSON());
+    console.log('Tokens utente creato:', newUser.tokens);
 
     return res.status(201).json({ message: 'Utente creato con successo' });
   } catch (error) {
@@ -57,14 +59,21 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Credenziali non valide' });
     }
 
-    // Genera token JWT (metti una secret forte nel .env)
     const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET || 'secretkey', 
+      { id: user.id, username: user.username, role: user.role, tokens: user.tokens },
+      process.env.JWT_SECRET || 'secretkey',
       { expiresIn: '1h' }
     );
 
-    return res.json({ token });
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        tokens: user.tokens,
+      },
+    });
   } catch (error) {
     console.error('Errore login:', error);
     return res.status(500).json({ error: 'Errore del server' });
@@ -76,10 +85,7 @@ router.get('/private', authenticateToken, (req: Request, res: Response) => {
   res.json({ message: 'Accesso autorizzato!', user });
 });
 
-
 router.post('/logout', (req: Request, res: Response) => {
-  // Per JWT stateless, logout lato server non serve invalidare nulla
-  // Solo il client deve eliminare il token (es. localStorage)
   
   return res.json({ message: 'Logout eseguito con successo' });
 });

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
 
-type Track = {
+type TrackBase = {
   id: string;
   titolo: string;
   artista: string;
@@ -10,6 +10,10 @@ type Track = {
   music_path: string;
   cover_path: string;
   updated_at: string;
+};
+
+type Track = TrackBase & {
+  isUpdated?: boolean;
 };
 
 const PUBLIC_URL = 'https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public';
@@ -21,11 +25,19 @@ function TrackList() {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     fetch(`${API_URL}/tracks`)
       .then(res => res.json())
-      .then((data: Track[]) => {
+      .then((data: TrackBase[]) => {
+        const ordinati = [...data].sort((a, b) => {
+        const artistaA = a.artista.split(',')[0].trim().toLowerCase();
+        const artistaB = b.artista.split(',')[0].trim().toLowerCase();
+        const confrontoArtista = artistaA.localeCompare(artistaB);
+        if (confrontoArtista !== 0) return confrontoArtista;
+        return a.titolo.toLowerCase().localeCompare(b.titolo.toLowerCase());
+        });
+
         const localTimestamps = loadLocalTimestamps();
         const newTimestamps: Record<string, string> = {};
 
-        const aggiornati = data.map(track => {
+        const aggiornati = ordinati.map(track => {
           const id = track.music_path;
           const updatedAt = track.updated_at;
           const localUpdated = localTimestamps[id];
@@ -35,20 +47,13 @@ function TrackList() {
             newTimestamps[id] = updatedAt;
           }
 
+          // estendo con isUpdated solo in frontend
           return { ...track, isUpdated: shouldUpdate };
         });
 
         saveLocalTimestamps({ ...localTimestamps, ...newTimestamps });
 
-        const ordinati = [...aggiornati].sort((a, b) => {
-          const artistaA = a.artista.split(',')[0].trim().toLowerCase();
-          const artistaB = b.artista.split(',')[0].trim().toLowerCase();
-          const confrontoArtista = artistaA.localeCompare(artistaB);
-          if (confrontoArtista !== 0) return confrontoArtista;
-          return a.titolo.toLowerCase().localeCompare(b.titolo.toLowerCase());
-        });
-
-        setTracks(ordinati);
+        setTracks(aggiornati);
       })
       .catch(err => console.error('Errore nel fetch:', err));
   }, []);
