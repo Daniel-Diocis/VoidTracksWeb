@@ -57,7 +57,17 @@ Track.init(
     },
     costo: {
       type: DataTypes.INTEGER,
-      allowNull: true, // permetti null temporaneamente
+      allowNull: true,
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'created_at',
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'updated_at',
     },
   },
   {

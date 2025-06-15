@@ -46,7 +46,7 @@ User.init(
       defaultValue: 10,
     },
     role: {
-      type: DataTypes.ENUM('user', 'admin'),
+      type: DataTypes.STRING(10),
       allowNull: false,
       defaultValue: 'user',
     },

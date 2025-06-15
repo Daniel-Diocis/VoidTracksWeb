@@ -4,7 +4,7 @@ import Track from '../models/Track'; // Assicurati che il percorso sia corretto
 const router = Router();
 
 // GET /tracks - ritorna tutti i brani
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
   try {
     const tracks = await Track.findAll();
     res.json(tracks);

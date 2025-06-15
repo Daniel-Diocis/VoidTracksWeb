@@ -39,7 +39,8 @@ export async function syncTracksFromSupabase() {
         const supaUpdated = new Date(supaTrack.updated_at).getTime();
 
         if (localUpdated !== supaUpdated) {
-          await track.update({
+        await track.update(
+            {
             titolo: supaTrack.titolo,
             artista: supaTrack.artista,
             album: supaTrack.album,
@@ -47,8 +48,12 @@ export async function syncTracksFromSupabase() {
             cover_path: supaTrack.cover_path,
             costo: supaTrack.costo ?? 0,
             updatedAt: new Date(supaTrack.updated_at),
-          });
-          console.log(`Aggiornato il brano ${supaTrack.titolo} (${supaTrack.id})`);
+            },
+            { silent: true }
+        );
+        await track.reload(); // ricarica i dati dal DB
+        console.log(`Aggiornato il brano ${supaTrack.titolo} (${supaTrack.id})`);
+        console.log(`Nuovo updatedAt dopo update: ${track.updatedAt}`);
         }
       } else {
         await Track.create({
@@ -66,7 +71,6 @@ export async function syncTracksFromSupabase() {
       }
     }
 
-    // Rimuovi i brani locali non più presenti in Supabase
     for (const localTrack of localTracks) {
       if (!supaTrackIds.has(localTrack.id)) {
         await localTrack.destroy();

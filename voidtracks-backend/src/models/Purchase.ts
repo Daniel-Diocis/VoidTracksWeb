@@ -20,18 +20,18 @@ class Purchase extends Model<PurchaseAttributes, PurchaseCreationAttributes> imp
 Purchase.init(
   {
     id: {
-      type: DataTypes.INTEGER,  // senza UNSIGNED
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
     user_id: {
-      type: DataTypes.INTEGER,  // senza UNSIGNED
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: 'users', key: 'id' },
       onDelete: 'CASCADE',
     },
     track_id: {
-      type: DataTypes.INTEGER,  // senza UNSIGNED
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: 'tracks', key: 'id' },
       onDelete: 'CASCADE',
@@ -45,7 +45,13 @@ Purchase.init(
   {
     tableName: 'purchases',
     sequelize,
-    timestamps: false, // usi purchased_at al posto dei created/updatedAt
+    timestamps: false,
+    indexes: [
+      {
+        unique: true,
+        fields: ['user_id', 'track_id'],  // qui definisci l'indice unico composito
+      },
+    ],
   }
 );
 
