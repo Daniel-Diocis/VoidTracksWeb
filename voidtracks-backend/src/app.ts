@@ -4,6 +4,7 @@ import cors from 'cors';
 import tracksRouter from './routes/tracks'; // attenzione al percorso se serve aggiustar
 import authRouter from './routes/auth';
 import testRouter from './routes/testRouter';
+import purchaseRouter from './routes/purchase';
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.get('/', (_req: Request, res: Response) => {
 app.use('/tracks', tracksRouter);
 app.use('/auth', authRouter);
 app.use('/test', testRouter);
+app.use('/', purchaseRouter);
 
 // gestione errori async (es. exportato da utils se vuoi)
 export function asyncHandler(fn: Function) {

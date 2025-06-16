@@ -24,10 +24,14 @@ CREATE TABLE tracks (
 
 -- Tabella acquisti (brani acquistati dagli utenti)
 CREATE TABLE purchases (
-  id SERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id INT REFERENCES users(id) ON DELETE CASCADE,
   track_id UUID REFERENCES tracks(id) ON DELETE CASCADE,
-  purchased_at TIMESTAMP DEFAULT NOW()
+  purchased_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  valid_until TIMESTAMP NOT NULL,
+  used_flag BOOLEAN DEFAULT FALSE NOT NULL,
+  costo INTEGER NOT NULL,
+  download_token UUID NOT NULL UNIQUE
 );
 
 -- Tabella playlist

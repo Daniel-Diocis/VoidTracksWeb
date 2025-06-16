@@ -5,6 +5,7 @@ import TrackList from './pages/TrackList';
 import TrackDetail from './pages/TrackDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import TracksMarket from './pages/TracksMarket';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         <Routes>
           <Route path="/" element={<TrackList />} />
+          <Route path="/market" element={<TracksMarket />} />
           <Route path="/track/:music_path" element={<TrackDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

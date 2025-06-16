@@ -46,7 +46,7 @@ export async function syncTracksFromSupabase() {
             album: supaTrack.album,
             music_path: supaTrack.music_path,
             cover_path: supaTrack.cover_path,
-            costo: supaTrack.costo ?? 0,
+            costo: supaTrack.costo,
             updatedAt: new Date(supaTrack.updated_at),
             },
             { silent: true }

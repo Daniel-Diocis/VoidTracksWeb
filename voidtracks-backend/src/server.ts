@@ -12,7 +12,7 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('Connessione al database stabilita con successo.');
 
-    //await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: true });
 
     app.listen(PORT, () => {
       console.log(`Server avviato su http://localhost:${PORT}`);
