@@ -31,6 +31,7 @@ function Navbar() {
       <div className="flex gap-4">
         {isLoggedIn ? (
           <>
+            <Link to="/my-purchases" className="px-4 py-2 hover:underline">I miei acquisti</Link>
             <span className="self-center text-sm">Benvenuto, {user}</span>
             <button
               onClick={handleLogout}

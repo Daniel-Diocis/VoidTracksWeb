@@ -46,7 +46,8 @@ CREATE TABLE playlists (
 -- Tabella playlist_tracks (brani nelle playlist)
 CREATE TABLE playlist_tracks (
   id SERIAL PRIMARY KEY,
-  playlist_id INT REFERENCES playlists(id) ON DELETE CASCADE,
-  track_id UUID REFERENCES tracks(id) ON DELETE CASCADE,
-  is_favorite BOOLEAN DEFAULT FALSE
+  playlist_id INT NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
+  track_id UUID NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+  is_favorite BOOLEAN NOT NULL DEFAULT FALSE,
+  UNIQUE (playlist_id, track_id)
 );

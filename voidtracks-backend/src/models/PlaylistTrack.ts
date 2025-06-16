@@ -4,7 +4,7 @@ import sequelize from '../db/sequelize';
 interface PlaylistTrackAttributes {
   id: number;
   playlist_id: number;
-  track_id: number;
+  track_id: string;
   is_favorite: boolean;
 }
 
@@ -13,14 +13,14 @@ interface PlaylistTrackCreationAttributes extends Optional<PlaylistTrackAttribut
 class PlaylistTrack extends Model<PlaylistTrackAttributes, PlaylistTrackCreationAttributes> implements PlaylistTrackAttributes {
   public id!: number;
   public playlist_id!: number;
-  public track_id!: number;
+  public track_id!: string;
   public is_favorite!: boolean;
 }
 
 PlaylistTrack.init(
   {
     id: {
-      type: DataTypes.INTEGER,  // PostgreSQL non supporta UNSIGNED
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
@@ -31,7 +31,7 @@ PlaylistTrack.init(
       onDelete: 'CASCADE',
     },
     track_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: false,
       references: { model: 'tracks', key: 'id' },
       onDelete: 'CASCADE',
@@ -45,7 +45,13 @@ PlaylistTrack.init(
   {
     tableName: 'playlist_tracks',
     sequelize,
-    timestamps: false, // Disabilita createdAt e updatedAt
+    timestamps: false,
+    indexes: [
+      {
+        unique: true,
+        fields: ['playlist_id', 'track_id'],
+      },
+    ],
   }
 );
 

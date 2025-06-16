@@ -18,6 +18,7 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
     const userId = (req as any).user.id;
     const { track_id } = req.body;
 
+    // Controlla che il track_id sia presente
     if (!track_id) {
       return res.status(400).json({ error: 'track_id è obbligatorio' });
     }
@@ -26,8 +27,12 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
     const user = await User.findByPk(userId);
     const track = await Track.findByPk(track_id);
 
-    if (!user || !track) {
-      return res.status(404).json({ error: 'Utente o brano non trovato' });
+    // Controlli iniziali
+    if (!user) {
+    return res.status(404).json({ error: 'Utente non trovato' });
+    }
+    if (!track) {
+    return res.status(404).json({ error: 'Brano non trovato' });
     }
 
     // Controlla se esiste già un acquisto valido non usato e non scaduto
@@ -158,7 +163,10 @@ router.get('/purchases', authenticateToken, async (req: Request, res: Response) 
       order: [['purchased_at', 'DESC']],
     });
 
-    res.json(purchases);
+    res.json({
+        message: `Trovati ${purchases.length} acquisti`,
+        data: purchases
+    });
   } catch (error) {
     console.error('Errore nel recupero acquisti:', error);
     res.status(500).json({ error: 'Errore del server nel recupero acquisti' });

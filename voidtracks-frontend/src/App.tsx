@@ -7,6 +7,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import TracksMarket from './pages/TracksMarket';
 import DownloadPage from './pages/DownloadPage';
+import MyPurchases from './pages/MyPurchases';
+import PopularTracks from './pages/PopularTracks';
+
 
 function App() {
   return (
@@ -20,6 +23,8 @@ function App() {
           <Route path="/track/:music_path" element={<TrackDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/my-purchases" element={<MyPurchases />} />
+          <Route path="/popular" element={<PopularTracks />} />
         </Routes>
       </main>
     </>
