@@ -1,43 +1,61 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 
 function Register() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const auth = useContext(AuthContext);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccess(null);
 
     try {
-        const res = await fetch(`${API_URL}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
-        });
+      const res = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
 
-        if (!res.ok) {
-            const data = await res.json();
-            setError(data.error || 'Errore durante la registrazione');
-            return;
-        }
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Errore durante la registrazione');
+        return;
+      }
 
-        setSuccess('Registrazione avvenuta con successo! Puoi effettuare il login.');
-        setTimeout(() => navigate('/login'), 2000);
-        } catch (err: unknown) {
-        if (err instanceof Error) {
-            setError(err.message);
-        } else {
-            setError('Errore di rete o server');
-            }
-        }
-    };
+      const data = await res.json();
+
+      // Chiamata per ottenere dati utente compresi i token
+      const userRes = await fetch(`${API_URL}/auth/private`, {
+        headers: {
+          Authorization: `Bearer ${data.token}`,
+        },
+      });
+
+      if (!userRes.ok) {
+        setError('Registrazione completata, ma errore nel recupero dati utente');
+        return;
+      }
+
+      const userData = await userRes.json();
+
+      auth?.login(username, data.token, userData.user.tokens);
+
+      // Vai alla home
+      navigate('/');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Errore di rete o server');
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white">
@@ -47,7 +65,6 @@ function Register() {
       >
         <h2 className="text-2xl mb-4 text-center font-bold">Registrati</h2>
         {error && <p className="mb-4 text-red-500">{error}</p>}
-        {success && <p className="mb-4 text-green-500">{success}</p>}
         <input
           type="text"
           placeholder="Username"

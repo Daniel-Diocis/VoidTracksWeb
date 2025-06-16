@@ -6,6 +6,7 @@ import TrackDetail from './pages/TrackDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import TracksMarket from './pages/TracksMarket';
+import DownloadPage from './pages/DownloadPage';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Routes>
           <Route path="/" element={<TrackList />} />
           <Route path="/market" element={<TracksMarket />} />
+          <Route path="/download/:download_token" element={<DownloadPage />} />
           <Route path="/track/:music_path" element={<TrackDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

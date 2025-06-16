@@ -4,6 +4,9 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { authenticateToken } from '../middleware/authenticateToken';
 import dotenv from 'dotenv';
+import fs from 'fs';
+
+const privateKey = fs.readFileSync(process.env.PRIVATE_KEY_PATH || './private.key', 'utf8');
 
 dotenv.config();
 
@@ -34,7 +37,29 @@ router.post('/register', async (req: Request, res: Response) => {
     console.log('Utente creato:', newUser.toJSON());
     console.log('Tokens utente creato:', newUser.tokens);
 
-    return res.status(201).json({ message: 'Utente creato con successo' });
+  const token = jwt.sign(
+    { 
+      id: newUser.id, 
+      username: newUser.username, 
+      role: newUser.role, 
+      tokens: newUser.tokens 
+    },
+    privateKey,
+    { 
+      algorithm: 'RS256', 
+      expiresIn: '1h' 
+    }
+  );
+
+  return res.status(201).json({
+    token,
+    user: {
+      id: newUser.id,
+      username: newUser.username,
+      role: newUser.role,
+      tokens: newUser.tokens,
+    },
+  });
   } catch (error) {
     console.error('Errore registrazione:', error);
     return res.status(500).json({ error: 'Errore del server' });
@@ -60,9 +85,17 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role, tokens: user.tokens },
-      process.env.JWT_SECRET || 'secretkey',
-      { expiresIn: '1h' }
+      { 
+        id: user.id, 
+        username: user.username, 
+        role: user.role, 
+        tokens: user.tokens 
+      },
+      privateKey,
+      { 
+        algorithm: 'RS256', 
+        expiresIn: '1h'
+      }
     );
 
     return res.json({
@@ -80,9 +113,28 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/private', authenticateToken, (req: Request, res: Response) => {
-  const user = (req as any).user;
-  res.json({ message: 'Accesso autorizzato!', user });
+router.get('/private', authenticateToken, async (req: Request, res: Response) => {
+  const userPayload = (req as any).user;
+
+  try {
+    const user = await User.findByPk(userPayload.id);
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utente non trovato' });
+    }
+
+  res.json({
+    user: {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      tokens: user.tokens,
+    },
+  });
+  } catch (error) {
+    console.error('Errore in /auth/private:', error);
+    res.status(500).json({ error: 'Errore del server' });
+  }
 });
 
 router.post('/logout', (req: Request, res: Response) => {

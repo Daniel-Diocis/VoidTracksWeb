@@ -86,6 +86,7 @@ function TrackList() {
               </div>
               <audio
                 controls
+                controlsList="nodownload"
                 src={`${PUBLIC_URL}/music/${track.music_path}`}
                 className="w-full mt-2"
               />

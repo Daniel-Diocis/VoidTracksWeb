@@ -1,5 +1,8 @@
 import { Router, Request, Response } from 'express';
+import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { AxiosResponse } from 'axios';
+import { Readable } from 'stream';
 import User from '../models/User';
 import Track from '../models/Track';
 import Purchase from '../models/Purchase';
@@ -105,14 +108,27 @@ router.get('/purchase/download/:download_token', async (req: Request, res: Respo
     purchase.used_flag = true;
     await purchase.save();
 
-    // Redirect al file audio (modifica URL se serve)
+    // URL del file da Supabase
     const fileUrl = `https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public/music/${purchase.Track!.music_path}`;
 
-    return res.redirect(fileUrl);
+    // Richiesta dello stream audio
+    try {
+    const response: AxiosResponse<Readable> = await axios.get(fileUrl, {
+    responseType: 'stream',
+    });
+
+    res.setHeader('Content-Disposition', `attachment; filename="${purchase.Track!.titolo.replace(/[^a-z0-9]/gi, '_')}.mp3"`);
+    res.setHeader('Content-Type', 'audio/mpeg');
+
+    response.data.pipe(res);  // ✅ Solo se response.status === 200
+    } catch (err: any) {
+    console.error('Errore Axios:', err.response?.status, err.response?.data);
+    res.status(500).json({ error: 'Download fallito: file non raggiungibile o rimosso.' });
+    }
 
   } catch (error) {
-    console.error('Errore download:', error);
-    return res.status(500).json({ error: 'Errore del server durante il download' });
+    console.error('Errore durante il download:', error);
+    res.status(500).json({ error: 'Errore del server durante il download' });
   }
 });
 
@@ -146,6 +162,36 @@ router.get('/purchases', authenticateToken, async (req: Request, res: Response) 
   } catch (error) {
     console.error('Errore nel recupero acquisti:', error);
     res.status(500).json({ error: 'Errore del server nel recupero acquisti' });
+  }
+});
+
+// GET /purchase/:download_token - Visualizza pagina con dati del brano e flag canDownload
+router.get('/purchase/:download_token', async (req: Request, res: Response) => {
+  try {
+    const { download_token } = req.params;
+
+    const purchase = await Purchase.findOne({
+      where: { download_token },
+      include: [Track],
+    });
+
+    if (!purchase || !purchase.Track) {
+      return res.status(404).json({ error: 'Token non valido' });
+    }
+
+    const now = new Date();
+    const canDownload = !purchase.used_flag && now < purchase.valid_until;
+
+    res.json({
+      titolo: purchase.Track.titolo,
+      artista: purchase.Track.artista,
+      album: purchase.Track.album,
+      cover_path: purchase.Track.cover_path,
+      canDownload,
+    });
+  } catch (err) {
+    console.error('Errore GET /purchase/:token', err);
+    res.status(500).json({ error: 'Errore interno' });
   }
 });
 

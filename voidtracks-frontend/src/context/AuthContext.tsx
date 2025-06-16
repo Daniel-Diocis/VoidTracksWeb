@@ -8,6 +8,7 @@ interface AuthContextType {
   isLoggedIn: boolean;
   login: (username: string, token: string, tokens: number) => void;
   logout: () => void;
+  setTokens: (tokens: number) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,8 +55,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     localStorage.removeItem('tokens');
   };
 
+  const updateTokens = (newTokens: number) => {
+    setTokens(newTokens);
+    localStorage.setItem('tokens', newTokens.toString());
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, tokens, isLoggedIn, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, tokens, isLoggedIn, login, logout, setTokens: updateTokens }}
+    >
       {children}
     </AuthContext.Provider>
   );

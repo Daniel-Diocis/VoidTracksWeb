@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
 import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
 import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 type Track = {
   id: string;
@@ -11,7 +12,7 @@ type Track = {
   cover_path: string;
   music_path: string;
   updated_at: string;
-  isUpdated?: boolean; // aggiunto flag frontend
+  isUpdated?: boolean;
 };
 
 const PUBLIC_URL = 'https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public';
@@ -19,8 +20,10 @@ const PUBLIC_URL = 'https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/p
 const TracksMarket = () => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
+  const [downloadMap, setDownloadMap] = useState<Record<string, string>>({});
   const auth = useContext(AuthContext);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch(`${API_URL}/tracks`)
@@ -58,18 +61,23 @@ const TracksMarket = () => {
 
   useEffect(() => {
     if (auth?.token) {
-        fetch(`${API_URL}/purchases`, {
+      fetch(`${API_URL}/purchases`, {
         headers: {
-            Authorization: `Bearer ${auth.token}`,
+          Authorization: `Bearer ${auth.token}`,
         },
-        })
+      })
         .then(async res => {
-            if (!res.ok) {
+          if (!res.ok) {
             throw new Error('Errore nel recupero degli acquisti');
-            }
-            const purchases: { track_id: string }[] = await res.json();
-            const ids = new Set(purchases.map(p => p.track_id));
-            setPurchasedIds(ids);
+          }
+          const purchases: { track_id: string; download_token: string; used_flag: boolean }[] = await res.json();
+          const ids = new Set(purchases.map(p => p.track_id));
+          const tokensMap: Record<string, string> = {};
+          purchases.forEach(p => {
+            if (!p.used_flag) tokensMap[p.track_id] = p.download_token;
+          });
+          setPurchasedIds(ids);
+          setDownloadMap(tokensMap);
         })
         .catch(err => console.error('Errore nel fetch acquisti:', err));
     }
@@ -82,6 +90,7 @@ const TracksMarket = () => {
     }
 
     try {
+        console.log('TOKEN USATO:', auth.token);
       const res = await fetch(`${API_URL}/purchase`, {
         method: 'POST',
         headers: {
@@ -91,29 +100,44 @@ const TracksMarket = () => {
         body: JSON.stringify({ track_id: track.id }),
       });
 
+    if (!res.ok) {
+    const errorData = await res.json().catch(() => ({})); // evita crash se non è JSON
+    alert(errorData.error || 'Errore durante l\'acquisto.');
+    return;
+    }
+
       const data = await res.json();
 
-      if (!res.ok) {
-        alert(data.error || 'Errore durante l\'acquisto.');
-        return;
-      }
+      alert('Acquisto completato! Verrai reindirizzato alla pagina di download.');
+      setTimeout(() => {
+        navigate(`/download/${data.download_token}`);
+      }, 1000);
 
-      alert(`Acquisto completato! Download Token:\n${data.download_token}`);
+        const userRes = await fetch(`${API_URL}/auth/private`, {
+            headers: {
+            Authorization: `Bearer ${auth.token}`,
+            },
+        });
 
-      const userRes = await fetch(`${API_URL}/auth/private`, {
-        headers: {
-          Authorization: `Bearer ${auth.token}`,
-        },
-      });
-
-      if (userRes.ok) {
+        if (userRes.ok) {
         const userData = await userRes.json();
-        auth.login(auth.user!, auth.token, userData.user.tokens);
-        setPurchasedIds(prev => new Set([...prev, track.id])); // aggiorna stato localmente
-      }
+        console.log('Risposta da /auth/private:', userData);
+
+        if (typeof userData.user.tokens === 'number') {
+            auth.setTokens(userData.user.tokens);
+            console.log('Token aggiornati:', userData.user.tokens);
+        } else {
+            console.warn('⚠️ userData.user.tokens mancante o non numerico:', userData.user);
+        }
+
+        setPurchasedIds(prev => new Set([...prev, track.id]));
+        setDownloadMap(prev => ({ ...prev, [track.id]: data.download_token }));
+        }
+
     } catch (error) {
-      console.error('Errore durante l\'acquisto:', error);
-      alert('Errore di rete o del server.');
+    console.error('Errore durante l\'acquisto:', error);
+    if (error instanceof Error) alert(error.message);
+    else alert('Errore di rete o del server.');
     }
   };
 
@@ -123,6 +147,7 @@ const TracksMarket = () => {
       <ul>
         {tracks.map(track => {
           const isOwned = purchasedIds.has(track.id);
+          const canDownload = downloadMap[track.id];
 
           return (
             <li
@@ -151,23 +176,33 @@ const TracksMarket = () => {
                 </p>
                 <audio
                   controls
+                  controlsList="nodownload"
                   src={`${PUBLIC_URL}/music/${track.music_path}`}
                   className="w-36 mt-1"
                 />
               </div>
               <div className="flex flex-col items-end gap-1 min-w-[100px]">
                 <span className="text-cyan-400 font-semibold">{track.costo} token</span>
-                <button
-                  disabled={isOwned}
-                  onClick={() => handleAcquista(track)}
-                  className={`px-3 py-1 rounded text-sm ${
-                    isOwned
-                      ? 'bg-gray-600 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
-                >
-                  {isOwned ? 'Acquistato' : 'Acquista'}
-                </button>
+                {canDownload ? (
+                  <button
+                    onClick={() => navigate(`/download/${canDownload}`)}
+                    className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm"
+                  >
+                    Download
+                  </button>
+                ) : (
+                  <button
+                    disabled={isOwned}
+                    onClick={() => handleAcquista(track)}
+                    className={`px-3 py-1 rounded text-sm ${
+                      isOwned
+                        ? 'bg-gray-600 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {isOwned ? 'Acquistato' : 'Acquista'}
+                  </button>
+                )}
               </div>
             </li>
           );

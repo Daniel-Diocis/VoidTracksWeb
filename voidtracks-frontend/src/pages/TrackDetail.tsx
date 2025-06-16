@@ -48,7 +48,7 @@ export default function TrackDetail() {
         alt={`Cover ${track.titolo}`}
         className="w-64 h-64 object-cover rounded-lg mb-4"
       />
-      <audio controls src={`${PUBLIC_URL}/music/${track.music_path}`} className="w-full mb-4" />
+      <audio controls controlsList="nodownload" src={`${PUBLIC_URL}/music/${track.music_path}`} className="w-full mb-4" />
       {hash && <p className="text-sm text-gray-500 break-all">Hash: {hash}</p>}
     </div>
   );
