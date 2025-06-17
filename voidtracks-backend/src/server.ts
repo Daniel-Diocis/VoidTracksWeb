@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import sequelize from './db/sequelize';
+import './db'; // importa index.ts per eseguire le associazioni
 import app from './app';
 import { syncTracksFromSupabase } from './utils/syncSupabaseToLocal';
 

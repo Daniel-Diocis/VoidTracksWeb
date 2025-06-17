@@ -15,6 +15,9 @@ class PlaylistTrack extends Model<PlaylistTrackAttributes, PlaylistTrackCreation
   public playlist_id!: number;
   public track_id!: string;
   public is_favorite!: boolean;
+
+  // Associazione opzionale con il modello Track
+  public Track?: import('./Track').default;
 }
 
 PlaylistTrack.init(

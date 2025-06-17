@@ -9,6 +9,7 @@ import TracksMarket from './pages/TracksMarket';
 import DownloadPage from './pages/DownloadPage';
 import MyPurchases from './pages/MyPurchases';
 import PopularTracks from './pages/PopularTracks';
+import PlaylistsPage from './pages/PlaylistsPage';
 
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/my-purchases" element={<MyPurchases />} />
           <Route path="/popular" element={<PopularTracks />} />
+          <Route path="/playlists" element={<PlaylistsPage />} />
         </Routes>
       </main>
     </>

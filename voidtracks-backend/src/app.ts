@@ -1,10 +1,11 @@
 import express, { Request, Response, NextFunction } from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
-import tracksRouter from './routes/tracks'; // attenzione al percorso se serve aggiustar
+import tracksRouter from './routes/tracks';
 import authRouter from './routes/auth';
 import testRouter from './routes/testRouter';
 import purchaseRouter from './routes/purchase';
+import playlistRouter from './routes/playlist';
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use('/tracks', tracksRouter);
 app.use('/auth', authRouter);
 app.use('/test', testRouter);
 app.use('/', purchaseRouter);
+app.use('/playlists', playlistRouter);
 
 // gestione errori async (es. exportato da utils se vuoi)
 export function asyncHandler(fn: Function) {
