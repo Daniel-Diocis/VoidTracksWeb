@@ -70,25 +70,25 @@ function TrackList() {
           {tracks.map(track => (
             <div
               key={track.id}
-              className="bg-zinc-800 rounded-xl p-3 shadow hover:shadow-lg transition-shadow"
+              className="track-card"
             >
               <Link to={`/track/${track.music_path}`}>
                 <img
                   src={`${PUBLIC_URL}/cover/${track.cover_path}`}
                   alt={`Cover ${track.titolo}`}
-                  className="w-full h-32 object-cover rounded-md mb-2 hover:opacity-80 transition-opacity"
+                  className="track-cover"
                 />
               </Link>
-              <div className="text-sm">
-                <p className="font-semibold truncate">{track.titolo}</p>
-                <p className="text-gray-400 truncate">{track.artista}</p>
-                <p className="text-xs text-gray-500 truncate italic">{track.album}</p>
+              <div className="track-text">
+                <p className="track-title">{track.titolo}</p>
+                <p className="track-artist">{track.artista}</p>
+                <p className="track-album">{track.album}</p>
               </div>
               <audio
                 controls
                 controlsList="nodownload"
                 src={`${PUBLIC_URL}/music/${track.music_path}`}
-                className="w-full mt-2"
+                className="track-audio"
               />
             </div>
           ))}

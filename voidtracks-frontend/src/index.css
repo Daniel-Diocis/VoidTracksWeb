@@ -1,3 +1,126 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 🌑 Global base styles */
+/* Generale */
+body {
+  @apply bg-[#121212] text-white font-sans antialiased;
+}
+
+input, select, textarea {
+  @apply bg-zinc-800 text-white border border-zinc-600 px-2 py-1 rounded;
+}
+
+/* Aggiunto */
+.panel {
+  @apply bg-zinc-900 text-white rounded p-4;
+}
+
+/* Debug temporaneo */
+* {
+  /* outline: 1px solid red; */
+}
+/* 🎵 Componenti riutilizzabili */
+.card {
+  @apply bg-[#1e1e1e] p-4 rounded-xl shadow-md hover:shadow-lg transition;
+}
+
+.track-cover {
+  @apply w-full h-32 object-cover rounded-md mb-2 hover:opacity-80 transition-opacity;
+}
+
+/* index.css */
+
+.track-card {
+  @apply bg-zinc-800 rounded-xl p-3 shadow hover:shadow-lg transition-shadow flex flex-col items-center;
+}
+
+.track-cover {
+  @apply w-[200px] h-[200px] object-cover rounded-md mb-2 hover:opacity-80 transition-opacity mx-auto;
+}
+
+.track-audio {
+  @apply w-[220px] mt-2;
+}
+
+.track-text {
+  @apply text-sm text-center;
+}
+
+.track-title {
+  @apply font-semibold truncate;
+}
+
+.track-artist {
+  @apply text-gray-400 truncate;
+}
+
+.track-album {
+  @apply text-xs text-gray-500 truncate italic;
+}
+
+.market-cover {
+  @apply w-[100px] h-[100px] object-cover rounded-md;
+}
+
+.track-info {
+  @apply text-sm;
+}
+
+.track-info p {
+  @apply truncate;
+}
+/* 🎚️ Audio player style */
+audio {
+  @apply w-[220px] mt-2;
+}
+
+/* 🎧 Track Market card style */
+.market-item {
+  @apply flex items-center justify-between py-2 border-b border-gray-700 gap-4;
+}
+
+.market-cover {
+  @apply w-[100px] h-[100px] object-cover rounded-md;
+}
+
+.market-info {
+  @apply flex-1 min-w-0;
+}
+
+.market-title {
+  @apply font-semibold truncate;
+}
+
+.market-subtitle {
+  @apply text-sm text-gray-400 truncate;
+}
+
+.market-audio {
+  @apply w-36 mt-1;
+}
+
+.market-actions {
+  @apply flex flex-col items-end gap-1 min-w-[100px];
+}
+
+.market-price {
+  @apply text-cyan-400 font-semibold;
+}
+
+.market-button {
+  @apply px-3 py-1 rounded text-sm;
+}
+
+.market-buy {
+  @apply bg-blue-600 hover:bg-blue-700 text-white;
+}
+
+.market-download {
+  @apply bg-green-600 hover:bg-green-700 text-white;
+}
+
+.market-disabled {
+  @apply bg-gray-600 text-white cursor-not-allowed;
+}

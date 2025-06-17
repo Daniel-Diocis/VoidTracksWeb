@@ -18,3 +18,13 @@ export interface PlaylistWithTracks {
   playlist: Playlist;
   tracks: Track[];
 }
+
+export interface PurchaseWithTrack {
+  id: number;
+  Track: {
+    id: string;
+    titolo: string;
+    artista: string;
+    album: string;
+  };
+}

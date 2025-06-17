@@ -137,24 +137,28 @@ router.get('/purchase/download/:download_token', async (req: Request, res: Respo
   }
 });
 
-// GET /purchases - Lista acquisti utente autenticato, con filtri opzionali per date e stato
+// GET /purchases - Lista acquisti utente autenticato, con filtri opzionali per date
 router.get('/purchases', authenticateToken, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { fromDate, toDate, used } = req.query;
+    const { fromDate, toDate } = req.query;
 
     const whereClause: any = {
       user_id: userId,
     };
 
     if (fromDate) {
-      whereClause.purchased_at = { ...(whereClause.purchased_at || {}), [Op.gte]: new Date(fromDate as string) };
+      whereClause.purchased_at = {
+        ...(whereClause.purchased_at || {}),
+        [Op.gte]: new Date(fromDate as string)
+      };
     }
+
     if (toDate) {
-      whereClause.purchased_at = { ...(whereClause.purchased_at || {}), [Op.lte]: new Date(toDate as string) };
-    }
-    if (used !== undefined) {
-      whereClause.used_flag = used === 'true';
+      whereClause.purchased_at = {
+        ...(whereClause.purchased_at || {}),
+        [Op.lte]: new Date(toDate as string)
+      };
     }
 
     const purchases = await Purchase.findAll({
@@ -164,8 +168,8 @@ router.get('/purchases', authenticateToken, async (req: Request, res: Response) 
     });
 
     res.json({
-        message: `Trovati ${purchases.length} acquisti`,
-        data: purchases
+      message: `Trovati ${purchases.length} acquisti`,
+      data: purchases
     });
   } catch (error) {
     console.error('Errore nel recupero acquisti:', error);

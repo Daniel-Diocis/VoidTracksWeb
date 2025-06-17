@@ -61,6 +61,7 @@ const TracksMarket = () => {
 
   useEffect(() => {
     if (auth?.token) {
+      console.log('TOKEN CONTROLLATO:', auth.token);
       fetch(`${API_URL}/purchases`, {
         headers: {
           Authorization: `Bearer ${auth.token}`,
@@ -70,7 +71,9 @@ const TracksMarket = () => {
           if (!res.ok) {
             throw new Error('Errore nel recupero degli acquisti');
           }
-          const purchases: { track_id: string; download_token: string; used_flag: boolean }[] = await res.json();
+          const json = await res.json();
+          const purchases: { track_id: string; download_token: string; used_flag: boolean }[] = json.data;
+          console.log('Risposta acquisti:', purchases);
           const ids = new Set(purchases.map(p => p.track_id));
           const tokensMap: Record<string, string> = {};
           purchases.forEach(p => {
@@ -152,55 +155,54 @@ const TracksMarket = () => {
           return (
             <li
               key={track.id}
-              className="flex items-center justify-between py-2 border-b border-gray-700 gap-4"
+              className="market-item"
             >
               <img
                 src={`${PUBLIC_URL}/cover/${track.cover_path}`}
                 alt={`Cover di ${track.titolo}`}
-                style={{
-                  width: '100px',
-                  height: '100px',
-                  objectFit: 'cover',
-                  borderRadius: '0.375rem',
-                }}
+                className='market-cover'
               />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">
+              <div className="market-info">
+                <p className="market-title">
                   {track.titolo}{' '}
                   {track.isUpdated && (
                     <span className="text-yellow-400 text-xs ml-2">(Nuovo!)</span>
                   )}
                 </p>
-                <p className="text-sm text-gray-400 truncate">
+                <p className="market-subtitle">
                   {track.artista} — <em>{track.album}</em>
                 </p>
                 <audio
                   controls
                   controlsList="nodownload"
                   src={`${PUBLIC_URL}/music/${track.music_path}`}
-                  className="w-36 mt-1"
+                  className="market-audio"
                 />
               </div>
-              <div className="flex flex-col items-end gap-1 min-w-[100px]">
-                <span className="text-cyan-400 font-semibold">{track.costo} token</span>
-                {canDownload ? (
-                  <button
-                    onClick={() => navigate(`/download/${canDownload}`)}
-                    className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm"
-                  >
-                    Download
-                  </button>
+              <div className="market-actions">
+                <span className="market-price">{track.costo} token</span>
+                {isOwned ? (
+                  canDownload ? (
+                    <button
+                      onClick={() => navigate(`/download/${canDownload}`)}
+                      className="market-button market-download"
+                    >
+                      Download
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="market-button market-disabled"
+                    >
+                      Acquistato
+                    </button>
+                  )
                 ) : (
                   <button
-                    disabled={isOwned}
                     onClick={() => handleAcquista(track)}
-                    className={`px-3 py-1 rounded text-sm ${
-                      isOwned
-                        ? 'bg-gray-600 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
+                    className="market-button market-buy"
                   >
-                    {isOwned ? 'Acquistato' : 'Acquista'}
+                    Acquista
                   </button>
                 )}
               </div>

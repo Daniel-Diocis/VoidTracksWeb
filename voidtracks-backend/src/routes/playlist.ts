@@ -170,7 +170,6 @@ router.post('/:id/tracks', authenticateToken, async (req: Request, res: Response
       return res.status(400).json({ error: 'ID del brano mancante' });
     }
 
-    // Verifica che la playlist appartenga all'utente
     const playlist = await Playlist.findOne({
       where: { id: playlistId, user_id: userId }
     });
@@ -179,21 +178,18 @@ router.post('/:id/tracks', authenticateToken, async (req: Request, res: Response
       return res.status(404).json({ error: 'Playlist non trovata o non autorizzato' });
     }
 
-    // Verifica che l'utente abbia acquistato il brano
-    const acquistoValido = await Purchase.findOne({
+    // Verifica che l'utente abbia acquistato il brano (non serve used_flag né valid_until)
+    const acquisto = await Purchase.findOne({
       where: {
         user_id: userId,
-        track_id,
-        used_flag: false,
-        valid_until: { [Op.gt]: new Date() }
+        track_id
       }
     });
 
-    if (!acquistoValido) {
-      return res.status(403).json({ error: 'Brano non acquistato o non valido' });
+    if (!acquisto) {
+      return res.status(403).json({ error: 'Brano non acquistato' });
     }
 
-    // Verifica che il brano non sia già nella playlist
     const giàPresente = await PlaylistTrack.findOne({
       where: {
         playlist_id: playlistId,
@@ -205,7 +201,6 @@ router.post('/:id/tracks', authenticateToken, async (req: Request, res: Response
       return res.status(409).json({ error: 'Brano già presente nella playlist' });
     }
 
-    // Aggiunge il brano
     const nuovo = await PlaylistTrack.create({
       playlist_id: playlistId,
       track_id,
@@ -224,9 +219,8 @@ router.delete('/:id/tracks/:trackId', authenticateToken, async (req: Request, re
   try {
     const userId = (req as any).user.id;
     const playlistId = parseInt(req.params.id, 10);
-    const trackId = req.params.trackId; // UUID, quindi stringa
+    const trackId = req.params.trackId;
 
-    // Verifica che la playlist appartenga all'utente
     const playlist = await Playlist.findOne({
       where: { id: playlistId, user_id: userId }
     });
@@ -235,7 +229,6 @@ router.delete('/:id/tracks/:trackId', authenticateToken, async (req: Request, re
       return res.status(404).json({ error: 'Playlist non trovata o accesso negato' });
     }
 
-    // Elimina il brano dalla playlist
     const eliminato = await PlaylistTrack.destroy({
       where: {
         playlist_id: playlistId,
@@ -265,7 +258,6 @@ router.patch('/:id/favorite', authenticateToken, async (req: Request, res: Respo
       return res.status(400).json({ error: 'trackId mancante nel body' });
     }
 
-    // Verifica che la playlist appartenga all’utente
     const playlist = await Playlist.findOne({
       where: { id: playlistId, user_id: userId }
     });
@@ -274,7 +266,6 @@ router.patch('/:id/favorite', authenticateToken, async (req: Request, res: Respo
       return res.status(404).json({ error: 'Playlist non trovata o accesso negato' });
     }
 
-    // Verifica che il brano sia effettivamente presente nella playlist
     const entry = await PlaylistTrack.findOne({
       where: {
         playlist_id: playlistId,
@@ -286,13 +277,12 @@ router.patch('/:id/favorite', authenticateToken, async (req: Request, res: Respo
       return res.status(404).json({ error: 'Brano non presente nella playlist' });
     }
 
-    // Resetta tutti gli is_favorite a false
+    // Solo un preferito per playlist: resetta gli altri
     await PlaylistTrack.update(
       { is_favorite: false },
       { where: { playlist_id: playlistId } }
     );
 
-    // Imposta il nuovo preferito
     await entry.update({ is_favorite: true });
 
     res.json({ message: 'Brano preferito aggiornato con successo' });
