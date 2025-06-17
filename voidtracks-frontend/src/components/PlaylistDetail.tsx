@@ -1,209 +1,187 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import type { PlaylistWithTracks } from '../types';
-import type { PurchaseWithTrack } from '../types'; // o il percorso corretto
+import type { PlaylistWithTracks, PurchaseWithTrack } from '../types';
 import axios from 'axios';
 
-export default function PlaylistDetail({ 
-    playlistId, 
-    onRename 
-    }: { 
-        playlistId: number; 
-        onRename: (id: number, nuovoNome: string) => void; 
-    }) {
+export default function PlaylistDetail({
+  playlistId,
+  onRename
+}: {
+  playlistId: number;
+  onRename: (id: number, nuovoNome: string) => void;
+}) {
   const { token } = useAuth();
   const [playlist, setPlaylist] = useState<PlaylistWithTracks | null>(null);
+  const [purchasedTracks, setPurchasedTracks] = useState<PurchaseWithTrack[]>([]);
   const [editing, setEditing] = useState(false);
   const [newName, setNewName] = useState('');
-  const [purchasedTracks, setPurchasedTracks] = useState<PurchaseWithTrack[]>([]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (!token) return;
 
     const fetchData = async () => {
-        try {
-            const [playlistRes, purchasesRes] = await Promise.all([
-            fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            }),
-            fetch(`${import.meta.env.VITE_API_URL}/purchases`, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            ]);
+      try {
+        const [playlistRes, purchasesRes] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          fetch(`${import.meta.env.VITE_API_URL}/purchases`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
 
-            if (!playlistRes.ok || !purchasesRes.ok) {
-            throw new Error('Errore nel fetch');
-            }
+        const playlistData = await playlistRes.json();
+        const purchasesData = await purchasesRes.json();
 
-            const playlistData = await playlistRes.json();
-            const purchasesData = await purchasesRes.json();
-
-            // 🔒 Controllo difensivo: se manca tracks, assegna array vuoto
-            if (!Array.isArray(playlistData.tracks)) {
-            console.warn('La playlist non contiene tracks, assegno array vuoto');
-            playlistData.tracks = [];
-            }
-
-            setPlaylist(playlistData);
-            setNewName(playlistData.playlist.nome);
-            setPurchasedTracks(purchasesData.data || []); // fallback vuoto se manca "data"
-        } catch (err) {
-            console.error('Errore dettagli playlist', err);
-        }
+        playlistData.tracks ??= [];
+        setPlaylist(playlistData);
+        setNewName(playlistData.playlist.nome);
+        setPurchasedTracks(purchasesData.data || []);
+      } catch (err) {
+        console.error('Errore fetch playlist:', err);
+      }
     };
 
     fetchData();
-    }, [token, playlistId]);
+  }, [token, playlistId]);
 
-    const handleRename = async () => {
+  const handleRename = async () => {
     if (!newName.trim()) return;
     await onRename(playlistId, newName.trim());
     setEditing(false);
-    };
+  };
 
-    const handleAddSpecificTrack = async (trackId: string) => {
+  const refreshPlaylist = async () => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    data.tracks ??= [];
+    setPlaylist(data);
+  };
+
+  const handleAddTrack = async (trackId: string) => {
     try {
-        await axios.post(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}/tracks`, {
-        track_id: trackId
-        }, {
-        headers: { Authorization: `Bearer ${token}` }
-        });
-
-        alert("Brano aggiunto con successo.");
-
-        // Ricarica playlist aggiornata
-        const updated = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await updated.json();
-        if (!Array.isArray(data.tracks)) {
-        data.tracks = [];
-        }
-        setPlaylist(data);
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/playlists/${playlistId}/tracks`,
+        { track_id: trackId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      refreshPlaylist();
     } catch (err) {
-        console.error("Errore aggiunta brano:", err);
-        alert("Errore durante l'aggiunta del brano.");
+      console.error("Errore aggiunta brano:", err);
+      alert('Errore aggiunta brano');
     }
-    };
+  };
 
-    const handleRemoveTrack = async (trackId: string) => {
-    const confirm = window.confirm("Sei sicuro di voler rimuovere questo brano?");
-    if (!confirm) return;
-
+  const handleRemoveTrack = async (trackId: string) => {
+    if (!window.confirm('Rimuovere questo brano?')) return;
     try {
-        await axios.delete(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}/tracks/${trackId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-        });
-
-        // Ricarica la playlist aggiornata
-        const updated = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await updated.json();
-        setPlaylist(data);
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/playlists/${playlistId}/tracks/${trackId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      refreshPlaylist();
     } catch (err) {
-        console.error("Errore rimozione brano:", err);
-        alert("Errore durante la rimozione del brano.");
+      console.error("Errore aggiunta brano:", err);
+      alert('Errore rimozione brano');
     }
-    };
+  };
 
-    const handleSetFavorite = async (trackId: string) => {
+  const handleSetFavorite = async (trackId: string) => {
     try {
-        await axios.patch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}/favorite`, {
-        trackId
-        }, {
-        headers: { Authorization: `Bearer ${token}` }
-        });
-
-        // Ricarica la playlist aggiornata
-        const updated = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await updated.json();
-        setPlaylist(data);
+      await axios.patch(
+        `${import.meta.env.VITE_API_URL}/playlists/${playlistId}/favorite`,
+        { trackId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      refreshPlaylist();
     } catch (err) {
-        console.error("Errore impostazione preferito:", err);
-        alert("Errore durante l'aggiornamento del brano preferito.");
+      console.error("Errore impostazione preferito:", err);
+      alert('Errore impostazione preferito');
     }
-    };
+  };
 
-  if (!playlist) return <div className="w-full md:w-2/3">Caricamento...</div>;
+  if (!playlist) return <div className="panel">Caricamento...</div>;
 
   return (
-    <div className="w-full md:w-2/3 border p-4 rounded-xl bg-white shadow-md">
-        <div className="flex items-center justify-between mb-2">
-            {editing ? (
-            <div className="flex gap-2 w-full">
-                <input
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-                className="flex-1 p-1 border rounded"
-                />
-                <button onClick={handleRename} className="text-green-600 font-semibold">✔</button>
-                <button onClick={() => setEditing(false)} className="text-gray-500">✖</button>
-            </div>
-            ) : (
-            <>
-                <h2 className="text-xl font-bold">{playlist.playlist.nome}</h2>
-                <button onClick={() => setEditing(true)} className="text-blue-500 text-sm">✏️ Rinomina</button>
-            </>
-            )}
-        </div>
-        <h3 className="font-semibold mt-6 mb-2">Brani acquistati non presenti nella playlist:</h3>
-        <ul className="border rounded p-2 bg-gray-50">
-        {purchasedTracks
-            .filter(p => p.Track && !playlist.tracks.some(t => t.id === p.Track.id))
-            .map(p => (
-                <li key={p.Track!.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                <div>
-                    <div className="font-medium">{p.Track!.titolo}</div>
-                    <div className="text-sm text-gray-500">{p.Track!.artista} – {p.Track!.album}</div>
-                </div>
-                <button
-                    onClick={() => handleAddSpecificTrack(p.Track!.id)}
-                    className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                >
-                    ➕ Aggiungi
-                </button>
-            </li>
-        ))}
-
-        {/* fallback se nessun brano da aggiungere */}
-        {purchasedTracks.filter(p => p.Track && !playlist.tracks.some(t => t.id === p.Track.id)).length === 0 && (
-        <li className="text-gray-500 italic p-2">Tutti i brani acquistati sono già presenti nella playlist.</li>
+    <div className="panel w-full md:w-2/3">
+      <div className="flex items-center justify-between mb-2">
+        {editing ? (
+          <div className="flex gap-2 w-full">
+            <input
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              className="flex-1"
+            />
+            <button onClick={handleRename} className="text-green-400">✔</button>
+            <button onClick={() => setEditing(false)} className="text-gray-400">✖</button>
+          </div>
+        ) : (
+          <>
+            <h2 className="text-xl font-bold">{playlist.playlist.nome}</h2>
+            <button onClick={() => setEditing(true)} className="text-blue-400 text-sm">
+              ✏️ Rinomina
+            </button>
+          </>
         )}
-        </ul>
-        <ul>
-            {playlist.tracks && playlist.tracks.length > 0 ? (
-            playlist.tracks.map(track => (
-                <li key={track.id} className="flex items-center justify-between p-2 border-b">
-                <div>
-                    <div className="font-medium">{track.titolo}</div>
-                    <div className="text-sm text-gray-500">{track.artista} – {track.album}</div>
-                </div>
-                <div className="flex gap-2 items-center">
-                    {track.is_favorite && <span className="text-yellow-500 font-bold">★</span>}
-                    <button 
-                    onClick={() => handleSetFavorite(track.id)} 
-                    title="Imposta come preferito"
-                    className="text-yellow-500 hover:text-yellow-600"
-                    >
-                    ⭐
-                    </button>
-                    <button 
-                    onClick={() => handleRemoveTrack(track.id)} 
-                    title="Rimuovi brano"
-                    className="text-red-500 hover:text-red-700"
-                    >
-                    🗑️
-                    </button>
-                </div>
-                </li>
-            ))
-            ) : (
-            <li className="text-gray-500 italic p-2">Nessun brano presente in questa playlist.</li>
-            )}
-        </ul>
+      </div>
+
+      <h3 className="font-semibold mt-4 mb-2">Brani acquistati non nella playlist:</h3>
+      <ul className="bg-zinc-800 p-2 rounded border border-zinc-700 mb-4">
+        {purchasedTracks
+          .filter(p => p.Track && !playlist.tracks.some(t => t.id === p.Track.id))
+          .map(p => (
+            <li
+              key={p.Track!.id}
+              className="flex justify-between items-center py-2 border-b border-zinc-700 last:border-b-0"
+            >
+              <div>
+                <div className="font-medium">{p.Track!.titolo}</div>
+                <div className="text-sm text-gray-400">{p.Track!.artista} – {p.Track!.album}</div>
+              </div>
+              <button onClick={() => handleAddTrack(p.Track!.id)} className="market-buy">
+                ➕ Aggiungi
+              </button>
+            </li>
+          ))}
+        {purchasedTracks.filter(p => p.Track && !playlist.tracks.some(t => t.id === p.Track.id)).length === 0 && (
+          <li className="text-gray-500 italic p-2">Nessun brano disponibile da aggiungere.</li>
+        )}
+      </ul>
+
+      <h3 className="font-semibold mb-2">Brani nella playlist:</h3>
+      <ul>
+        {playlist.tracks.length > 0 ? (
+          playlist.tracks.map(track => (
+            <li key={track.id} className="flex justify-between items-center p-2 border-b border-zinc-700">
+              <div>
+                <div className="font-medium">{track.titolo}</div>
+                <div className="text-sm text-gray-400">{track.artista} – {track.album}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                {track.is_favorite && <span className="text-yellow-400 font-bold">★</span>}
+                <button
+                  onClick={() => handleSetFavorite(track.id)}
+                  title="Imposta come preferito"
+                  className="text-yellow-400 hover:text-yellow-500"
+                >
+                  ⭐
+                </button>
+                <button
+                  onClick={() => handleRemoveTrack(track.id)}
+                  title="Rimuovi"
+                  className="text-red-500 hover:text-red-700"
+                >
+                  🗑️
+                </button>
+              </div>
+            </li>
+          ))
+        ) : (
+          <li className="text-gray-500 italic p-2">Nessun brano nella playlist.</li>
+        )}
+      </ul>
     </div>
   );
 }

@@ -2,21 +2,21 @@ import type { Playlist } from '../types';
 
 interface Props {
   playlists: Playlist[];
-  onSelect: (id: number) => void;
   selectedId: number | null;
+  onSelect: (id: number) => void;
   onDelete: (id: number) => void;
 }
 
-export default function PlaylistList({ playlists, onSelect, selectedId, onDelete }: Props) {
+export default function PlaylistList({ playlists, selectedId, onSelect, onDelete }: Props) {
   return (
-    <div className="w-full border p-4 rounded-xl bg-white shadow-md">
+    <div className="card">
       <h2 className="text-xl font-semibold mb-3">Le tue Playlist</h2>
       <ul>
         {playlists.map(pl => (
           <li
             key={pl.id}
             className={`flex justify-between items-center p-2 rounded cursor-pointer hover:bg-gray-100 ${
-              selectedId === pl.id ? 'bg-gray-200' : ''
+              selectedId === pl.id ? 'bg-gray-200 text-black' : ''
             }`}
           >
             <div onClick={() => onSelect(pl.id)} className="flex-1">

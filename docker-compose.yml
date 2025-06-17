@@ -31,6 +31,17 @@ services:
       - postgres
     networks:
       - voidtracks
+  
+  seed:
+    build: ./voidtracks-backend
+    command: ["npx", "ts-node", "src/scripts/seed.ts"]
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    restart: "no"
+    networks:
+      - voidtracks
 
   # Resto invariato
   frontend:
