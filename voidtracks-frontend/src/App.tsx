@@ -1,5 +1,7 @@
 // src/App.tsx
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { AuthContext } from './context/AuthContext'; // o il path corretto
 import Navbar from './components/Navbar';
 import TrackList from './pages/TrackList';
 import TrackDetail from './pages/TrackDetail';
@@ -10,9 +12,18 @@ import DownloadPage from './pages/DownloadPage';
 import MyPurchases from './pages/MyPurchases';
 import PopularTracks from './pages/PopularTracks';
 import PlaylistsPage from './pages/PlaylistsPage';
-
+import AdminPanel from './pages/AdminPanel';
 
 function App() {
+  const auth = useContext(AuthContext);
+
+  if (!auth) {
+    return <div>Errore: contesto Auth non disponibile</div>;
+  }
+  if (auth.isInitializing) {
+  return <div>Caricamento...</div>;
+  }
+
   return (
     <>
       <Navbar />
@@ -27,6 +38,16 @@ function App() {
           <Route path="/my-purchases" element={<MyPurchases />} />
           <Route path="/popular" element={<PopularTracks />} />
           <Route path="/playlists" element={<PlaylistsPage />} />
+          <Route
+            path="/admin"
+            element={
+              auth.user?.role === 'admin' ? (
+                <AdminPanel />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
         </Routes>
       </main>
     </>

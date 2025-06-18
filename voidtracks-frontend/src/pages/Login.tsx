@@ -55,7 +55,14 @@ function Login() {
       console.log('Tokens numerici utente:', userData.user.tokens);
 
       // Chiamata al contesto
-      auth?.login(username, data.token, userData.user.tokens);
+      auth?.login(
+        {
+          username: userData.user.username,
+          role: userData.user.role
+        },
+        data.token,
+        userData.user.tokens
+      );
       console.log('Calling login with:', username, data.token, userData.user.tokens);
 
       // Redirect o azione post login

@@ -131,6 +131,7 @@ router.get('/private', authenticateToken, async (req: Request, res: Response) =>
       tokens: user.tokens,
     },
   });
+  console.log('Utente autenticato:', user.toJSON());
   } catch (error) {
     console.error('Errore in /auth/private:', error);
     res.status(500).json({ error: 'Errore del server' });

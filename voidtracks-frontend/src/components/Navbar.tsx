@@ -32,7 +32,9 @@ function Navbar() {
         {isLoggedIn ? (
           <>
             <Link to="/my-purchases" className="px-4 py-2 hover:underline">I miei acquisti</Link>
-            <span className="self-center text-sm">Benvenuto, {user}</span>
+            {user && (
+              <span className="self-center text-sm">Benvenuto, {user.username}</span>
+            )}
             <button
               onClick={handleLogout}
               className="bg-red-600 px-4 py-2 rounded hover:bg-red-700"

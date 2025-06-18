@@ -44,7 +44,11 @@ function Register() {
 
       const userData = await userRes.json();
 
-      auth?.login(username, data.token, userData.user.tokens);
+      auth?.login(
+        { username: userData.user.username, role: userData.user.role },
+        data.token,
+        userData.user.tokens
+      );
 
       // Vai alla home
       navigate('/');

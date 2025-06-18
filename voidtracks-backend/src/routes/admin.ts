@@ -6,7 +6,7 @@ import User from '../models/User';
 
 const router = express.Router();
 
-router.patch('/admin/recharge', authenticateToken, isAdmin, async (req, res) => {
+router.patch('/recharge', authenticateToken, isAdmin, async (req, res) => {
   const { username, tokens } = req.body;
 
     if (!username || typeof username !== 'string' || typeof tokens !== 'number' || tokens < 0) {
