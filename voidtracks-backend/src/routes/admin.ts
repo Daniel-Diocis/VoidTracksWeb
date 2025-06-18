@@ -1,10 +1,10 @@
-import express from 'express';
+import { Router } from 'express';
 import { authenticateToken } from '../middleware/authenticateToken';
 import { authenticateAdmin } from '../middleware/authRoles';
-import * as adminController from '../controllers/adminController';
+import { rechargeTokens } from '../controllers/adminController';
 
-const router = express.Router();
+const router = Router();
 
-router.patch('/recharge', authenticateToken, authenticateAdmin, adminController.rechargeTokens);
+router.patch('/recharge', authenticateToken, authenticateAdmin, rechargeTokens);
 
 export default router;
