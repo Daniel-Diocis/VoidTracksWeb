@@ -7,6 +7,7 @@ import testRouter from './routes/testRouter';
 import purchaseRouter from './routes/purchase';
 import playlistRouter from './routes/playlist';
 import adminRouter from './routes/admin';
+import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 
@@ -21,7 +22,7 @@ app.get('/', (_req: Request, res: Response) => {
 app.use('/tracks', tracksRouter);
 app.use('/auth', authRouter);
 app.use('/test', testRouter);
-app.use('/', purchaseRouter);
+app.use('/purchase', purchaseRouter);
 app.use('/playlists', playlistRouter);
 app.use('/admin', adminRouter);
 
@@ -32,14 +33,6 @@ export function asyncHandler(fn: Function) {
   };
 }
 
-// Middleware globale gestione errori
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    error: {
-      message: err.message || 'Internal Server Error',
-    },
-  });
-});
+app.use(errorHandler);
 
 export default app;

@@ -25,7 +25,7 @@ function MyPurchases() {
             if (fromDate) query.append('fromDate', fromDate);
             if (toDate) query.append('toDate', toDate);
 
-            const response = await fetch(`http://localhost:3000/purchases?${query.toString()}`, {
+            const response = await fetch(`http://localhost:3000/purchase?${query.toString()}`, {
                 headers: {
                 Authorization: `Bearer ${token}`,
                 },

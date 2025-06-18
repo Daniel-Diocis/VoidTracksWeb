@@ -62,7 +62,7 @@ const TracksMarket = () => {
   useEffect(() => {
     if (auth?.token) {
       console.log('TOKEN CONTROLLATO:', auth.token);
-      fetch(`${API_URL}/purchases`, {
+      fetch(`${API_URL}/purchase`, {
         headers: {
           Authorization: `Bearer ${auth.token}`,
         },

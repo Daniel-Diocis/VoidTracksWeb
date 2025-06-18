@@ -25,7 +25,7 @@ export default function PlaylistDetail({
           fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          fetch(`${import.meta.env.VITE_API_URL}/purchases`, {
+          fetch(`${import.meta.env.VITE_API_URL}/purchase`, {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
