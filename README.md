@@ -95,7 +95,7 @@ Altri errori di server:
 }
 ```
 
-### POST: /auth/login
+## POST: /auth/login
 
 **Richiesta**
 
