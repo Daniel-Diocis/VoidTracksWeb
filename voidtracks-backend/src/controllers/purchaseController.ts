@@ -1,11 +1,11 @@
-import { Request, Response } from 'express';
-import axios, { AxiosResponse } from 'axios';
-import { v4 as uuidv4 } from 'uuid';
-import { Readable } from 'stream';
-import User from '../models/User';
-import Track from '../models/Track';
-import Purchase from '../models/Purchase';
-import { Op } from 'sequelize';
+import { Request, Response } from "express";
+import axios, { AxiosResponse } from "axios";
+import { v4 as uuidv4 } from "uuid";
+import { Readable } from "stream";
+import User from "../models/User";
+import Track from "../models/Track";
+import Purchase from "../models/Purchase";
+import { Op } from "sequelize";
 
 export async function createPurchase(req: Request, res: Response) {
   try {
@@ -13,14 +13,14 @@ export async function createPurchase(req: Request, res: Response) {
     const { track_id } = req.body;
 
     if (!track_id) {
-      return res.status(400).json({ error: 'track_id è obbligatorio' });
+      return res.status(400).json({ error: "track_id è obbligatorio" });
     }
 
     const user = await User.findByPk(userId);
     const track = await Track.findByPk(track_id);
 
-    if (!user) return res.status(404).json({ error: 'Utente non trovato' });
-    if (!track) return res.status(404).json({ error: 'Brano non trovato' });
+    if (!user) return res.status(404).json({ error: "Utente non trovato" });
+    if (!track) return res.status(404).json({ error: "Brano non trovato" });
 
     const existingPurchase = await Purchase.findOne({
       where: {
@@ -33,14 +33,16 @@ export async function createPurchase(req: Request, res: Response) {
 
     if (existingPurchase) {
       return res.status(200).json({
-        message: 'Acquisto già presente e valido',
+        message: "Acquisto già presente e valido",
         purchase_id: existingPurchase.id,
         download_token: existingPurchase.download_token,
       });
     }
 
     if (user.tokens < track.costo) {
-      return res.status(401).json({ error: "Token insufficienti per l'acquisto" });
+      return res
+        .status(401)
+        .json({ error: "Token insufficienti per l'acquisto" });
     }
 
     user.tokens -= track.costo;
@@ -57,16 +59,18 @@ export async function createPurchase(req: Request, res: Response) {
     });
 
     res.status(201).json({
-      message: 'Acquisto completato con successo',
+      message: "Acquisto completato con successo",
       purchase_id: purchase.id,
       download_token: purchase.download_token,
     });
   } catch (error) {
-    console.error('Errore nell\'acquisto:', error);
+    console.error("Errore nell'acquisto:", error);
     if (error instanceof Error) {
       return res.status(500).json({ error: error.message });
     }
-    return res.status(500).json({ error: 'Errore del server durante l\'acquisto' });
+    return res
+      .status(500)
+      .json({ error: "Errore del server durante l'acquisto" });
   }
 }
 
@@ -79,29 +83,44 @@ export async function downloadTrack(req: Request, res: Response) {
       include: [Track],
     });
 
-    if (!purchase) return res.status(404).json({ error: 'Link di download non valido' });
-    if (purchase.used_flag) return res.status(403).json({ error: 'Link già utilizzato' });
-    if (new Date() > purchase.valid_until) return res.status(403).json({ error: 'Link scaduto' });
+    if (!purchase)
+      return res.status(404).json({ error: "Link di download non valido" });
+    if (purchase.used_flag)
+      return res.status(403).json({ error: "Link già utilizzato" });
+    if (new Date() > purchase.valid_until)
+      return res.status(403).json({ error: "Link scaduto" });
 
     purchase.used_flag = true;
     await purchase.save();
 
-    const fileUrl = `https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public/music/${purchase.Track!.music_path}`;
+    const fileUrl = `https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public/music/${
+      purchase.Track!.music_path
+    }`;
 
     try {
-      const response: AxiosResponse<Readable> = await axios.get(fileUrl, { responseType: 'stream' });
+      const response: AxiosResponse<Readable> = await axios.get(fileUrl, {
+        responseType: "stream",
+      });
 
-      res.setHeader('Content-Disposition', `attachment; filename="${purchase.Track!.titolo.replace(/[^a-z0-9]/gi, '_')}.mp3"`);
-      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${purchase.Track!.titolo.replace(
+          /[^a-z0-9]/gi,
+          "_"
+        )}.mp3"`
+      );
+      res.setHeader("Content-Type", "audio/mpeg");
 
       response.data.pipe(res);
     } catch (err: any) {
-      console.error('Errore Axios:', err.response?.status, err.response?.data);
-      res.status(500).json({ error: 'Download fallito: file non raggiungibile o rimosso.' });
+      console.error("Errore Axios:", err.response?.status, err.response?.data);
+      res
+        .status(500)
+        .json({ error: "Download fallito: file non raggiungibile o rimosso." });
     }
   } catch (error) {
-    console.error('Errore durante il download:', error);
-    res.status(500).json({ error: 'Errore del server durante il download' });
+    console.error("Errore durante il download:", error);
+    res.status(500).json({ error: "Errore del server durante il download" });
   }
 }
 
@@ -113,23 +132,32 @@ export async function getUserPurchases(req: Request, res: Response) {
     const whereClause: any = { user_id: userId };
 
     if (fromDate) {
-      whereClause.purchased_at = { ...(whereClause.purchased_at || {}), [Op.gte]: new Date(fromDate as string) };
+      whereClause.purchased_at = {
+        ...(whereClause.purchased_at || {}),
+        [Op.gte]: new Date(fromDate as string),
+      };
     }
 
     if (toDate) {
-      whereClause.purchased_at = { ...(whereClause.purchased_at || {}), [Op.lte]: new Date(toDate as string) };
+      whereClause.purchased_at = {
+        ...(whereClause.purchased_at || {}),
+        [Op.lte]: new Date(toDate as string),
+      };
     }
 
     const purchases = await Purchase.findAll({
       where: whereClause,
       include: [Track],
-      order: [['purchased_at', 'DESC']],
+      order: [["purchased_at", "DESC"]],
     });
 
-    res.json({ message: `Trovati ${purchases.length} acquisti`, data: purchases });
+    res.json({
+      message: `Trovati ${purchases.length} acquisti`,
+      data: purchases,
+    });
   } catch (error) {
-    console.error('Errore nel recupero acquisti:', error);
-    res.status(500).json({ error: 'Errore del server nel recupero acquisti' });
+    console.error("Errore nel recupero acquisti:", error);
+    res.status(500).json({ error: "Errore del server nel recupero acquisti" });
   }
 }
 
@@ -143,7 +171,7 @@ export async function getPurchaseDetails(req: Request, res: Response) {
     });
 
     if (!purchase || !purchase.Track) {
-      return res.status(404).json({ error: 'Token non valido' });
+      return res.status(404).json({ error: "Token non valido" });
     }
 
     const now = new Date();
@@ -157,7 +185,7 @@ export async function getPurchaseDetails(req: Request, res: Response) {
       canDownload,
     });
   } catch (error) {
-    console.error('Errore GET /purchase/:token', error);
-    res.status(500).json({ error: 'Errore interno' });
+    console.error("Errore GET /purchase/:token", error);
+    res.status(500).json({ error: "Errore interno" });
   }
 }

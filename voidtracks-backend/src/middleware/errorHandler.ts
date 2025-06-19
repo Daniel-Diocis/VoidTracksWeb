@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
 
 // Middleware globale gestione errori
 export function errorHandler(
@@ -10,7 +10,7 @@ export function errorHandler(
   console.error(err.stack);
   res.status(err.status || 500).json({
     error: {
-      message: err.message || 'Internal Server Error',
+      message: err.message || "Internal Server Error",
     },
   });
 }

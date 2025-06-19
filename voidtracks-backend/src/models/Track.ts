@@ -1,8 +1,9 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../db/sequelize';
+import { DataTypes, Model, Optional } from "sequelize";
+import sequelize from "../db/sequelize";
 
+// Interfaccia che definisce gli attributi del modello Track
 interface TrackAttributes {
-  id: string;  // cambia a stringa per UUID
+  id: string;
   titolo: string;
   artista: string;
   album: string;
@@ -13,9 +14,16 @@ interface TrackAttributes {
   updatedAt?: Date;
 }
 
-interface TrackCreationAttributes extends Optional<TrackAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+// Interfaccia per la creazione del modello, rende opzionali alcuni campi
+interface TrackCreationAttributes
+  extends Optional<TrackAttributes, "id" | "createdAt" | "updatedAt"> {}
 
-class Track extends Model<TrackAttributes, TrackCreationAttributes> implements TrackAttributes {
+// Definizione della classe modello Track estesa da Sequelize Model
+class Track
+  extends Model<TrackAttributes, TrackCreationAttributes>
+  implements TrackAttributes
+{
+  // Definizione degli attributi obbligatori
   public id!: string;
   public titolo!: string;
   public artista!: string;
@@ -24,10 +32,12 @@ class Track extends Model<TrackAttributes, TrackCreationAttributes> implements T
   public cover_path!: string;
   public costo!: number;
 
+  // Attributi di sola lettura gestiti da Sequelize
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
+// Inizializzazione del modello Sequelize con le colonne e tipi dati associati
 Track.init(
   {
     id: {
@@ -63,20 +73,20 @@ Track.init(
     createdAt: {
       type: DataTypes.DATE,
       allowNull: true,
-      field: 'created_at',
+      field: "created_at",
     },
     updatedAt: {
       type: DataTypes.DATE,
       allowNull: true,
-      field: 'updated_at',
+      field: "updated_at",
     },
   },
   {
-    tableName: 'tracks',
+    tableName: "tracks",
     sequelize,
     timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   }
 );
 

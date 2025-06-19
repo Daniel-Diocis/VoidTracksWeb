@@ -19,6 +19,7 @@ type Track = TrackBase & {
 const PUBLIC_URL = 'https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public';
 
 function TrackList() {
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [query, setQuery] = useState('');
 
@@ -71,6 +72,31 @@ function TrackList() {
         onChange={e => setQuery(e.target.value)} // aggiorna query e fa partire fetch
         className="w-full mb-6 p-2 rounded bg-zinc-700 text-white placeholder-zinc-400"
       />
+      {/* Player del brano in riproduzione */}
+      {currentTrack && (
+        <div className="fixed bottom-0 left-0 right-0 bg-zinc-800 p-4 flex items-center gap-4">
+          <img
+            src={`${PUBLIC_URL}/cover/${currentTrack.cover_path}`}
+            alt={`Cover ${currentTrack.titolo}`}
+            className="w-16 h-16 object-cover rounded"
+          />
+          <div className="flex flex-col">
+            <span className="font-bold">{currentTrack.titolo}</span>
+            <span className="text-sm text-gray-400">{currentTrack.artista}</span>
+          </div>
+          <audio
+            controls
+            controlsList="nodownload"
+            autoPlay
+            src={`${PUBLIC_URL}/music/${currentTrack.music_path}`}
+            className="flex-grow"
+            onEnded={() => setCurrentTrack(null)}
+          />
+          <button onClick={() => setCurrentTrack(null)} className="ml-4 text-white">
+            Close
+          </button>
+        </div>
+      )}
       {/* Lista tracce */}
       {tracks.length === 0 ? (
         <p className="text-center">Caricamento...</p>
@@ -96,12 +122,12 @@ function TrackList() {
                 <p className="track-artist">{track.artista}</p>
                 <p className="track-album">{track.album}</p>
               </div>
-              <audio
-                controls
-                controlsList="nodownload"
-                src={`${PUBLIC_URL}/music/${track.music_path}`}
-                className="track-audio"
-              />
+              <button
+                onClick={() => setCurrentTrack(track)}
+                className="btn-play"
+              >
+                {currentTrack?.id === track.id ? 'Pause' : 'Play'}
+              </button>
             </div>
           ))}
         </div>
