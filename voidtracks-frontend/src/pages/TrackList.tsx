@@ -20,10 +20,13 @@ const PUBLIC_URL = 'https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/p
 
 function TrackList() {
   const [tracks, setTracks] = useState<Track[]>([]);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    fetch(`${API_URL}/tracks`)
+
+    const url = query ? `${API_URL}/tracks?q=${encodeURIComponent(query)}` : `${API_URL}/tracks`;
+    fetch(url)
       .then(res => res.json())
       .then((data: TrackBase[]) => {
         const ordinati = [...data].sort((a, b) => {
@@ -56,10 +59,19 @@ function TrackList() {
         setTracks(aggiornati);
       })
       .catch(err => console.error('Errore nel fetch:', err));
-  }, []);
+  }, [query]);
 
   return (
     <div className="min-h-screen bg-zinc-900 text-white px-4 py-6 max-w-7xl mx-auto">
+      {/* Input di ricerca */}
+      <input
+        type="text"
+        placeholder="Cerca titolo, artista o album..."
+        value={query}
+        onChange={e => setQuery(e.target.value)} // aggiorna query e fa partire fetch
+        className="w-full mb-6 p-2 rounded bg-zinc-700 text-white placeholder-zinc-400"
+      />
+      {/* Lista tracce */}
       {tracks.length === 0 ? (
         <p className="text-center">Caricamento...</p>
       ) : (

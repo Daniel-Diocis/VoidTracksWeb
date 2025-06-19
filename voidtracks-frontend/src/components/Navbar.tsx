@@ -30,7 +30,7 @@ function Navbar() {
       <div className="flex gap-4 items-center">
         {/* Link visibili a tutti */}
         <Link to="/market" className="px-4 py-2 hover:underline">Market</Link>
-        <Link to="/popular" className="px-4 py-2 hover:underline">Brani più popolari</Link>
+        <Link to="/popular" className="px-4 py-2 hover:underline">Brani più acquistati</Link>
 
         {/* Link solo utenti loggati */}
         {isLoggedIn && (

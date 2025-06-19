@@ -1,11 +1,24 @@
 import { Request, Response } from 'express';
-import { fn, col } from 'sequelize';
+import { fn, col, Op } from 'sequelize';
 import Track from '../models/Track';
 import Purchase from '../models/Purchase';
 
 export async function getAllTracks(req: Request, res: Response) {
   try {
-    const tracks = await Track.findAll();
+    const query = req.query.q as string | undefined;
+
+    let whereClause = {};
+    if (query) {
+      whereClause = {
+        [Op.or]: [
+          { titolo: { [Op.iLike]: `%${query}%` } },
+          { artista: { [Op.iLike]: `%${query}%` } },
+          { album: { [Op.iLike]: `%${query}%` } },
+        ],
+      };
+    }
+
+    const tracks = await Track.findAll({ where: whereClause });
     res.json(tracks);
   } catch (error) {
     console.error('Errore recupero brani:', error);

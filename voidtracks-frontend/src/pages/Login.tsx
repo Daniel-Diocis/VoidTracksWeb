@@ -49,11 +49,6 @@ function Login() {
       // Dopo questa riga, appena ricevuti i dati userData:
       console.log('Dati ricevuti da /auth/private:', userData);
 
-      // Poi appena prima di chiamare login:
-      console.log('Username:', username);
-      console.log('Token JWT:', data.token);
-      console.log('Tokens numerici utente:', userData.user.tokens);
-
       // Chiamata al contesto
       auth?.login(
         {
@@ -63,7 +58,6 @@ function Login() {
         data.token,
         userData.user.tokens
       );
-      console.log('Calling login with:', username, data.token, userData.user.tokens);
 
       // Redirect o azione post login
       navigate('/');
