@@ -128,13 +128,20 @@ export async function getPrivateUser(req: Request, res: Response) {
       return res.status(404).json({ error: "Utente non trovato" });
     }
 
-    // Controllo del bonus token giornaliero
+    // Controllo del bonus token giornaliero usando lastTokenBonusDate
     const now = new Date();
-    const lastUpdateDay = format(toZonedTime(user.updatedAt || new Date(0), timeZone), 'yyyy-MM-dd');
-    const today = format(toZonedTime(now, timeZone), 'yyyy-MM-dd');
+    const lastBonusDate = user.lastTokenBonusDate; // nuovo campo
 
-    if (lastUpdateDay !== today) {
+    // Formatta le date in yyyy-MM-dd (time zone Europe/Rome)
+    const lastBonusDay = lastBonusDate
+      ? format(toZonedTime(lastBonusDate, timeZone), "yyyy-MM-dd")
+      : null;
+
+    const today = format(toZonedTime(now, timeZone), "yyyy-MM-dd");
+
+    if (lastBonusDay !== today) {
       user.tokens += 1;
+      user.lastTokenBonusDate = now; // aggiorna la data del bonus
       await user.save();
     }
 

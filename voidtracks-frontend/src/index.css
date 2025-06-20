@@ -98,7 +98,7 @@ audio {
 }
 
 .market-audio {
-  @apply w-36 mt-1;
+  @apply w-full mt-1;
 }
 
 .market-actions {

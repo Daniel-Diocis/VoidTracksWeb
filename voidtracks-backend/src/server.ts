@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import sequelize from "./db/sequelize";
 import "./db"; // importa index.ts per eseguire le associazioni
 import app from "./app";
-import { syncTracksFromSupabase } from "./utils/syncSupabaseToLocal";
+import { syncTracksFromSupabase, syncArtistsFromSupabase, syncTrackArtistsFromSupabase } from "./utils/syncSupabaseToLocal";
 
 dotenv.config();
 
@@ -20,7 +20,9 @@ const startServer = async () => {
     });
 
     // Sincronizza in background
-    syncTracksFromSupabase().catch(console.error);
+    const supaTracks = await syncTracksFromSupabase(); // Modifica questa funzione per farla ritornare i dati sincronizzati
+    await syncArtistsFromSupabase(); // Se vuoi puoi farla tornare i dati degli artisti se ti serve
+    await syncTrackArtistsFromSupabase(supaTracks); // Passo i dati brani qui
   } catch (error) {
     console.error("Impossibile connettersi al database:", error);
   }

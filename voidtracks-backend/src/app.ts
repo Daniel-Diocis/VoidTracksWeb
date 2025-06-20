@@ -6,6 +6,7 @@ import authRouter from "./routes/auth";
 import purchaseRouter from "./routes/purchase";
 import playlistRouter from "./routes/playlist";
 import adminRouter from "./routes/admin";
+import artistsRouter from "./routes/artists";
 import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
@@ -23,6 +24,7 @@ app.use("/auth", authRouter);
 app.use("/purchase", purchaseRouter);
 app.use("/playlists", playlistRouter);
 app.use("/admin", adminRouter);
+app.use("/artists", artistsRouter);
 
 // gestione errori async (es. exportato da utils se vuoi)
 export function asyncHandler(fn: Function) {

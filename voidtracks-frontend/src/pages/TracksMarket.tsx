@@ -1,7 +1,7 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useRef } from 'react';
 import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 type Track = {
   id: string;
@@ -26,6 +26,11 @@ const TracksMarket = () => {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
   const navigate = useNavigate();
 
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Fetch tracks e gestione timestamps
   useEffect(() => {
     const url = query ? `${API_URL}/tracks?q=${encodeURIComponent(query)}` : `${API_URL}/tracks`;
     fetch(url)
@@ -61,21 +66,16 @@ const TracksMarket = () => {
       .catch(err => console.error('Errore nel fetch:', err));
   }, [query]);
 
+  // Fetch acquisti
   useEffect(() => {
     if (auth?.token) {
-      console.log('TOKEN CONTROLLATO:', auth.token);
       fetch(`${API_URL}/purchase`, {
-        headers: {
-          Authorization: `Bearer ${auth.token}`,
-        },
+        headers: { Authorization: `Bearer ${auth.token}` },
       })
         .then(async res => {
-          if (!res.ok) {
-            throw new Error('Errore nel recupero degli acquisti');
-          }
+          if (!res.ok) throw new Error('Errore nel recupero degli acquisti');
           const json = await res.json();
           const purchases: { track_id: string; download_token: string; used_flag: boolean }[] = json.data;
-          console.log('Risposta acquisti:', purchases);
           const ids = new Set(purchases.map(p => p.track_id));
           const tokensMap: Record<string, string> = {};
           purchases.forEach(p => {
@@ -88,6 +88,28 @@ const TracksMarket = () => {
     }
   }, [auth]);
 
+  // Controllo play/pause audio HTML nativo
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.play();
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [isPlaying, currentTrack]);
+
+  // Funzione play/pause bottone
+  const togglePlayPause = (track: Track) => {
+    if (currentTrack?.id === track.id) {
+      setIsPlaying(!isPlaying);
+    } else {
+      setCurrentTrack(track);
+      setIsPlaying(true);
+    }
+  };
+
+  // Funzione acquisto
   const handleAcquista = async (track: Track) => {
     if (!auth || !auth.token) {
       alert('Devi essere loggato per acquistare.');
@@ -95,7 +117,6 @@ const TracksMarket = () => {
     }
 
     try {
-        console.log('TOKEN USATO:', auth.token);
       const res = await fetch(`${API_URL}/purchase`, {
         method: 'POST',
         headers: {
@@ -105,11 +126,11 @@ const TracksMarket = () => {
         body: JSON.stringify({ track_id: track.id }),
       });
 
-    if (!res.ok) {
-    const errorData = await res.json().catch(() => ({})); // evita crash se non è JSON
-    alert(errorData.error || 'Errore durante l\'acquisto.');
-    return;
-    }
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.error || "Errore durante l'acquisto.");
+        return;
+      }
 
       const data = await res.json();
 
@@ -118,45 +139,77 @@ const TracksMarket = () => {
         navigate(`/download/${data.download_token}`);
       }, 1000);
 
-        const userRes = await fetch(`${API_URL}/auth/private`, {
-            headers: {
-            Authorization: `Bearer ${auth.token}`,
-            },
-        });
+      const userRes = await fetch(`${API_URL}/auth/private`, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+        },
+      });
 
-        if (userRes.ok) {
+      if (userRes.ok) {
         const userData = await userRes.json();
-        console.log('Risposta da /auth/private:', userData);
 
         if (typeof userData.user.tokens === 'number') {
-            auth.setTokens(userData.user.tokens);
-            console.log('Token aggiornati:', userData.user.tokens);
-        } else {
-            console.warn('⚠️ userData.user.tokens mancante o non numerico:', userData.user);
+          auth.setTokens(userData.user.tokens);
         }
 
         setPurchasedIds(prev => new Set([...prev, track.id]));
         setDownloadMap(prev => ({ ...prev, [track.id]: data.download_token }));
-        }
-
+      }
     } catch (error) {
-    console.error('Errore durante l\'acquisto:', error);
-    if (error instanceof Error) alert(error.message);
-    else alert('Errore di rete o del server.');
+      if (error instanceof Error) alert(error.message);
+      else alert('Errore di rete o del server.');
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto p-4 bg-zinc-900 text-white rounded">
       <h1 className="text-2xl font-bold mb-6">Market - Acquista brani</h1>
-      {/* Input di ricerca */}
+
       <input
         type="text"
         placeholder="Cerca titolo, artista o album..."
         value={query}
-        onChange={e => setQuery(e.target.value)} // aggiorna query e fa partire fetch
+        onChange={e => setQuery(e.target.value)}
         className="w-full mb-6 p-2 rounded bg-zinc-700 text-white placeholder-zinc-400"
       />
+
+      {/* Player fisso in basso */}
+      {currentTrack && (
+        <div className="fixed bottom-0 left-0 right-0 bg-zinc-800 p-4 flex items-center gap-4">
+          <img
+            src={`${PUBLIC_URL}/cover/${currentTrack.cover_path}`}
+            alt={`Cover ${currentTrack.titolo}`}
+            className="w-16 h-16 object-cover rounded"
+          />
+          <div className="flex flex-col">
+            <span className="font-bold">{currentTrack.titolo}</span>
+            <span className="text-sm text-gray-400">{currentTrack.artista}</span>
+          </div>
+          <audio
+            ref={audioRef}
+            controls
+            controlsList="nodownload"
+            src={`${PUBLIC_URL}/music/${currentTrack.music_path}`}
+            className="flex-grow"
+            onEnded={() => {
+              setIsPlaying(false);
+              setCurrentTrack(null);
+            }}
+            onPause={() => setIsPlaying(false)}
+            onPlay={() => setIsPlaying(true)}
+          />
+          <button
+            onClick={() => {
+              setIsPlaying(false);
+              setCurrentTrack(null);
+            }}
+            className="ml-4 text-white"
+          >
+            Close
+          </button>
+        </div>
+      )}
+
       {/* Lista tracce */}
       <ul>
         {tracks.map(track => {
@@ -164,14 +217,11 @@ const TracksMarket = () => {
           const canDownload = downloadMap[track.id];
 
           return (
-            <li
-              key={track.id}
-              className="market-item"
-            >
+            <li key={track.id} className="market-item">
               <img
                 src={`${PUBLIC_URL}/cover/${track.cover_path}`}
                 alt={`Cover di ${track.titolo}`}
-                className='market-cover'
+                className="market-cover"
               />
               <div className="market-info">
                 <p className="market-title">
@@ -181,14 +231,18 @@ const TracksMarket = () => {
                   )}
                 </p>
                 <p className="market-subtitle">
-                  {track.artista} — <em>{track.album}</em>
+                  {track.artista.split(',').map((artistName, index, arr) => {
+                    const trimmedName = artistName.trim();
+                    return (
+                      <span key={trimmedName}>
+                        <Link to={`/artist/${encodeURIComponent(trimmedName)}`} className="text-blue-400 hover:underline">
+                          {trimmedName}
+                        </Link>
+                        {index < arr.length - 1 ? ', ' : ''}
+                      </span>
+                    );
+                  })} — <em>{track.album}</em>
                 </p>
-                <audio
-                  controls
-                  controlsList="nodownload"
-                  src={`${PUBLIC_URL}/music/${track.music_path}`}
-                  className="market-audio"
-                />
               </div>
               <div className="market-actions">
                 <span className="market-price">{track.costo} token</span>
@@ -201,10 +255,7 @@ const TracksMarket = () => {
                       Download
                     </button>
                   ) : (
-                    <button
-                      disabled
-                      className="market-button market-disabled"
-                    >
+                    <button disabled className="market-button market-disabled">
                       Acquistato
                     </button>
                   )
@@ -216,6 +267,12 @@ const TracksMarket = () => {
                     Acquista
                   </button>
                 )}
+                <button
+                  onClick={() => togglePlayPause(track)}
+                  className="btn-play ml-4"
+                >
+                  {currentTrack?.id === track.id && isPlaying ? 'Pause' : 'Play'}
+                </button>
               </div>
             </li>
           );

@@ -5,6 +5,7 @@ CREATE TABLE users (
   password_hash VARCHAR(255) NOT NULL,
   tokens INT NOT NULL DEFAULT 10,
   role VARCHAR(10) NOT NULL DEFAULT 'user', -- 'user' o 'admin'
+  last_token_bonus_date DATE DEFAULT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -50,4 +51,23 @@ CREATE TABLE playlist_tracks (
   track_id UUID NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
   is_favorite BOOLEAN NOT NULL DEFAULT FALSE,
   UNIQUE (playlist_id, track_id)
+);
+
+-- Tabella artisti
+CREATE TABLE artists (
+  id UUID PRIMARY KEY,
+  nome VARCHAR(100) NOT NULL UNIQUE,
+  genere VARCHAR(100),
+  paese VARCHAR(100),
+  descrizione VARCHAR(255),
+  profile_path VARCHAR(255),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tabella brani_artisti
+CREATE TABLE track_artists (
+  track_id UUID REFERENCES tracks(id) ON DELETE CASCADE,
+  artist_id UUID REFERENCES artists(id) ON DELETE CASCADE,
+  PRIMARY KEY (track_id, artist_id)
 );

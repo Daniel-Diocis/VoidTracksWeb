@@ -8,6 +8,7 @@ interface UserAttributes {
   password_hash: string;
   tokens: number;
   role: "user" | "admin";
+  lastTokenBonusDate?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -16,7 +17,7 @@ interface UserAttributes {
 interface UserCreationAttributes
   extends Optional<
     UserAttributes,
-    "id" | "tokens" | "role" | "createdAt" | "updatedAt"
+    "id" | "tokens" | "role" | "lastTokenBonusDate" | "createdAt" | "updatedAt"
   > {}
 
 // Classe modello User estesa da Sequelize Model con tipi definiti
@@ -29,6 +30,7 @@ class User
   public password_hash!: string;
   public tokens!: number;
   public role!: "user" | "admin";
+  public lastTokenBonusDate?: Date | null;
 
   // Timestamp gestiti automaticamente da Sequelize, solo lettura
   public readonly createdAt!: Date;
@@ -61,6 +63,11 @@ User.init(
       type: DataTypes.STRING(10),
       allowNull: false,
       defaultValue: "user",
+    },
+    lastTokenBonusDate: {
+      type: DataTypes.DATEONLY,    // solo data senza ora
+      allowNull: true,
+      field: "last_token_bonus_date",
     },
   },
   {

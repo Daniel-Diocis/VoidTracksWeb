@@ -1,5 +1,6 @@
-import { DataTypes, Model, Optional } from "sequelize";
+import { DataTypes, Model, Optional, BelongsToManyAddAssociationsMixin, BelongsToManySetAssociationsMixin } from "sequelize";
 import sequelize from "../db/sequelize";
+import Artist from "./Artist";
 
 // Interfaccia che definisce gli attributi del modello Track
 interface TrackAttributes {
@@ -35,6 +36,10 @@ class Track
   // Attributi di sola lettura gestiti da Sequelize
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  // Questi metodi servono per associare Artist (generati da belongsToMany)
+  public setArtists!: BelongsToManySetAssociationsMixin<Artist, string>;
+  public addArtists!: BelongsToManyAddAssociationsMixin<Artist, string>;
 }
 
 // Inizializzazione del modello Sequelize con le colonne e tipi dati associati

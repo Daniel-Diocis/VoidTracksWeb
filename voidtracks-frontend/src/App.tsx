@@ -14,6 +14,7 @@ import PopularTracks from './pages/PopularTracks';
 import PlaylistsPage from './pages/PlaylistsPage';
 import AdminPanel from './pages/AdminPanel';
 import NotAuthorized from './pages/NotAuthorized';
+import ArtistDetail from './pages/ArtistDetail';
 
 function App() {
   const auth = useContext(AuthContext);
@@ -34,6 +35,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/popular" element={<PopularTracks />} />
+          <Route path="/artist/:nome" element={<ArtistDetail />} />
+          {/* Rotte protette - solo utenti loggati */}
           <Route path="/not-authorized" element={<NotAuthorized />} />
 
           {/* Rotte protette - solo utenti loggati */}

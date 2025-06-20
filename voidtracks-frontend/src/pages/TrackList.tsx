@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
 
@@ -20,8 +20,11 @@ const PUBLIC_URL = 'https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/p
 
 function TrackList() {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [query, setQuery] = useState('');
+
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -31,11 +34,11 @@ function TrackList() {
       .then(res => res.json())
       .then((data: TrackBase[]) => {
         const ordinati = [...data].sort((a, b) => {
-        const artistaA = a.artista.split(',')[0].trim().toLowerCase();
-        const artistaB = b.artista.split(',')[0].trim().toLowerCase();
-        const confrontoArtista = artistaA.localeCompare(artistaB);
-        if (confrontoArtista !== 0) return confrontoArtista;
-        return a.titolo.toLowerCase().localeCompare(b.titolo.toLowerCase());
+          const artistaA = a.artista.split(',')[0].trim().toLowerCase();
+          const artistaB = b.artista.split(',')[0].trim().toLowerCase();
+          const confrontoArtista = artistaA.localeCompare(artistaB);
+          if (confrontoArtista !== 0) return confrontoArtista;
+          return a.titolo.toLowerCase().localeCompare(b.titolo.toLowerCase());
         });
 
         const localTimestamps = loadLocalTimestamps();
@@ -51,7 +54,6 @@ function TrackList() {
             newTimestamps[id] = updatedAt;
           }
 
-          // estendo con isUpdated solo in frontend
           return { ...track, isUpdated: shouldUpdate };
         });
 
@@ -62,6 +64,28 @@ function TrackList() {
       .catch(err => console.error('Errore nel fetch:', err));
   }, [query]);
 
+  // Controlla play/pause sull'audio HTML nativo
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.play();
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [isPlaying, currentTrack]);
+
+  const togglePlayPause = (track: Track) => {
+    if (currentTrack?.id === track.id) {
+      // Se è già il brano corrente, alterna play/pause
+      setIsPlaying(!isPlaying);
+    } else {
+      // Se cambio brano, setta e metti play
+      setCurrentTrack(track);
+      setIsPlaying(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-900 text-white px-4 py-6 max-w-7xl mx-auto">
       {/* Input di ricerca */}
@@ -69,10 +93,11 @@ function TrackList() {
         type="text"
         placeholder="Cerca titolo, artista o album..."
         value={query}
-        onChange={e => setQuery(e.target.value)} // aggiorna query e fa partire fetch
+        onChange={e => setQuery(e.target.value)}
         className="w-full mb-6 p-2 rounded bg-zinc-700 text-white placeholder-zinc-400"
       />
-      {/* Player del brano in riproduzione */}
+
+      {/* Player fisso in basso */}
       {currentTrack && (
         <div className="fixed bottom-0 left-0 right-0 bg-zinc-800 p-4 flex items-center gap-4">
           <img
@@ -85,18 +110,28 @@ function TrackList() {
             <span className="text-sm text-gray-400">{currentTrack.artista}</span>
           </div>
           <audio
+            ref={audioRef}
             controls
             controlsList="nodownload"
-            autoPlay
             src={`${PUBLIC_URL}/music/${currentTrack.music_path}`}
             className="flex-grow"
-            onEnded={() => setCurrentTrack(null)}
+            onEnded={() => {
+              setIsPlaying(false);
+              setCurrentTrack(null);
+            }}
           />
-          <button onClick={() => setCurrentTrack(null)} className="ml-4 text-white">
+          <button
+            onClick={() => {
+              setIsPlaying(false);
+              setCurrentTrack(null);
+            }}
+            className="ml-4 text-white"
+          >
             Close
           </button>
         </div>
       )}
+
       {/* Lista tracce */}
       {tracks.length === 0 ? (
         <p className="text-center">Caricamento...</p>
@@ -106,10 +141,7 @@ function TrackList() {
           style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}
         >
           {tracks.map(track => (
-            <div
-              key={track.id}
-              className="track-card"
-            >
+            <div key={track.id} className="track-card">
               <Link to={`/track/${track.music_path}`}>
                 <img
                   src={`${PUBLIC_URL}/cover/${track.cover_path}`}
@@ -119,14 +151,26 @@ function TrackList() {
               </Link>
               <div className="track-text">
                 <p className="track-title">{track.titolo}</p>
-                <p className="track-artist">{track.artista}</p>
+                <p className="track-artist">
+                  {track.artista.split(',').map((artistName, index, arr) => {
+                    const trimmedName = artistName.trim();
+                    return (
+                      <span key={trimmedName}>
+                        <Link to={`/artist/${encodeURIComponent(trimmedName)}`} className="text-blue-400 hover:underline">
+                          {trimmedName}
+                        </Link>
+                        {index < arr.length - 1 ? ', ' : ''}
+                      </span>
+                    );
+                  })}
+                </p>
                 <p className="track-album">{track.album}</p>
               </div>
               <button
-                onClick={() => setCurrentTrack(track)}
+                onClick={() => togglePlayPause(track)}
                 className="btn-play"
               >
-                {currentTrack?.id === track.id ? 'Pause' : 'Play'}
+                {currentTrack?.id === track.id && isPlaying ? 'Pause' : 'Play'}
               </button>
             </div>
           ))}
