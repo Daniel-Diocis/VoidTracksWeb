@@ -56,6 +56,34 @@ Il meccanismo è il seguente:
 - Genera un token JWT contenente id, username, ruolo e token residui.
 - Restituisce il token e i dati utente.
 
+**Diagramma di sequenza**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant Controller
+  participant DB
+  participant JWTService
+
+  Client->>App: POST /auth/register (username, password)
+  App->>Middleware: validateInput
+  Middleware->>App: next()
+  App->>Middleware: checkUserExists
+  Middleware->>DB: findOne(username)
+  DB-->>Middleware: user or null
+  Middleware->>App: next()
+  App->>Controller: register(req)
+  Controller->>DB: createUser(username, password_hash, tokens, role)
+  DB-->>Controller: newUser
+  Controller->>JWTService: sign(payload)
+  JWTService-->>Controller: token
+  Controller->>App: response(token, user)
+  App->>Client: response(token, user)
+```
+
 **Risposta in caso di successo**
 
 La risposta restituisce il token e i dati utente.
@@ -115,6 +143,34 @@ Il meccanismo è il seguente:
 - Se sono corrette, genera un token JWT firmato.
 - Restituisce il token e alcuni dati base dell’utente (username e ruolo).
 
+**Diagramma di sequenza**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant Controller
+  participant DB
+  participant JWTService
+
+  Client->>App: POST /auth/login (username, password)
+  App->>Middleware: validateInput
+  Middleware->>App: next()
+  App->>Middleware: checkUserCredentials
+  Middleware->>DB: findOne(username)
+  DB-->>Middleware: user or null
+  Middleware->>bcrypt: compare(password, hash)
+  bcrypt-->>Middleware: true/false
+  Middleware->>App: next() with userRecord
+  App->>Controller: login(req)
+  Controller->>JWTService: sign(payload)
+  JWTService-->>Controller: token
+  Controller->>App: response(token, user)
+  App->>Client: response(token, user)
+```
+
 **Risposta in caso di successo**
 
 In caso di successo la risposta restituisce un JSON con { token, user { id, user, role, tokens }.
@@ -154,6 +210,33 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 
 Il server verifica il token e, se valido, recupera dal database i dati completi dell’utente associato
 
+**Diagramma di sequenza**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant MiddlewareAuthToken
+  participant MiddlewareDailyBonus
+  participant Controller
+  participant DB
+
+  Client->>App: GET /auth/private (Authorization: Bearer JWT)
+  App->>MiddlewareAuthToken: authenticateToken
+  MiddlewareAuthToken->>JWTService: verify(token)
+  JWTService-->>MiddlewareAuthToken: payload or error
+  MiddlewareAuthToken->>App: next() with user payload
+  App->>MiddlewareDailyBonus: dailyTokenBonus
+  MiddlewareDailyBonus->>DB: findByPk(user.id)
+  DB-->>MiddlewareDailyBonus: user
+  MiddlewareDailyBonus->>DB: update tokens if needed
+  MiddlewareDailyBonus->>App: next() with userRecord
+  App->>Controller: getPrivateUser(req)
+  Controller->>App: response(user data)
+  App->>Client: response(user data)
+```
+
 **Risposta in caso di successo**
 
 Se il token è valido, la risposta restituisce i dati completi dell’utente, ad esempio:
@@ -184,6 +267,16 @@ Per effettuare il logout, non è necessario inviare un body nella richiesta.
 
 **Meccaniscmo**
 Il server conferma la disconnessione dell’utente. Il token JWT non viene invalidato lato server, quindi il client deve eliminare il token localmente per completare il logout.
+
+**Diagramma di sequenza**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  Client->>Router: POST /auth/logout
+  Router->>Controller: logout()
+  Controller-->>Client: 200 OK { message: "Logout eseguito con successo" }
+```
 
 **Risposta in caso di successo**
 
