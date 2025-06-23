@@ -3,23 +3,36 @@ import sequelize from "../db/sequelize";
 import User from "./User";
 import Track from "./Track";
 
+/**
+ * Attributi della tabella `purchases`.
+ */
 interface PurchaseAttributes {
-  id: string; // UUID
-  user_id: number;
-  track_id: string; // UUID
-  purchased_at?: Date;
-  valid_until: Date;
-  used_flag: boolean;
-  costo: number;
-  download_token: string; // UUID per link download
+  id: string; // UUID della transazione
+  user_id: number; // riferimento all’utente acquirente
+  track_id: string; // riferimento al brano acquistato
+  purchased_at?: Date; // timestamp dell'acquisto
+  valid_until: Date; // data di scadenza per il download
+  used_flag: boolean; // indica se il download è già stato effettuato
+  costo: number; // costo in token
+  download_token: string; // token univoco per il download
 }
 
+/**
+ * Attributi opzionali alla creazione di una nuova `Purchase`.
+ * - `id`, `purchased_at`, `used_flag` e `download_token` sono generati automaticamente.
+ */
 interface PurchaseCreationAttributes
   extends Optional<
     PurchaseAttributes,
     "id" | "purchased_at" | "used_flag" | "download_token"
   > {}
 
+/**
+ * Modello Sequelize per rappresentare un acquisto di un brano da parte di un utente.
+ *
+ * - Include riferimenti alle entità `User` e `Track`.
+ * - Ogni riga rappresenta un download autorizzato e limitato nel tempo.
+ */
 class Purchase
   extends Model<PurchaseAttributes, PurchaseCreationAttributes>
   implements PurchaseAttributes
@@ -33,14 +46,27 @@ class Purchase
   public costo!: number;
   public download_token!: string;
 
+  /**
+   * Associazione opzionale con il modello `User`.
+   */
   public readonly User?: User;
+
+  /**
+   * Associazione opzionale con il modello `Track`.
+   */
   public readonly Track?: Track;
 }
 
+/**
+ * Inizializzazione del modello `Purchase` con Sequelize.
+ *
+ * - Definisce i campi, vincoli, chiavi esterne e indici.
+ * - Non utilizza i timestamp `createdAt` e `updatedAt`.
+ */
 Purchase.init(
   {
     id: {
-      type: DataTypes.UUID, // UUID come PK
+      type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
@@ -97,8 +123,5 @@ Purchase.init(
     ],
   }
 );
-
-Purchase.belongsTo(User, { foreignKey: "user_id" });
-Purchase.belongsTo(Track, { foreignKey: "track_id" });
 
 export default Purchase;

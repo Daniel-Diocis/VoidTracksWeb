@@ -26,13 +26,6 @@ app.use("/playlists", playlistRouter);
 app.use("/admin", adminRouter);
 app.use("/artists", artistsRouter);
 
-// gestione errori async (es. exportato da utils se vuoi)
-export function asyncHandler(fn: Function) {
-  return function (req: Request, res: Response, next: NextFunction) {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-}
-
 app.use(errorHandler);
 
 export default app;

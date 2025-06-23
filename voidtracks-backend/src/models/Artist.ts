@@ -1,17 +1,23 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "../db/sequelize";
 
+/**
+ * Attributi del modello `Artist`, che rappresenta un artista musicale.
+ */
 interface ArtistAttributes {
-  id: string;
-  nome: string;
-  genere?: string;
-  paese?: string;
-  descrizione?: string;
-  profile_path?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  id: string;                   // UUID dell'artista
+  nome: string;                 // Nome dell'artista
+  genere?: string;              // Genere musicale (es. Hip-Hop, Pop)
+  paese?: string;               // Paese di provenienza
+  descrizione?: string;         // Breve biografia o nota descrittiva
+  profile_path?: string;        // Percorso all'immagine del profilo
+  createdAt?: Date;             // Timestamp di creazione (gestito da Sequelize)
+  updatedAt?: Date;             // Timestamp di aggiornamento (gestito da Sequelize)
 }
 
+/**
+ * Attributi opzionali per la creazione di un artista.
+ */
 interface ArtistCreationAttributes
   extends Optional<
     ArtistAttributes,
@@ -24,6 +30,13 @@ interface ArtistCreationAttributes
     | "updatedAt"
   > {}
 
+/**
+ * Modello Sequelize `Artist`.
+ *
+ * Rappresenta un artista musicale che può essere collegato a uno o più `Track`.
+ * Gli artisti possono essere sincronizzati da Supabase e avere dati come
+ * biografia, genere, paese e immagine del profilo.
+ */
 class Artist
   extends Model<ArtistAttributes, ArtistCreationAttributes>
   implements ArtistAttributes
@@ -39,6 +52,9 @@ class Artist
   public readonly updatedAt!: Date;
 }
 
+/**
+ * Inizializzazione del modello `Artist` con Sequelize.
+ */
 Artist.init(
   {
     id: {

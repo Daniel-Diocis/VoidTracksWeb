@@ -1,7 +1,9 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "../db/sequelize";
 
-// Interfaccia che definisce gli attributi del modello User
+/**
+ * Attributi definiti per il modello `User`.
+ */
 interface UserAttributes {
   id: number;
   username: string;
@@ -13,14 +15,23 @@ interface UserAttributes {
   updatedAt?: Date;
 }
 
-// Interfaccia per creazione User, rende opzionali alcuni campi come id, tokens, role, createdAt, updatedAt
+/**
+ * Attributi richiesti al momento della creazione di un nuovo utente.
+ * Rende opzionali `id`, `tokens`, `role`, `lastTokenBonusDate`, `createdAt`, `updatedAt`,
+ * che verranno gestiti automaticamente da Sequelize.
+ */
 interface UserCreationAttributes
   extends Optional<
     UserAttributes,
     "id" | "tokens" | "role" | "lastTokenBonusDate" | "createdAt" | "updatedAt"
   > {}
 
-// Classe modello User estesa da Sequelize Model con tipi definiti
+/**
+ * Modello Sequelize che rappresenta la tabella `users`.
+ *
+ * - Estende `Model` di Sequelize.
+ * - Implementa l'interfaccia `UserAttributes` per tipizzazione forte.
+ */
 class User
   extends Model<UserAttributes, UserCreationAttributes>
   implements UserAttributes
@@ -32,12 +43,18 @@ class User
   public role!: "user" | "admin";
   public lastTokenBonusDate?: Date | null;
 
-  // Timestamp gestiti automaticamente da Sequelize, solo lettura
+  // Timestamp generati automaticamente da Sequelize
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
-// Inizializzazione del modello Sequelize con le colonne e tipi dati associati
+/**
+ * Inizializzazione del modello `User` con Sequelize.
+ *
+ * - Mappa gli attributi sul database.
+ * - Imposta vincoli come `allowNull`, `defaultValue` e `unique`.
+ * - Abilita i timestamp `created_at` e `updated_at`.
+ */
 User.init(
   {
     id: {
@@ -65,15 +82,15 @@ User.init(
       defaultValue: "user",
     },
     lastTokenBonusDate: {
-      type: DataTypes.DATEONLY,    // solo data senza ora
+      type: DataTypes.DATEONLY,
       allowNull: true,
       field: "last_token_bonus_date",
     },
   },
   {
-    tableName: "users", // nome tabella nel DB
-    sequelize, // istanza Sequelize
-    timestamps: true, // abilita createdAt e updatedAt
+    tableName: "users",
+    sequelize,
+    timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
   }

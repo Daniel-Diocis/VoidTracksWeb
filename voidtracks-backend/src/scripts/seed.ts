@@ -2,7 +2,14 @@ import bcrypt from "bcryptjs";
 import sequelize from "../db/sequelize";
 import User from "../models/User";
 
-// Attende che il database sia pronto
+/**
+ * Tenta di connettersi al database, riprovando più volte in caso di errore.
+ * Utile per garantire che il database sia pronto prima di eseguire il seed.
+ *
+ * @param retries - Numero massimo di tentativi (default: 10)
+ * @param delayMs - Millisecondi di attesa tra un tentativo e l'altro (default: 2000 ms)
+ * @throws Errore se la connessione non riesce dopo tutti i tentativi
+ */
 async function waitForDatabase(retries = 10, delayMs = 2000) {
   while (retries > 0) {
     try {
@@ -22,10 +29,16 @@ async function waitForDatabase(retries = 10, delayMs = 2000) {
   );
 }
 
+/**
+ * Esegue il seeding del database, inserendo utenti di esempio.
+ * - Crea tre utenti: un admin e due utenti standard
+ * - Applica hash alle password
+ * - Evita duplicati usando `findOrCreate`
+ */
 async function seed() {
   try {
-    await waitForDatabase(); // Aspetta il DB prima di proseguire
-    await sequelize.sync();
+    await waitForDatabase(); // Verifica connessione al DB
+    await sequelize.sync(); // Sincronizza i modelli
 
     const users = [
       {
@@ -70,4 +83,5 @@ async function seed() {
   }
 }
 
+// Avvia il seeding
 seed();
