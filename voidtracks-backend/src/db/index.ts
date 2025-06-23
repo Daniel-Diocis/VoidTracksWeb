@@ -1,4 +1,4 @@
-import sequelize from "./sequelize";
+import { getSequelizeInstance } from "./sequelize";
 
 import User from "../models/User";
 import Track from "../models/Track";
@@ -7,6 +7,8 @@ import Playlist from "../models/Playlist";
 import PlaylistTrack from "../models/PlaylistTrack";
 import Artist from "../models/Artist";
 import TrackArtist from "../models/TrackArtist";
+
+const sequelize = getSequelizeInstance();
 
 /**
  * Associazioni tra modelli Sequelize.

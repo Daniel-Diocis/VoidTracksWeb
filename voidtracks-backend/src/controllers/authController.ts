@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { StatusCodes } from "http-status-codes";
+import { MessageFactory } from "../utils/messageFactory";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
@@ -8,6 +10,7 @@ const privateKey = fs.readFileSync(
   process.env.PRIVATE_KEY_PATH || "./private.key",
   "utf8"
 );
+const factory = new MessageFactory();
 
 /**
  * Registra un nuovo utente nel sistema.
@@ -48,7 +51,7 @@ export async function register(req: Request, res: Response) {
       }
     );
 
-    return res.status(201).json({
+    return res.status(StatusCodes.CREATED).json({
       token,
       user: {
         id: newUser.id,
@@ -59,7 +62,7 @@ export async function register(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Errore registrazione:", error);
-    return res.status(500).json({ error: "Errore del server" });
+    return factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante la registrazione");
   }
 }
 
@@ -103,7 +106,7 @@ export async function login(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Errore login:", error);
-    return res.status(500).json({ error: "Errore del server" });
+    return factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante il login");
   }
 }
 

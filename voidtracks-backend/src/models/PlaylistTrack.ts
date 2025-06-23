@@ -1,5 +1,7 @@
 import { DataTypes, Model, Optional } from "sequelize";
-import sequelize from "../db/sequelize";
+import { getSequelizeInstance } from "../db/sequelize";
+
+const sequelize = getSequelizeInstance();
 
 /**
  * Attributi della tabella `playlist_tracks`, che rappresenta l'associazione

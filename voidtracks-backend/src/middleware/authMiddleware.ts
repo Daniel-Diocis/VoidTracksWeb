@@ -1,10 +1,13 @@
 import { Request, Response, NextFunction } from "express";
-import User from "../models/User";
 import { body, validationResult } from 'express-validator';
-import bcrypt from "bcryptjs";
 import { toZonedTime, format } from "date-fns-tz";
+import { StatusCodes } from "http-status-codes";
+import { MessageFactory } from "../utils/messageFactory";
+import User from "../models/User";
+import bcrypt from "bcryptjs";
 
 const timeZone = "Europe/Rome";
+const factory = new MessageFactory();
 
 /**
  * Middleware di validazione per `username` e `password`.
@@ -22,7 +25,7 @@ export const validateAuthInput = [
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(StatusCodes.BAD_REQUEST).json({ errors: errors.array() });
     }
     next();
   },
@@ -43,7 +46,7 @@ export async function checkUserExists(req: Request, res: Response, next: NextFun
     const { username } = req.body;
     const user = await User.findOne({ where: { username } });
     if (user) {
-      return res.status(409).json({ error: "Username già in uso" });
+      return factory.getStatusMessage(res, StatusCodes.CONFLICT, "Username già in uso");
     }
     next();
   } catch (error) {
@@ -67,12 +70,12 @@ export async function checkUserCredentials(req: Request, res: Response, next: Ne
     const { username, password } = req.body;
     const user = await User.findOne({ where: { username } });
     if (!user) {
-      return res.status(401).json({ error: "Credenziali non valide" });
+      return factory.getStatusMessage(res, StatusCodes.UNAUTHORIZED, "Credenziali non valide");
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
-      return res.status(401).json({ error: "Credenziali non valide" });
+      return factory.getStatusMessage(res, StatusCodes.UNAUTHORIZED, "Credenziali non valide");
     }
 
     (req as any).userRecord = user;
@@ -97,12 +100,12 @@ export async function dailyTokenBonus(req: Request, res: Response, next: NextFun
   try {
     const userPayload = (req as any).user;
     if (!userPayload) {
-      return res.status(401).json({ error: "Utente non autenticato" });
+      return factory.getStatusMessage(res, StatusCodes.UNAUTHORIZED, "Utente non autenticato");
     }
 
     const user = await User.findByPk(userPayload.id);
     if (!user) {
-      return res.status(404).json({ error: "Utente non trovato" });
+      return factory.getStatusMessage(res, StatusCodes.NOT_FOUND, "Utente non trovato");
     }
 
     const now = new Date();
@@ -120,7 +123,6 @@ export async function dailyTokenBonus(req: Request, res: Response, next: NextFun
     }
 
     (req as any).userRecord = user;
-
     next();
   } catch (error) {
     next(error);

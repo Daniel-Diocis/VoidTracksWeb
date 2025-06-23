@@ -1,4 +1,8 @@
 import { Request, Response, NextFunction } from "express";
+import { StatusCodes } from "http-status-codes";
+import { MessageFactory } from "../utils/messageFactory";
+
+const factory = new MessageFactory();
 
 /**
  * Middleware di validazione per il parametro `q` della query string.
@@ -13,7 +17,7 @@ import { Request, Response, NextFunction } from "express";
 export function validateTrackQuery(req: Request, res: Response, next: NextFunction) {
   const q = req.query.q;
   if (q && typeof q !== "string") {
-    return res.status(400).json({ error: "Il parametro 'q' deve essere una stringa" });
+    return factory.getStatusMessage(res, StatusCodes.BAD_REQUEST, "Il parametro 'q' deve essere una stringa");
   }
   next();
 }

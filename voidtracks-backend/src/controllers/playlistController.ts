@@ -1,22 +1,24 @@
 import { Request, Response } from "express";
+import { StatusCodes } from "http-status-codes";
+import { MessageFactory } from "../utils/messageFactory";
 import Playlist from "../models/Playlist";
 import PlaylistTrack from "../models/PlaylistTrack";
 import Purchase from "../models/Purchase";
 import Track from "../models/Track";
 
+const factory = new MessageFactory();
+
 export async function listUserPlaylists(req: Request, res: Response) {
   try {
     const userId = (req as any).user.id;
-
     const playlists = await Playlist.findAll({
       where: { user_id: userId },
       order: [["createdAt", "DESC"]],
     });
-
     res.json(playlists);
   } catch (error) {
     console.error("Errore nel recupero delle playlist:", error);
-    res.status(500).json({ error: "Errore del server" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server");
   }
 }
 
@@ -26,18 +28,14 @@ export async function createPlaylist(req: Request, res: Response) {
     const { nome } = req.body;
 
     if (!nome || typeof nome !== "string") {
-      return res.status(400).json({ error: "Nome playlist non valido" });
+      return factory.getStatusMessage(res, StatusCodes.BAD_REQUEST, "Nome playlist non valido");
     }
 
-    const nuovaPlaylist = await Playlist.create({
-      nome,
-      user_id: userId,
-    });
-
-    res.status(201).json(nuovaPlaylist);
+    const nuovaPlaylist = await Playlist.create({ nome, user_id: userId });
+    res.status(StatusCodes.CREATED).json(nuovaPlaylist);
   } catch (error) {
     console.error("Errore creazione playlist:", error);
-    res.status(500).json({ error: "Errore del server" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server");
   }
 }
 
@@ -46,22 +44,14 @@ export async function getPlaylistWithTracks(req: Request, res: Response) {
     const userId = (req as any).user.id;
     const playlistId = parseInt(req.params.id, 10);
 
-    const playlist = await Playlist.findOne({
-      where: { id: playlistId, user_id: userId },
-    });
-
+    const playlist = await Playlist.findOne({ where: { id: playlistId, user_id: userId } });
     if (!playlist) {
-      return res.status(404).json({ error: "Playlist non trovata" });
+      return factory.getStatusMessage(res, StatusCodes.NOT_FOUND, "Playlist non trovata");
     }
 
     const playlistTracks = await PlaylistTrack.findAll({
       where: { playlist_id: playlistId },
-      include: [
-        {
-          model: Track,
-          attributes: ["id", "titolo", "artista", "album", "cover_path"],
-        },
-      ],
+      include: [{ model: Track, attributes: ["id", "titolo", "artista", "album", "cover_path"] }],
     });
 
     const tracks = playlistTracks
@@ -90,7 +80,7 @@ export async function getPlaylistWithTracks(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Errore nel recupero della playlist:", error);
-    res.status(500).json({ error: "Errore del server" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server");
   }
 }
 
@@ -99,21 +89,16 @@ export async function deletePlaylist(req: Request, res: Response) {
     const userId = (req as any).user.id;
     const playlistId = parseInt(req.params.id, 10);
 
-    const playlist = await Playlist.findOne({
-      where: { id: playlistId, user_id: userId },
-    });
-
+    const playlist = await Playlist.findOne({ where: { id: playlistId, user_id: userId } });
     if (!playlist) {
-      return res
-        .status(404)
-        .json({ error: "Playlist non trovata o non autorizzato" });
+      return factory.getStatusMessage(res, StatusCodes.NOT_FOUND, "Playlist non trovata o non autorizzato");
     }
 
     await playlist.destroy();
     res.json({ message: "Playlist eliminata con successo" });
   } catch (error) {
     console.error("Errore eliminazione playlist:", error);
-    res.status(500).json({ error: "Errore del server" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server");
   }
 }
 
@@ -124,31 +109,21 @@ export async function renamePlaylist(req: Request, res: Response) {
     const { nome } = req.body;
 
     if (!nome || nome.trim() === "") {
-      return res
-        .status(400)
-        .json({ error: "Il nome della playlist è obbligatorio" });
+      return factory.getStatusMessage(res, StatusCodes.BAD_REQUEST, "Il nome della playlist è obbligatorio");
     }
 
-    const playlist = await Playlist.findOne({
-      where: { id: playlistId, user_id: userId },
-    });
-
+    const playlist = await Playlist.findOne({ where: { id: playlistId, user_id: userId } });
     if (!playlist) {
-      return res
-        .status(404)
-        .json({ error: "Playlist non trovata o non autorizzato" });
+      return factory.getStatusMessage(res, StatusCodes.NOT_FOUND, "Playlist non trovata o non autorizzato");
     }
 
     playlist.nome = nome.trim();
     await playlist.save();
 
-    res.json({
-      message: "Nome della playlist aggiornato con successo",
-      playlist,
-    });
+    res.json({ message: "Nome della playlist aggiornato con successo", playlist });
   } catch (error) {
     console.error("Errore durante la modifica della playlist:", error);
-    res.status(500).json({ error: "Errore del server" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server");
   }
 }
 
@@ -159,48 +134,29 @@ export async function addTrackToPlaylist(req: Request, res: Response) {
     const { track_id } = req.body;
 
     if (!track_id) {
-      return res.status(400).json({ error: "ID del brano mancante" });
+      return factory.getStatusMessage(res, StatusCodes.BAD_REQUEST, "ID del brano mancante");
     }
 
-    const playlist = await Playlist.findOne({
-      where: { id: playlistId, user_id: userId },
-    });
+    const playlist = await Playlist.findOne({ where: { id: playlistId, user_id: userId } });
     if (!playlist) {
-      return res
-        .status(404)
-        .json({ error: "Playlist non trovata o non autorizzato" });
+      return factory.getStatusMessage(res, StatusCodes.NOT_FOUND, "Playlist non trovata o non autorizzato");
     }
 
-    const acquisto = await Purchase.findOne({
-      where: { user_id: userId, track_id },
-    });
-
+    const acquisto = await Purchase.findOne({ where: { user_id: userId, track_id } });
     if (!acquisto) {
-      return res.status(403).json({ error: "Brano non acquistato" });
+      return factory.getStatusMessage(res, StatusCodes.FORBIDDEN, "Brano non acquistato");
     }
 
-    const giàPresente = await PlaylistTrack.findOne({
-      where: { playlist_id: playlistId, track_id },
-    });
-
+    const giàPresente = await PlaylistTrack.findOne({ where: { playlist_id: playlistId, track_id } });
     if (giàPresente) {
-      return res
-        .status(409)
-        .json({ error: "Brano già presente nella playlist" });
+      return factory.getStatusMessage(res, StatusCodes.CONFLICT, "Brano già presente nella playlist");
     }
 
-    const nuovo = await PlaylistTrack.create({
-      playlist_id: playlistId,
-      track_id,
-      is_favorite: false,
-    });
-
-    res
-      .status(201)
-      .json({ message: "Brano aggiunto alla playlist", track: nuovo });
+    const nuovo = await PlaylistTrack.create({ playlist_id: playlistId, track_id, is_favorite: false });
+    res.status(StatusCodes.CREATED).json({ message: "Brano aggiunto alla playlist", track: nuovo });
   } catch (error) {
     console.error("Errore aggiunta brano alla playlist:", error);
-    res.status(500).json({ error: "Errore del server" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server");
   }
 }
 
@@ -210,29 +166,20 @@ export async function removeTrackFromPlaylist(req: Request, res: Response) {
     const playlistId = parseInt(req.params.id, 10);
     const trackId = req.params.trackId;
 
-    const playlist = await Playlist.findOne({
-      where: { id: playlistId, user_id: userId },
-    });
+    const playlist = await Playlist.findOne({ where: { id: playlistId, user_id: userId } });
     if (!playlist) {
-      return res
-        .status(404)
-        .json({ error: "Playlist non trovata o accesso negato" });
+      return factory.getStatusMessage(res, StatusCodes.NOT_FOUND, "Playlist non trovata o accesso negato");
     }
 
-    const eliminato = await PlaylistTrack.destroy({
-      where: { playlist_id: playlistId, track_id: trackId },
-    });
-
+    const eliminato = await PlaylistTrack.destroy({ where: { playlist_id: playlistId, track_id: trackId } });
     if (eliminato === 0) {
-      return res
-        .status(404)
-        .json({ error: "Brano non trovato nella playlist" });
+      return factory.getStatusMessage(res, StatusCodes.NOT_FOUND, "Brano non trovato nella playlist");
     }
 
     res.json({ message: "Brano rimosso dalla playlist" });
   } catch (error) {
     console.error("Errore rimozione brano dalla playlist:", error);
-    res.status(500).json({ error: "Errore del server" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server");
   }
 }
 
@@ -243,39 +190,25 @@ export async function setFavoriteTrack(req: Request, res: Response) {
     const { trackId } = req.body;
 
     if (!trackId) {
-      return res.status(400).json({ error: "trackId mancante nel body" });
+      return factory.getStatusMessage(res, StatusCodes.BAD_REQUEST, "trackId mancante nel body");
     }
 
-    const playlist = await Playlist.findOne({
-      where: { id: playlistId, user_id: userId },
-    });
+    const playlist = await Playlist.findOne({ where: { id: playlistId, user_id: userId } });
     if (!playlist) {
-      return res
-        .status(404)
-        .json({ error: "Playlist non trovata o accesso negato" });
+      return factory.getStatusMessage(res, StatusCodes.NOT_FOUND, "Playlist non trovata o accesso negato");
     }
 
-    const entry = await PlaylistTrack.findOne({
-      where: { playlist_id: playlistId, track_id: trackId },
-    });
-
+    const entry = await PlaylistTrack.findOne({ where: { playlist_id: playlistId, track_id: trackId } });
     if (!entry) {
-      return res
-        .status(404)
-        .json({ error: "Brano non presente nella playlist" });
+      return factory.getStatusMessage(res, StatusCodes.NOT_FOUND, "Brano non presente nella playlist");
     }
 
-    // Solo un preferito per playlist: resetta gli altri
-    await PlaylistTrack.update(
-      { is_favorite: false },
-      { where: { playlist_id: playlistId } }
-    );
-
+    await PlaylistTrack.update({ is_favorite: false }, { where: { playlist_id: playlistId } });
     await entry.update({ is_favorite: true });
 
     res.json({ message: "Brano preferito aggiornato con successo" });
   } catch (error) {
     console.error("Errore aggiornamento brano preferito:", error);
-    res.status(500).json({ error: "Errore del server" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server");
   }
 }

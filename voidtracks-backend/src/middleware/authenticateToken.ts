@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from "express";
+import { StatusCodes } from "http-status-codes";
+import { MessageFactory } from "../utils/messageFactory";
 import jwt from "jsonwebtoken";
 import fs from "fs";
 import path from "path";
+
 
 interface JwtPayload {
   id: number;
@@ -13,6 +16,8 @@ interface JwtPayload {
 // Legge la chiave pubblica da file
 const publicKeyPath = process.env.PUBLIC_KEY_PATH || "public.key";
 const publicKey = fs.readFileSync(path.resolve(publicKeyPath), "utf8");
+
+const factory = new MessageFactory();
 
 /**
  * Middleware di autenticazione basato su JWT.
@@ -34,12 +39,12 @@ export function authenticateToken(
   const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({ error: "Token mancante" });
+    return factory.getStatusMessage(res, StatusCodes.UNAUTHORIZED, "Token mancante");
   }
 
   jwt.verify(token, publicKey, { algorithms: ["RS256"] }, (err, payload) => {
     if (err) {
-      return res.status(401).json({ error: "Token non valido o scaduto" });
+      return factory.getStatusMessage(res, StatusCodes.UNAUTHORIZED, "Token non valido o scaduto");
     }
 
     (req as any).user = payload as JwtPayload;

@@ -5,8 +5,10 @@ import {
   BelongsToManyAddAssociationsMixin,
   BelongsToManySetAssociationsMixin
 } from "sequelize";
-import sequelize from "../db/sequelize";
+import { getSequelizeInstance } from "../db/sequelize";
 import Artist from "./Artist";
+
+const sequelize = getSequelizeInstance();
 
 /**
  * Attributi del modello `Track`.

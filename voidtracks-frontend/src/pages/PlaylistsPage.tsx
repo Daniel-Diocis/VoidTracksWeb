@@ -1,23 +1,45 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import PlaylistList from '../components/PlaylistList';
 import PlaylistDetail from '../components/PlaylistDetail';
 import type { Playlist } from '../types';
 
 export default function PlaylistsPage() {
-  const { token } = useAuth();
+  const { token, logout } = useAuth();
+  const navigate = useNavigate();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [newName, setNewName] = useState('');
 
   useEffect(() => {
     if (!token) return;
+
     fetch(`${import.meta.env.VITE_API_URL}/playlists`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then(res => res.json())
-      .then(setPlaylists)
-      .catch(err => console.error('Errore caricamento playlist:', err));
+      .then(async res => {
+        const data = await res.json();
+
+        if (!res.ok) {
+          console.error("Errore backend:", data?.error || "Errore generico");
+        if (res.status === 401) {
+          logout(); // funzione del tuo hook useAuth
+          navigate("/login");
+        }
+          return;
+        }
+
+        if (Array.isArray(data)) {
+          setPlaylists(data);
+        } else {
+          console.warn("Formato playlist inatteso:", data);
+          setPlaylists([]); // fallback sicuro
+        }
+      })
+      .catch(err => {
+        console.error("Errore caricamento playlist:", err);
+      });
   }, [token]);
 
   const handleCreatePlaylist = async () => {

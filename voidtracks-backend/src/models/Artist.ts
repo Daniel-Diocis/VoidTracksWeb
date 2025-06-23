@@ -1,5 +1,7 @@
 import { DataTypes, Model, Optional } from "sequelize";
-import sequelize from "../db/sequelize";
+import { getSequelizeInstance } from "../db/sequelize";
+
+const sequelize = getSequelizeInstance();
 
 /**
  * Attributi del modello `Artist`, che rappresenta un artista musicale.

@@ -73,7 +73,11 @@ const TracksMarket = () => {
         headers: { Authorization: `Bearer ${auth.token}` },
       })
         .then(async res => {
-          if (!res.ok) throw new Error('Errore nel recupero degli acquisti');
+          const data = await res.json();
+          if (!res.ok || !Array.isArray(data)) {
+            console.error("Errore nel recupero dei brani:", data?.error || "Formato non valido");
+            return;
+          }
           const json = await res.json();
           const purchases: { track_id: string; download_token: string; used_flag: boolean }[] = json.data;
           const ids = new Set(purchases.map(p => p.track_id));

@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
-import sequelize from "../db/sequelize";
+import { getSequelizeInstance } from "../db/sequelize";
 import User from "../models/User";
+
+const sequelize = getSequelizeInstance();
 
 /**
  * Tenta di connettersi al database, riprovando più volte in caso di errore.

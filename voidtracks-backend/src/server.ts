@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import sequelize from "./db/sequelize";
+import { getSequelizeInstance } from "./db/sequelize";
 import "./db"; // importa index.ts per eseguire le associazioni
 import app from "./app";
 import { syncTracksFromSupabase, syncArtistsFromSupabase, syncTrackArtistsFromSupabase } from "./utils/syncSupabaseToLocal";
@@ -7,6 +7,7 @@ import { syncTracksFromSupabase, syncArtistsFromSupabase, syncTrackArtistsFromSu
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
+const sequelize = getSequelizeInstance();
 
 const startServer = async () => {
   try {

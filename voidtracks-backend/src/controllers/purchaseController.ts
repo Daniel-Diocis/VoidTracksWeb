@@ -3,14 +3,17 @@ import { Request, Response } from "express";
 import axios, { AxiosResponse } from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { Readable } from "stream";
+import { Op } from "sequelize";
+import { StatusCodes } from "http-status-codes";
+import { MessageFactory } from "../utils/messageFactory";
 import User from "../models/User";
 import Track from "../models/Track";
 import Purchase from "../models/Purchase";
-import { Op } from "sequelize";
 
 dotenv.config();
 
 const FILE_URL = process.env.FILE_URL;
+const factory = new MessageFactory();
 
 /**
  * Effettua l'acquisto di un brano.
@@ -40,14 +43,14 @@ export async function createPurchase(req: Request, res: Response) {
       download_token: uuidv4(),
     });
 
-    res.status(201).json({
+    res.status(StatusCodes.CREATED).json({
       message: "Acquisto completato con successo",
       purchase_id: purchase.id,
       download_token: purchase.download_token,
     });
   } catch (error) {
     console.error("Errore nell'acquisto:", error);
-    res.status(500).json({ error: "Errore del server durante l'acquisto" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante l'acquisto");
   }
 }
 
@@ -67,10 +70,7 @@ export async function downloadTrack(req: Request, res: Response) {
     await purchase.save();
 
     const fileUrl = `${FILE_URL}${purchase.Track!.music_path}`;
-
-    const response: AxiosResponse<Readable> = await axios.get(fileUrl, {
-      responseType: "stream",
-    });
+    const response: AxiosResponse<Readable> = await axios.get(fileUrl, { responseType: "stream" });
 
     res.setHeader(
       "Content-Disposition",
@@ -81,7 +81,7 @@ export async function downloadTrack(req: Request, res: Response) {
     response.data.pipe(res);
   } catch (error: any) {
     console.error("Errore durante il download:", error);
-    res.status(500).json({ error: "Errore del server durante il download" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante il download");
   }
 }
 
@@ -92,17 +92,17 @@ export async function downloadTrack(req: Request, res: Response) {
  * @param req - Richiesta HTTP con l'utente autenticato (`user.id`) e filtri opzionali
  * @param res - Risposta JSON con elenco acquisti
  */
+
 export async function getUserPurchases(req: Request, res: Response) {
   try {
     const userId = (req as any).user.id;
     const { fromDate, toDate } = req.query;
 
     const whereClause: any = { user_id: userId };
-
     const purchasedAtConditions: any = {};
+
     if (fromDate) purchasedAtConditions[Op.gte] = new Date(fromDate as string);
     if (toDate) purchasedAtConditions[Op.lte] = new Date(toDate as string);
-
     if (Object.keys(purchasedAtConditions).length > 0) {
       whereClause.purchased_at = purchasedAtConditions;
     }
@@ -119,7 +119,7 @@ export async function getUserPurchases(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Errore nel recupero acquisti:", error);
-    res.status(500).json({ error: "Errore del server nel recupero acquisti" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server nel recupero acquisti");
   }
 }
 
@@ -146,6 +146,6 @@ export async function getPurchaseDetails(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Errore GET /purchase/:token", error);
-    res.status(500).json({ error: "Errore interno" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore interno");
   }
 }

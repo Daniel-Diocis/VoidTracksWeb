@@ -1,27 +1,33 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
 
-// Caricamento delle variabili d'ambiente dal file .env
 dotenv.config();
 
-/**
- * Stringa di connessione al database PostgreSQL.
- * Deve essere definita nella variabile d'ambiente `DATABASE_URL`.
- */
-const connectionString = process.env.DATABASE_URL;
+let sequelizeInstance: Sequelize | null = null;
 
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not defined in environment variables");
+/**
+ * Restituisce un'istanza singleton di Sequelize configurata per PostgreSQL.
+ *
+ * - Utilizza la stringa di connessione `DATABASE_URL` definita nel file `.env`.
+ * - Disabilita i log SQL per mantenere l'output pulito (`logging: false`).
+ * - Garantisce che venga creata una sola istanza condivisa in tutta l'applicazione.
+ *
+ * @returns {Sequelize} Istanza condivisa di Sequelize.
+ *
+ * @throws {Error} Se la variabile `DATABASE_URL` non è definita.
+ */
+export function getSequelizeInstance(): Sequelize {
+  if (!sequelizeInstance) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error("DATABASE_URL is not defined in environment variables");
+    }
+
+    sequelizeInstance = new Sequelize(connectionString, {
+      dialect: "postgres",
+      logging: false,
+    });
+  }
+
+  return sequelizeInstance;
 }
-
-/**
- * Istanza di Sequelize configurata per connettersi a un database PostgreSQL.
- * - Disabilita i log SQL (logging: false)
- * - Utilizza la stringa di connessione fornita dalle variabili d'ambiente
- */
-const sequelize = new Sequelize(connectionString, {
-  dialect: "postgres",
-  logging: false,
-});
-
-export default sequelize;

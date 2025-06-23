@@ -1,7 +1,9 @@
 import { DataTypes, Model, Optional } from "sequelize";
-import sequelize from "../db/sequelize";
+import { getSequelizeInstance } from "../db/sequelize";
 import User from "./User";
 import Track from "./Track";
+
+const sequelize = getSequelizeInstance();
 
 /**
  * Attributi della tabella `purchases`.

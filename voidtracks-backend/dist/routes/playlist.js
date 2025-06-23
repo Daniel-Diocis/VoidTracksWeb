@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authenticateToken_1 = require("../middleware/authenticateToken");
+const playlistController_1 = require("../controllers/playlistController");
+const router = (0, express_1.Router)();
+router.get("/", authenticateToken_1.authenticateToken, playlistController_1.listUserPlaylists);
+router.post("/", authenticateToken_1.authenticateToken, playlistController_1.createPlaylist);
+router.get("/:id", authenticateToken_1.authenticateToken, playlistController_1.getPlaylistWithTracks);
+router.delete("/:id", authenticateToken_1.authenticateToken, playlistController_1.deletePlaylist);
+router.patch("/:id", authenticateToken_1.authenticateToken, playlistController_1.renamePlaylist);
+router.post("/:id/tracks", authenticateToken_1.authenticateToken, playlistController_1.addTrackToPlaylist);
+router.delete("/:id/tracks/:trackId", authenticateToken_1.authenticateToken, playlistController_1.removeTrackFromPlaylist);
+router.patch("/:id/favorite", authenticateToken_1.authenticateToken, playlistController_1.setFavoriteTrack);
+exports.default = router;

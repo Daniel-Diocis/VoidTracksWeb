@@ -1,7 +1,11 @@
 import { Request, Response } from "express";
 import { fn, col, Op } from "sequelize";
+import { StatusCodes } from "http-status-codes";
+import { MessageFactory } from "../utils/messageFactory";
 import Track from "../models/Track";
 import Purchase from "../models/Purchase";
+
+const factory = new MessageFactory();
 
 /**
  * Restituisce l’elenco di tutti i brani presenti nel sistema.
@@ -32,7 +36,7 @@ export async function getAllTracks(req: Request, res: Response) {
     res.json(tracks);
   } catch (error) {
     console.error("Errore recupero brani:", error);
-    res.status(500).json({ error: "Errore server" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore server durante il recupero dei brani");
   }
 }
 
@@ -65,6 +69,6 @@ export async function getPopularTracks(req: Request, res: Response) {
     res.json(topTracks);
   } catch (error) {
     console.error("Errore nel recupero dei brani popolari:", error);
-    res.status(500).json({ error: "Errore del server" });
+    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore server durante il recupero dei brani popolari");
   }
 }

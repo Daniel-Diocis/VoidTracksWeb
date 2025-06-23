@@ -1,5 +1,7 @@
 import { DataTypes, Model } from "sequelize";
-import sequelize from "../db/sequelize";
+import { getSequelizeInstance } from "../db/sequelize";
+
+const sequelize = getSequelizeInstance();
 
 class TrackArtist extends Model {
   public track_id!: string;
