@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import { Request, Response } from "express";
 import axios, { AxiosResponse } from "axios";
 import { v4 as uuidv4 } from "uuid";
@@ -7,50 +8,31 @@ import Track from "../models/Track";
 import Purchase from "../models/Purchase";
 import { Op } from "sequelize";
 
+dotenv.config();
+
+const FILE_URL = process.env.FILE_URL;
+
+/**
+ * Effettua l'acquisto di un brano.
+ * - Scala i token dal saldo utente.
+ * - Registra l'acquisto nel database.
+ * - Genera un token temporaneo per il download.
+ *
+ * @param req - Richiesta HTTP contenente l'utente e il brano (dal middleware)
+ * @param res - Risposta HTTP con i dati dell'acquisto
+ * @returns JSON con ID acquisto e token di download
+ */
 export async function createPurchase(req: Request, res: Response) {
   try {
-    const userId = (req as any).user.id;
-    const { track_id } = req.body;
-
-    if (!track_id) {
-      return res.status(400).json({ error: "track_id è obbligatorio" });
-    }
-
-    const user = await User.findByPk(userId);
-    const track = await Track.findByPk(track_id);
-
-    if (!user) return res.status(404).json({ error: "Utente non trovato" });
-    if (!track) return res.status(404).json({ error: "Brano non trovato" });
-
-    const existingPurchase = await Purchase.findOne({
-      where: {
-        user_id: userId,
-        track_id,
-        used_flag: false,
-        valid_until: { [Op.gt]: new Date() },
-      },
-    });
-
-    if (existingPurchase) {
-      return res.status(200).json({
-        message: "Acquisto già presente e valido",
-        purchase_id: existingPurchase.id,
-        download_token: existingPurchase.download_token,
-      });
-    }
-
-    if (user.tokens < track.costo) {
-      return res
-        .status(401)
-        .json({ error: "Token insufficienti per l'acquisto" });
-    }
+    const user = (req as any).userInstance;
+    const track = (req as any).trackInstance;
 
     user.tokens -= track.costo;
     await user.save();
 
     const purchase = await Purchase.create({
-      user_id: userId,
-      track_id,
+      user_id: user.id,
+      track_id: track.id,
       purchased_at: new Date(),
       valid_until: new Date(Date.now() + 10 * 60 * 1000),
       used_flag: false,
@@ -65,65 +47,51 @@ export async function createPurchase(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Errore nell'acquisto:", error);
-    if (error instanceof Error) {
-      return res.status(500).json({ error: error.message });
-    }
-    return res
-      .status(500)
-      .json({ error: "Errore del server durante l'acquisto" });
+    res.status(500).json({ error: "Errore del server durante l'acquisto" });
   }
 }
 
+/**
+ * Permette il download del brano acquistato, utilizzando il token di download.
+ * - Marca il token come usato.
+ * - Serve il file audio in streaming.
+ *
+ * @param req - Richiesta HTTP con `purchaseInstance` popolato dal middleware
+ * @param res - Risposta con il file MP3 in streaming
+ */
 export async function downloadTrack(req: Request, res: Response) {
   try {
-    const { download_token } = req.params;
-
-    const purchase = await Purchase.findOne({
-      where: { download_token },
-      include: [Track],
-    });
-
-    if (!purchase)
-      return res.status(404).json({ error: "Link di download non valido" });
-    if (purchase.used_flag)
-      return res.status(403).json({ error: "Link già utilizzato" });
-    if (new Date() > purchase.valid_until)
-      return res.status(403).json({ error: "Link scaduto" });
+    const purchase = (req as any).purchaseInstance;
 
     purchase.used_flag = true;
     await purchase.save();
 
-    const fileUrl = `https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public/music/${
-      purchase.Track!.music_path
-    }`;
+    const fileUrl = `${FILE_URL}${purchase.Track!.music_path}`;
 
-    try {
-      const response: AxiosResponse<Readable> = await axios.get(fileUrl, {
-        responseType: "stream",
-      });
+    const response: AxiosResponse<Readable> = await axios.get(fileUrl, {
+      responseType: "stream",
+    });
 
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${purchase.Track!.titolo.replace(
-          /[^a-z0-9]/gi,
-          "_"
-        )}.mp3"`
-      );
-      res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${purchase.Track!.titolo.replace(/[^a-z0-9]/gi, "_")}.mp3"`
+    );
+    res.setHeader("Content-Type", "audio/mpeg");
 
-      response.data.pipe(res);
-    } catch (err: any) {
-      console.error("Errore Axios:", err.response?.status, err.response?.data);
-      res
-        .status(500)
-        .json({ error: "Download fallito: file non raggiungibile o rimosso." });
-    }
-  } catch (error) {
+    response.data.pipe(res);
+  } catch (error: any) {
     console.error("Errore durante il download:", error);
     res.status(500).json({ error: "Errore del server durante il download" });
   }
 }
 
+/**
+ * Restituisce la lista degli acquisti effettuati da un utente.
+ * - Permette filtri opzionali per intervallo di date (`fromDate`, `toDate`)
+ *
+ * @param req - Richiesta HTTP con l'utente autenticato (`user.id`) e filtri opzionali
+ * @param res - Risposta JSON con elenco acquisti
+ */
 export async function getUserPurchases(req: Request, res: Response) {
   try {
     const userId = (req as any).user.id;
@@ -131,18 +99,12 @@ export async function getUserPurchases(req: Request, res: Response) {
 
     const whereClause: any = { user_id: userId };
 
-    if (fromDate) {
-      whereClause.purchased_at = {
-        ...(whereClause.purchased_at || {}),
-        [Op.gte]: new Date(fromDate as string),
-      };
-    }
+    const purchasedAtConditions: any = {};
+    if (fromDate) purchasedAtConditions[Op.gte] = new Date(fromDate as string);
+    if (toDate) purchasedAtConditions[Op.lte] = new Date(toDate as string);
 
-    if (toDate) {
-      whereClause.purchased_at = {
-        ...(whereClause.purchased_at || {}),
-        [Op.lte]: new Date(toDate as string),
-      };
+    if (Object.keys(purchasedAtConditions).length > 0) {
+      whereClause.purchased_at = purchasedAtConditions;
     }
 
     const purchases = await Purchase.findAll({
@@ -161,18 +123,16 @@ export async function getUserPurchases(req: Request, res: Response) {
   }
 }
 
+/**
+ * Restituisce i dettagli di un singolo acquisto tramite il token di download.
+ * - Indica se l'utente può ancora effettuare il download (non scaduto, non usato).
+ *
+ * @param req - Richiesta HTTP contenente `purchaseInstance`
+ * @param res - Risposta con dettagli brano e flag `canDownload`
+ */
 export async function getPurchaseDetails(req: Request, res: Response) {
   try {
-    const { download_token } = req.params;
-
-    const purchase = await Purchase.findOne({
-      where: { download_token },
-      include: [Track],
-    });
-
-    if (!purchase || !purchase.Track) {
-      return res.status(404).json({ error: "Token non valido" });
-    }
+    const purchase = (req as any).purchaseInstance;
 
     const now = new Date();
     const canDownload = !purchase.used_flag && now < purchase.valid_until;
