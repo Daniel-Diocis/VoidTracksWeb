@@ -13,7 +13,6 @@ La seguente tabella mostra le rotte:
 | POST   | /auth/register                | username, password               |
 | POST   | /auth/login                   | username, password               |
 | GET    | /auth/private                 | token (header Authorization)    |
-| POST   | /auth/logout                  | Nessuno                        |
 | GET    | /tracks                       | Nessuno                         |
 | GET    | /tracks/popular               | Nessuno                         |
 | POST   | /purchase                    | token (header Authorization), track_id |
@@ -41,22 +40,24 @@ Di seguito viene descritto il funzionamento delle principali rotte API del proge
 Il corpo della richiesta deve seguire il modello JSON:
 ```json
 {
-  "username": "nuovoutente",
-  "password": "passwordsicura123!"
+  "username": "nuovoUtente",
+  "password": "nuovaPassword"
 }
 ```
 
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il server verifica che username e password siano stati inseriti.
-- Controlla che l’username non sia già in uso.
-- Cripta la password con bcrypt.
+- Valida i dati ricevuti (username e password).
+- Verifica che l’username non sia già registrato.
+- Applica un hash sicuro alla password tramite bcrypt.
 - Crea un nuovo utente con ruolo user e saldo iniziale di token (10).
 - Genera un token JWT contenente id, username, ruolo e token residui.
 - Restituisce il token e i dati utente.
 
 **Diagramma di sequenza**
+
+Il meccanismo che si innesca all'atto della chiamata è descritto dal seguente diagramma:
 
 ```mermaid
 sequenceDiagram
@@ -69,19 +70,21 @@ sequenceDiagram
   participant JWTService
 
   Client->>App: POST /auth/register (username, password)
-  App->>Middleware: validateInput
-  Middleware->>App: next()
+  App->>Middleware: validateAuthInput
+  Middleware-->>App: next() o 400 error
   App->>Middleware: checkUserExists
-  Middleware->>DB: findOne(username)
-  DB-->>Middleware: user or null
-  Middleware->>App: next()
+  Middleware->>DB: findOne({ username })
+  DB-->>Middleware: null or user
+  Middleware-->>App: next() o 409 error
   App->>Controller: register(req)
-  Controller->>DB: createUser(username, password_hash, tokens, role)
+  Controller->>DB: create({ username, password_hash, tokens, role })
   DB-->>Controller: newUser
-  Controller->>JWTService: sign(payload)
+  Controller->>JWTService: sign({ id, username, role, tokens })
   JWTService-->>Controller: token
-  Controller->>App: response(token, user)
-  App->>Client: response(token, user)
+  Controller->>App: status: res.status(201)
+  Controller->>App: result: res.json({ token, user })
+  App->>Client: status: 201 Created
+  App->>Client: result: { token, user }
 ```
 
 **Risposta in caso di successo**
@@ -93,7 +96,7 @@ La risposta restituisce il token e i dati utente.
   "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": 10,
-    "username": "nuovoutente",
+    "username": "nuovoUtente",
     "role": "user",
     "tokens": 10
   }
@@ -102,21 +105,35 @@ La risposta restituisce il token e i dati utente.
 
 **Risposta in caso di errore**
 
-Se manca username o password:
+Se username o password sono assenti o non validi, viene restituito un errore con codice **400** e una lista di messaggi strutturati:
+
 ```json
 {
-  "error": "Username e password sono obbligatori"
+  "errors": [
+    {
+      "msg": "Username obbligatorio, almeno 3 caratteri",
+      "param": "username",
+      "location": "body"
+    },
+    {
+      "msg": "Password obbligatoria, almeno 6 caratteri",
+      "param": "password",
+      "location": "body"
+    }
+  ]
 }
 ```
+Se solo uno dei due campi è errato, la risposta conterrà solo l’errore corrispondente.
 
-Se username già esistente:
+Se l'username fornito è già presente nel database, viene restituito un errore con codice **409** e un messaggio descrittivo:
+
 ```json
 {
   "error": "Username già in uso"
 }
 ```
 
-Altri errori di server:
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
 ```json
 {
   "error": "Errore del server"
@@ -131,19 +148,22 @@ Il corpo della richiesta deve seguire il modello JSON:
 
 ```json
 {
-  "username": "nomeutente",
-  "password": "passwordsegreta"
+  "username": "nuovoUtente",
+  "password": "nuovaPassword"
 }
 ```
 
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il server verifica le credenziali.
-- Se sono corrette, genera un token JWT firmato.
-- Restituisce il token e alcuni dati base dell’utente (username e ruolo).
+- Valida i dati ricevuti (username e password).
+- Verifica che l’utente esista e che la password corrisponda.
+- Se le credenziali sono corrette, genera un token JWT firmato.
+- Restituisce il token e i dati dell’utente (id, username, ruolo e saldo token).
 
 **Diagramma di sequenza**
+
+Il meccanismo che si innesca all'atto della chiamata è descritto dal seguente diagramma:
 
 ```mermaid
 sequenceDiagram
@@ -153,34 +173,37 @@ sequenceDiagram
   participant Middleware
   participant Controller
   participant DB
+  participant Bcrypt
   participant JWTService
 
   Client->>App: POST /auth/login (username, password)
-  App->>Middleware: validateInput
-  Middleware->>App: next()
+  App->>Middleware: validateAuthInput
+  Middleware-->>App: next() o 400 error
   App->>Middleware: checkUserCredentials
-  Middleware->>DB: findOne(username)
-  DB-->>Middleware: user or null
-  Middleware->>bcrypt: compare(password, hash)
-  bcrypt-->>Middleware: true/false
-  Middleware->>App: next() with userRecord
+  Middleware->>DB: findOne({ username })
+  DB-->>Middleware: null or user
+  Middleware->>Bcrypt: compare(password, user.password_hash)
+  Bcrypt-->>Middleware: true or false
+  Middleware-->>App: next() with userRecord or 401 error
   App->>Controller: login(req)
-  Controller->>JWTService: sign(payload)
+  Controller->>JWTService: sign({ id, username, role, tokens })
   JWTService-->>Controller: token
-  Controller->>App: response(token, user)
-  App->>Client: response(token, user)
+  Controller->>App: status: res.status(200)
+  Controller->>App: result: res.json({ token, user })
+  App->>Client: status: 200 OK
+  App->>Client: result: { token, user }
 ```
 
 **Risposta in caso di successo**
 
-In caso di successo la risposta restituisce un JSON con { token, user { id, user, role, tokens }.
+In caso di credenziali corrette, viene restituito un JSON con codice 200 OK contenente un token JWT e i dati dell’utente autenticato:
 
 ```json
 {
   "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": 1,
-    "username": "nomeutente",
+    "username": "nuovoUtente",
     "role": "user",
     "tokens": 10
   }
@@ -189,9 +212,37 @@ In caso di successo la risposta restituisce un JSON con { token, user { id, user
 
 **Risposta in caso di errore**
 
+Se username o password sono assenti o non validi, viene restituito un errore con codice **400** e una lista di messaggi strutturati:
+
+```json
+{
+  "errors": [
+    {
+      "msg": "Username obbligatorio, almeno 3 caratteri",
+      "param": "username",
+      "location": "body"
+    },
+    {
+      "msg": "Password obbligatoria, almeno 6 caratteri",
+      "param": "password",
+      "location": "body"
+    }
+  ]
+}
+```
+Se solo uno dei due campi è errato, la risposta conterrà solo l’errore corrispondente.
+
+Se le credenziali non sono valide (username inesistente o password errata), viene restituito un errore con codice **401** e un messaggio descrittivo:
 ```json
 {
   "error": "Credenziali non valide"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+```json
+{
+  "error": "Errore del server"
 }
 ```
 
@@ -208,9 +259,15 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 
 **Meccanismo**
 
-Il server verifica il token e, se valido, recupera dal database i dati completi dell’utente associato
+Il meccanismo è il seguente:
+- Verifica il token JWT fornito nell’header.
+- Se il token è valido, recupera dal database i dati dell’utente associato.
+- Se l’utente non ha ancora ricevuto il bonus giornaliero, assegna un token aggiuntivo e aggiorna la data.
+- Restituisce i dati aggiornati dell’utente come risposta.
 
 **Diagramma di sequenza**
+
+Il meccanismo che si innesca all'atto della chiamata è descritto dal seguente diagramma:
 
 ```mermaid
 sequenceDiagram
@@ -239,21 +296,29 @@ sequenceDiagram
 
 **Risposta in caso di successo**
 
-Se il token è valido, la risposta restituisce i dati completi dell’utente, ad esempio:
+In caso di token valido, viene restituito un JSON con i dati aggiornati dell’utente:
 
 ```json
 {
   "user": {
     "id": 1,
-    "username": "esempioUtente",
+    "username": "nuovoUtente",
     "role": "user",
-    "tokens": 10
+    "tokens": 11
   }
 }
 ```
 **Risposta in caso di errore**
 
-In caso di errore (token mancante o scaduto), viene restituito un messaggio di errore con codice HTTP 401.
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Token mancante"
+}
+```
+
+oppure:
 
 ```json
 {
@@ -261,37 +326,18 @@ In caso di errore (token mancante o scaduto), viene restituito un messaggio di e
 }
 ```
 
-## POST:/auth/logout
-
-Per effettuare il logout, non è necessario inviare un body nella richiesta.
-
-**Meccaniscmo**
-Il server conferma la disconnessione dell’utente. Il token JWT non viene invalidato lato server, quindi il client deve eliminare il token localmente per completare il logout.
-
-**Diagramma di sequenza**
-
-```mermaid
-sequenceDiagram
-  autonumber
-  Client->>Router: POST /auth/logout
-  Router->>Controller: logout()
-  Controller-->>Client: 200 OK { message: "Logout eseguito con successo" }
-```
-
-**Risposta in caso di successo**
+Se l’utente non viene trovato nel database, viene restituito un errore con codice **404**:
 
 ```json
 {
-  "message": "Logout eseguito con successo"
+  "error": "Utente non trovato"
 }
 ```
 
-**Risposta in caso di errore**
-
-In caso di errore (token mancante o scaduto), viene restituito un messaggio di errore con codice HTTP 401.
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
 
 ```json
 {
-  "error": "Token non valido o scaduto"
+  "error": "Errore del server"
 }
 ```
