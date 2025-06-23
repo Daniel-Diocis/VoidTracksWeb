@@ -6,6 +6,13 @@ import { toZonedTime, format } from "date-fns-tz";
 
 const timeZone = "Europe/Rome";
 
+/**
+ * Middleware di validazione per `username` e `password`.
+ *
+ * - Controlla che lo username abbia almeno 3 caratteri.
+ * - Controlla che la password abbia almeno 6 caratteri.
+ * - In caso di errore, restituisce un array di messaggi.
+ */
 export const validateAuthInput = [
   body('username')
     .trim()
@@ -21,7 +28,16 @@ export const validateAuthInput = [
   },
 ];
 
-// Controlla che username non sia già usato (per registrazione)
+/**
+ * Middleware di controllo per la registrazione.
+ *
+ * - Verifica che lo username non sia già presente nel database.
+ * - In caso di conflitto, restituisce errore 409.
+ *
+ * @param req - Oggetto della richiesta HTTP contenente `username`.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ */
 export async function checkUserExists(req: Request, res: Response, next: NextFunction) {
   try {
     const { username } = req.body;
@@ -35,7 +51,17 @@ export async function checkUserExists(req: Request, res: Response, next: NextFun
   }
 }
 
-// Controlla che username esista e password corrisponda (per login)
+/**
+ * Middleware di autenticazione per il login.
+ *
+ * - Verifica che lo username esista.
+ * - Confronta la password fornita con l’hash salvato nel DB.
+ * - Se valido, aggiunge l’utente completo a `req.userRecord`.
+ *
+ * @param req - Oggetto della richiesta HTTP contenente `username` e `password`.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ */
 export async function checkUserCredentials(req: Request, res: Response, next: NextFunction) {
   try {
     const { username, password } = req.body;
@@ -56,7 +82,17 @@ export async function checkUserCredentials(req: Request, res: Response, next: Ne
   }
 }
 
-// Bonus token giornaliero
+/**
+ * Middleware per assegnare un token bonus giornaliero.
+ *
+ * - Controlla se l’utente ha già ricevuto il bonus nella data corrente.
+ * - Se non ancora assegnato, incrementa il numero di token e aggiorna la data.
+ * - Aggiorna `req.userRecord` con l’utente aggiornato.
+ *
+ * @param req - Oggetto della richiesta HTTP con `user` allegato dal middleware `authenticateToken`.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ */
 export async function dailyTokenBonus(req: Request, res: Response, next: NextFunction) {
   try {
     const userPayload = (req as any).user;

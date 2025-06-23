@@ -9,12 +9,21 @@ const privateKey = fs.readFileSync(
   "utf8"
 );
 
-// Register: creazione dell'utente e JWT
+/**
+ * Registra un nuovo utente nel sistema.
+ *
+ * - Hasha la password ricevuta in input.
+ * - Crea un nuovo record utente con 10 token e ruolo "user".
+ * - Genera un token JWT firmato e lo restituisce insieme ai dati utente.
+ *
+ * @param req - Oggetto della richiesta HTTP, contenente `username` e `password` nel body.
+ * @param res - Oggetto della risposta HTTP.
+ * @returns La risposta HTTP con il token JWT e i dati dell’utente appena creato.
+ */
 export async function register(req: Request, res: Response) {
   try {
     const { username, password } = req.body;
 
-    // Hash e crea utente
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(password, saltRounds);
 
@@ -54,10 +63,20 @@ export async function register(req: Request, res: Response) {
   }
 }
 
-// Login: generi token e risposta
+/**
+ * Effettua il login di un utente.
+ *
+ * - Presuppone che il middleware `checkUserCredentials` abbia verificato le credenziali
+ *   e allegato l'utente a `req.userRecord`.
+ * - Genera un token JWT e restituisce i dati dell’utente.
+ *
+ * @param req - Oggetto della richiesta HTTP, con `userRecord` settato dal middleware.
+ * @param res - Oggetto della risposta HTTP.
+ * @returns La risposta HTTP con il token JWT e i dati dell’utente autenticato.
+ */
 export async function login(req: Request, res: Response) {
   try {
-    const user = (req as any).userRecord;  // user aggiunto nel middleware checkUserCredentials
+    const user = (req as any).userRecord;
 
     const token = jwt.sign(
       {
@@ -88,7 +107,16 @@ export async function login(req: Request, res: Response) {
   }
 }
 
-// Restituisce dati utente aggiornati da dailyTokenBonus middleware
+/**
+ * Restituisce i dati dell’utente autenticato.
+ *
+ * - Presuppone che il middleware `verifyToken` e opzionalmente `dailyTokenBonus`
+ *   abbiano allegato l’oggetto utente aggiornato a `req.userRecord`.
+ *
+ * @param req - Oggetto della richiesta HTTP contenente `userRecord`.
+ * @param res - Oggetto della risposta HTTP.
+ * @returns La risposta HTTP con i dati aggiornati dell’utente.
+ */
 export async function getPrivateUser(req: Request, res: Response) {
   const user = (req as any).userRecord;
 
@@ -100,8 +128,4 @@ export async function getPrivateUser(req: Request, res: Response) {
       tokens: user.tokens,
     },
   });
-}
-
-export function logout(req: Request, res: Response) {
-  return res.json({ message: "Logout eseguito con successo" });
 }

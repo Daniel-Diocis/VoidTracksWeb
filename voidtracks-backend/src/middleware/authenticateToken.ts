@@ -10,10 +10,21 @@ interface JwtPayload {
   tokens: number;
 }
 
-// Legge la chiave pubblica da file (puoi farlo una volta sola per performance)
+// Legge la chiave pubblica da file
 const publicKeyPath = process.env.PUBLIC_KEY_PATH || "public.key";
 const publicKey = fs.readFileSync(path.resolve(publicKeyPath), "utf8");
 
+/**
+ * Middleware di autenticazione basato su JWT.
+ *
+ * - Verifica la presenza e la validità del token nell'header Authorization.
+ * - Se il token è valido, aggiunge il payload decodificato all’oggetto `req`.
+ *
+ * @param req - Oggetto della richiesta HTTP.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ * @returns Risposta 401 se il token è mancante o non valido.
+ */
 export function authenticateToken(
   req: Request,
   res: Response,
