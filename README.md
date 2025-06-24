@@ -398,7 +398,7 @@ sequenceDiagram
   Middleware-->>App: next()
 
   App->>Controller: getAllTracks(req)
-  Controller->>DB: Track.findAll({ where: ... })
+  Controller->>DB: Track.findAll
   DB-->>Controller: lista brani
   Controller-->>App: next()
 
@@ -478,7 +478,7 @@ sequenceDiagram
 
   Client->>App: GET /tracks/popular
   App->>Controller: getPopularTracks()
-  Controller->>DB: Purchase.findAll({ include: Track, group, count... })
+  Controller->>DB: Purchase.findAll
   DB-->>Controller: lista top tracks
   Controller-->>App: next()
 
@@ -538,11 +538,10 @@ Content-Type: application/json
 
 Il meccanismo è il seguente:
 - Il middleware authenticateToken verifica l’identità dell’utente.
-- I middleware validatePurchaseBody, checkUserAndTrackExist, checkDuplicatePurchase, checkUserTokens:
-  - Validano l’input (track_id).
-  - Controllano che l’utente e il brano esistano nel database.
-  - Verificano se esiste già un acquisto valido (non scaduto e non ancora utilizzato).
-  - Controllano che l’utente abbia abbastanza token.
+- Il middleware validatePurchaseBody valida l’input (track_id).
+- Il middlewarecheckUserAndTrackExist controlla che l’utente e il brano esistano nel database.
+- Il middlewarecheckDuplicatePurchase verifica se esiste già un acquisto valido (non scaduto e non ancora utilizzato).
+- Il middlewarecheckUserTokens controlla che l’utente abbia abbastanza token.
 - Il controller createPurchase:
   - Scala il costo del brano dai token dell’utente.
   - Registra l’acquisto con un download_token valido per 10 minuti.
@@ -583,9 +582,13 @@ sequenceDiagram
   Middleware-->>App: next()
 
   App->>Controller: createPurchase()
-  Controller->>DB: scala token e crea acquisto
-  DB-->>Controller: conferma acquisto
-  Controller-->>App: download_token
+  Controller->>DB: User.update (scala token)
+  DB-->>Controller: OK
+
+  Controller->>DB: Purchase.create()
+  DB-->>Controller: acquisto creato
+
+  Controller-->>App: res.status(201).json({ download_token })
 
   App->>Client: res.status(201)
   App->>Client: res.json({ download_token })
@@ -706,21 +709,23 @@ sequenceDiagram
   participant Supabase
 
   Client->>App: GET /purchase/download/:download_token
+
   App->>Middleware: validateDownloadToken
-  Middleware->>DB: Purchase.findOne({ include: [Track] })
+  Middleware->>DB: Purchase.findOne
   DB-->>Middleware: acquisto trovato
-  Middleware->>Middleware: verifica scadenza e uso
+  Middleware->>Middleware: verifica scadenza o uso
   Middleware-->>App: next()
 
   App->>Controller: downloadTrack(req)
   Controller->>Controller: purchase.used_flag = true
   Controller->>DB: purchase.save()
-  DB-->>Controller: conferma salvataggio
-  Controller->>Supabase: GET fileUrl (stream)
+  DB-->>Controller: OK
+
+  Controller->>Supabase: ottieni fileUrl
   Supabase-->>Controller: audio stream
-  Controller->>App: res.setHeader(...)
-  Controller->>App: response.data.pipe(res)
-  App-->>Client: avvio download file audio
+
+  Controller->>App: res.setHeader + stream
+  App-->>Client: download file audio
 ```
 
 **Risposta in caso di successo**
@@ -799,19 +804,24 @@ sequenceDiagram
   participant Client
   participant App
   participant Middleware
+  participant JWTService
   participant Controller
   participant DB
 
-  Client->>App: GET /purchase?fromDate=...&toDate=... (Authorization: Bearer JWT)
+  Client->>App: GET /purchase (Authorization: Bearer JWT)
+
   App->>Middleware: authenticateToken
-  Middleware->>Middleware: verifica token
-  Middleware-->>App: next() con req.user
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
   App->>Controller: getUserPurchases(req)
-  Controller->>DB: Purchase.findAll({ user_id, date range, include: Track })
-  DB-->>Controller: acquisti trovati
-  Controller->>App: res.status(200)
-  Controller->>App: res.json({ message, data })
-  App-->>Client: lista acquisti filtrati
+  Controller->>DB: Purchase.findAll
+  DB-->>Controller: elenco acquisti
+  Controller-->>App: res.status(200).json(acquisti)
+
+  App->>Client: res.status(200)
+  App->>Client: res.json(acquisti)
 ```
 
 **Risposta in caso di successo**
@@ -909,13 +919,17 @@ sequenceDiagram
   participant DB
 
   Client->>App: GET /purchase/:download_token
+
   App->>Middleware: loadPurchaseByToken
-  Middleware->>DB: Purchase.findOne({ download_token, include: Track })
+  Middleware->>DB: Purchase.findOne
   DB-->>Middleware: purchase trovato
-  Middleware-->>App: next() con req.purchaseInstance
-  App->>Controller: getPurchaseDetails
-  Controller->>App: res.json({ brano, canDownload })
-  App-->>Client: risposta JSON
+  Middleware-->>App: next()
+
+  App->>Controller: getPurchaseDetails(req)
+  Controller-->>App: res.status(200).json({ brano, canDownload })
+
+  App->>Client: res.status(200)
+  App->>Client: res.json({ brano, canDownload })
 ```
 
 **Risposta in caso di successo**
@@ -940,6 +954,955 @@ Se il token non è valido o non è associato a un brano esistente, viene restitu
 ```
 
 Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+## GET: /playlists
+
+Restituisce tutte le playlist create dall’utente autenticato, ordinate dalla più recente alla meno recente.
+
+**Richiesta**
+
+Richiede un token JWT valido nell’Authorization header:
+```http
+GET /playlists
+Authorization: Bearer <token>
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken verifica l’identità dell’utente tramite JWT.
+- Il controller listUserPlaylists:
+  - Estrae l’ID dell’utente autenticato da req.user.
+  - Recupera tutte le playlist associate a quell’utente.
+  - Le ordina per data di creazione (dalla più recente).
+  - Le restituisce come array JSON.
+
+**Diagramma di sequenza**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant Controller
+  participant DB
+
+  Client->>App: GET /playlists
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Controller: listUserPlaylists(req)
+  Controller->>DB: Playlist.findAll
+  DB-->>Controller: array playlist
+  Controller-->>App: res.status(200).json(playlists)
+
+  App->>Client: res.status(200)
+  App->>Client: res.json(playlists)
+```
+
+**Risposta in caso di successo**
+
+Se esistono playlist create dall’utente, viene restituito un array JSON contenente le playlist:
+```json
+[
+  {
+    "id": 3,
+    "nome": "Workout Playlist",
+    "user_id": 17,
+    "createdAt": "2025-06-24T14:23:45.123Z",
+    "updatedAt": "2025-06-24T14:23:45.123Z"
+  },
+  {
+    "id": 2,
+    "nome": "Chill Mix",
+    "user_id": 17,
+    "createdAt": "2025-06-24T17:39:00.000Z",
+    "updatedAt": "2025-06-20T17:40:00.000Z"
+  }
+]
+```
+
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+## POST: /playlists
+
+Crea una nuova playlist associata all’utente autenticato.
+
+**Richiesta**
+
+Richiede un token JWT valido nel header Authorization e un corpo JSON contenente il nome della nuova playlist:
+```http
+POST /playlists
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "nome": "Nuova Playlist"
+}
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken verifica l’identità dell’utente tramite JWT.
+- Il controller createPlaylist:
+  - Estrae l’ID dell’utente da req.user.
+  - Legge il campo nome dal corpo della richiesta.
+  - Crea una nuova entry nella tabella playlists con user_id e nome.
+  - Restituisce la nuova playlist creata come oggetto JSON.
+
+**Diagramma di sequenza**
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant Controller
+  participant DB
+
+  Client->>App: POST /playlists (nome)
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Controller: createPlaylist(req)
+  Controller->>DB: Playlist.create
+  DB-->>Controller: nuova playlist
+  Controller-->>App: res.status(201).json(nuovaPlaylist)
+
+  App->>Client: res.status(201)
+  App->>Client: res.json(nuovaPlaylist)
+```
+
+**Risposta in caso di successo**
+
+Se la playlist viene creata correttamente, il server restituisce un oggetto JSON con i dati della nuova playlist:
+```json
+{
+  "id": 12,
+  "nome": "Nuova Playlist",
+  "user_id": 17,
+  "createdAt": "2025-06-24T17:47:00.000Z",
+  "updatedAt": "2025-06-24T17:47:00.000Z"
+}
+```
+
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+## GET: /playlists/:id
+
+Restituisce i dettagli di una specifica playlist, inclusi tutti i brani associati.
+
+**Richiesta**
+
+Richiede un token JWT valido nell’Authorization header:
+```http
+GET /playlists/:id
+Authorization: Bearer <token>
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken: Verifica il token JWT e recupera l’ID utente.
+- Il middleware checkPlaylistOwnership: Verifica che la playlist appartenga all’utente.
+- Il controller getPlaylistWithTracks:
+  - Ottiene i dettagli della playlist (id, nome, createdAt, updatedAt).
+  - Recupera tutti i brani associati a quella playlist, inclusi titolo, artista, album, cover_path, is_favorite.
+  - Restituisce un oggetto JSON con le informazioni della playlist e un array di brani.
+
+**Diagramma di sequenza**
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant Controller
+  participant DB
+
+  Client->>App: GET /playlists/:id
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Middleware: checkPlaylistOwnership
+  Middleware->>DB: Playlist.findOne
+  DB-->>Middleware: playlist
+  Middleware-->>App: next()
+
+  App->>Controller: getPlaylistWithTracks(req)
+  Controller->>DB: PlaylistTrack.findAll
+  DB-->>Controller: tracks + metadati
+  Controller-->>App: res.status(200).json({ playlist, tracks })
+
+  App->>Client: res.status(200)
+  App->>Client: res.json({ playlist, tracks })
+```
+
+**Risposta in caso di successo**
+
+Restituisce la playlist, con i suoi brani:
+```json
+{
+  "playlist": {
+    "id": 2,
+    "nome": "Chill Mix",
+    "createdAt": "2025-06-24T17:39:00.000Z",
+    "updatedAt": "2025-06-20T17:39:00.000Z"
+  },
+  "tracks": [
+    {
+      "id": ef90cefb-ea88-4c87-b61c-cab9c92653cd,
+      "titolo": "Antes",
+      "artista": "C.R.O",
+      "album": "Rock",
+      "cover_path": "Rock.jpg",
+      "is_favorite": true
+    },
+    {
+      "id": 1a58d8b2-2c5b-451e-a6fd-50a4d0e4af4c,
+      "titolo": "Self Care",
+      "artista": "Mac Miller",
+      "album": "Swimming",
+      "cover_path": "Swimming.jpg",
+      "is_favorite": true
+    }
+  ]
+}
+```
+
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Se la playlist non è stata trovata, viene restituito un errore con codice 403:
+```json
+{
+  "error": "Playlist non trovata"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+## DELETE: /playlists/:id
+
+Elimina una playlist esistente appartenente all’utente autenticato.
+
+**Richiesta**
+
+Richiede un token JWT valido nell’Authorization header:
+```http
+DELETE /playlists/:id
+Authorization: Bearer <token>
+```
+
+Body della richiesta:
+```json
+{
+  "nome": "Nuovo nome playlist"
+}
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken: Verifica il token JWT e recupera l’ID utente.
+- Il middleware checkPlaylistOwnership: Verifica che la playlist appartenga all’utente.
+- Il controller renamePlaylist:
+  - Legge il nuovo nome dal body.
+  - Aggiorna il campo nome della playlist.
+  - Restituisce un messaggio di conferma e i dati aggiornati.
+
+**Diagramma di sequenza**
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant Controller
+  participant DB
+
+  Client->>App: DELETE /playlists/:id
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Middleware: checkPlaylistOwnership
+  Middleware->>DB: Playlist.findOne
+  DB-->>Middleware: playlist
+  Middleware-->>App: next()
+
+  App->>Controller: deletePlaylist(req)
+  Controller->>DB: Playlist.destroy
+  DB-->>Controller: OK
+  Controller-->>App: res.status(200).json({ message })
+
+  App->>Client: res.status(200)
+  App->>Client: res.json({ message: "Playlist eliminata con successo" })
+```
+
+**Risposta in caso di successo**
+
+Restituisce il messaggio di modifica:
+```json
+{
+  "message": "Nome della playlist aggiornato con successo",
+  "playlist": {
+    "id": 5,
+    "nome": "Nuovo nome playlist",
+    "createdAt": "2025-06-22T15:00:00.000Z",
+    "updatedAt": "2025-06-24T10:12:00.000Z"
+  }
+}
+```
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Se la playlist non è stata trovata, viene restituito un errore con codice 403:
+```json
+{
+  "error": "Playlist non trovata"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+## PATCH: /playlists/:id
+
+Rinomina una playlist esistente appartenente all’utente autenticato.
+
+**Richiesta**
+
+Richiede un token JWT valido nell’Authorization header:
+```http
+PATCH /playlists/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken: Verifica il token JWT e recupera l’ID utente.
+- Il middleware checkPlaylistOwnership: Verifica che la playlist appartenga all’utente.
+- Il controller deletePlaylist:
+  - Elimina la playlist identificata da :id.
+  - Restituisce un messaggio di conferma.
+
+**Diagramma di sequenza**
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant Controller
+  participant DB
+
+  Client->>App: PATCH /playlists/:id (body: { nome })
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Middleware: checkPlaylistOwnership
+  Middleware->>DB: Playlist.findOne
+  DB-->>Middleware: playlist trovata
+  Middleware-->>App: next()
+
+  App->>Controller: renamePlaylist(req)
+  Controller->>DB: Playlist.update
+  DB-->>Controller: OK
+  Controller-->>App: res.status(200).json({ message, playlist })
+
+  App->>Client: res.status(200)
+  App->>Client: res.json({ message, playlist })
+```
+
+**Risposta in caso di successo**
+
+Restituisce il messaggio di eliminazione:
+```json
+{
+  "message": "Playlist eliminata con successo"
+}
+```
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Se la playlist non è stata trovata, viene restituito un errore con codice 403:
+```json
+{
+  "error": "Playlist non trovata"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+## POST: /playlists/:id/tracks
+
+Aggiunge un brano acquistato a una playlist dell’utente autenticato.
+
+**Richiesta**
+
+Richiede un token JWT valido nel header Authorization e il campo track_id nel corpo JSON:
+```http
+POST /playlists/7/tracks
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "track_id": 17
+}
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken verifica l’identità dell’utente tramite JWT.
+- Il middleware checkPlaylistOwnership: verifica che la playlist appartenga all’utente.
+- Il middleware checkTrackIdInBody: controlla che track_id sia presente nel corpo.
+- Il middleware checkTrackOwnership: verifica che l’utente abbia acquistato il brano.
+- Il middlware checkTrackNotInPlaylist: assicura che il brano non sia già presente nella playlist.
+- Il controller addTrackToPlaylist: aggiunge il brano alla playlist.
+
+**Diagramma di sequenza**
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant DB
+  participant Controller
+
+  Client->>App: POST /playlists/:id/tracks
+
+  App->>Middleware: authenticateToken
+  Middleware-->>App: next()
+
+  App->>Middleware: checkPlaylistOwnership
+  Middleware->>DB: Playlist.findOne
+  DB-->>Middleware: Playlist trovata
+  Middleware-->>App: next()
+
+  App->>Middleware: checkTrackIdInBody
+  Middleware-->>App: next()
+
+  App->>Middleware: checkTrackOwnership
+  Middleware->>DB: Purchase.findOne
+  DB-->>Middleware: Acquisto trovato
+  Middleware-->>App: next()
+
+  App->>Middleware: checkTrackNotInPlaylist
+  Middleware->>DB: PlaylistTrack.findOne
+  DB-->>Middleware: Nessun duplicato
+  Middleware-->>App: next()
+
+  App->>Controller: addTrackToPlaylist
+  Controller->>DB: PlaylistTrack.create
+  DB-->>Controller: brano aggiunto
+  Controller-->>App: res.status(201).json({ message, track })
+
+  App->>Client: res.status(201)
+  App->>Client: res.json({ message: "Brano aggiunto alla playlist", track })
+```
+
+**Risposta in caso di successo**
+
+Se la playlist viene creata correttamente, il server restituisce un oggetto JSON con i dati della nuova playlist:
+```json
+{
+  "message": "Brano aggiunto alla playlist",
+  "track": {
+    "id": 4,
+    "playlist_id": 2,
+    "track_id": ef90cefb-ea88-4c87-b61c-cab9c92653cd,
+    "is_favorite": false,
+    "createdAt": "2025-06-24T19:00:00.000Z",
+    "updatedAt": "2025-06-24T19:00:00.000Z"
+  }
+}
+```
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+## DELETE: /playlists/:id/tracks/:trackId
+
+Rimuove un brano da una playlist dell’utente autenticato.
+
+**Richiesta**
+
+Richiede un token JWT valido nell’Authorization header:
+```http
+DELETE /playlists/2/tracks/17
+Authorization: Bearer <token>
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken: Verifica il token JWT e recupera l’ID utente.
+- Il middleware checkPlaylistOwnership verifica che la playlist appartenga all’utente.
+- Il middleware checkTrackIdParam controlla la presenza del parametro trackId nell’URL.
+- Il controller removeTrackFromPlaylist: rimuove il brano dalla playlist.
+
+**Diagramma di sequenza**
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant DB
+  participant Controller
+
+  Client->>App: DELETE /playlists/:id/tracks/:trackId
+
+  App->>Middleware: authenticateToken
+  Middleware-->>App: next()
+
+  App->>Middleware: checkPlaylistOwnership
+  Middleware->>DB: Playlist.findOne
+  DB-->>Middleware: Playlist trovata
+  Middleware-->>App: next()
+
+  App->>Middleware: checkTrackIdParam
+  Middleware-->>App: next()
+
+  App->>Controller: removeTrackFromPlaylist
+  Controller->>DB: PlaylistTrack.destroy
+  DB-->>Controller: rimozione eseguita
+  Controller-->>App: res.status(200).json({ message })
+
+  App->>Client: res.status(200)
+  App->>Client: res.json({ message: "Brano rimosso dalla playlist" })
+```
+
+**Risposta in caso di successo**
+
+Restituisce il messaggio di eliminazione:
+```json
+{
+  "message": "Brano rimosso dalla playlist"
+}
+```
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Se la playlist non è stata trovata, viene restituito un errore con codice 403:
+```json
+{
+  "error": "Playlist non trovata"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+## PATCH: /playlists/:id/favorite
+
+Imposta un brano come preferito in una playlist dell’utente autenticato.
+L’operazione azzera il campo is_favorite per tutti gli altri brani della stessa playlist.
+
+**Richiesta**
+
+Richiede un token JWT valido nel header Authorization e il trackId nel body della richiesta:
+```http
+PATCH /playlists/7/favorite
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "trackId": 42
+}
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken: Verifica il token JWT e recupera l’ID utente.
+- Il middleware checkPlaylistOwnership: Verifica che la playlist appartenga all’utente.
+- Il middleware checkTrackIdInFavoriteBody: controlla la presenza del campo trackId nel body.
+- Il controller checkTrackIdInFavoriteBody: controlla la presenza del campo trackId nel body.
+
+**Diagramma di sequenza**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant DB
+  participant Controller
+
+  Client->>App: PATCH /playlists/:id/favorite
+
+  App->>Middleware: authenticateToken
+  Middleware-->>App: next()
+
+  App->>Middleware: checkPlaylistOwnership
+  Middleware->>DB: Playlist.findOne
+  DB-->>Middleware: Playlist trovata
+  Middleware-->>App: next()
+
+  App->>Middleware: checkTrackIdInFavoriteBody
+  Middleware-->>App: next()
+
+  App->>Controller: setFavoriteTrack
+  Controller->>DB: PlaylistTrack.update (tutti is_favorite=false)
+  DB-->>Controller: ok
+  Controller->>DB: PlaylistTrack.update (uno is_favorite=true)
+  DB-->>Controller: ok
+  Controller-->>App: res.status(200).json({ message })
+
+  App->>Client: res.status(200)
+  App->>Client: res.json({ message: "Brano preferito aggiornato con successo" })
+```
+
+**Risposta in caso di successo**
+
+Restituisce il messaggio di aggiornamento brano preferito:
+```json
+{
+  "message": "Brano preferito aggiornato con successo"
+}
+```
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Se la playlist non è stata trovata, viene restituito un errore con codice 403:
+```json
+{
+  "error": "Playlist non trovata"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+## PATCH: /admin/recharge
+
+Permette a un utente con ruolo admin di ricaricare un certo numero di token a un utente specificato tramite il suo username.
+
+**Richiesta**
+
+La richiesta deve contenere un token JWT valido con ruolo admin nell’header Authorization:
+```http
+PATCH /admin/recharge
+Authorization: Bearer <JWT>
+Content-Type: application/json
+
+{
+  "username": "utenteUno",
+  "tokens": 10
+}
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken verifica l’identità dell’utente.
+- Il middleware authenticateAdmin controlla che il ruolo dell’utente sia admin.
+- Il middleware validateRechargeInput convalida i campi username (stringa) e tokens (numero ≥ 0).
+- Il controller rechargeTokens:
+  - Cerca l’utente nel database tramite username.
+  - Se lo trova, aggiorna il campo tokens e salva il record.
+  - Restituisce un messaggio di conferma e il nuovo saldo token.
+
+**Diagramma di sequenza**
+
+Il meccanismo che si innesca all'atto della chiamata è descritto dal seguente diagramma:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant Controller
+  participant DB
+
+  Client->>App: PATCH /admin/recharge (Authorization: Bearer JWT)
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Middleware: authenticateAdmin
+  Middleware-->>App: next()
+
+  App->>Middleware: validateRechargeInput
+  Middleware-->>App: next()
+
+  App->>Controller: rechargeTokens(req)
+  Controller->>DB: User.findOne({ where: { username } })
+  DB-->>Controller: utente trovato
+  Controller->>DB: user.tokens = tokens → user.save()
+  DB-->>Controller: ok
+  Controller-->>App: res.status(200).json({ message, tokens })
+
+  App->>Client: res.status(200)
+  App->>Client: res.json({ message, tokens })
+```
+
+**Risposta in caso di successo**
+
+```json
+{
+  "message": "Ricarica completata per utenteUno",
+  "tokens": 10
+}
+```
+
+
+**Risposta in caso di errore**
+
+Se token mancante o non valido, viene restituito un errore con codice **401**:
+```json
+{
+  "error": "Token mancante"
+}
+```
+
+oppure
+```json
+{
+  "error": "Token non valido o scaduto"
+}
+```
+
+Se l'utente non è admin, viene restituito un errore con codice **403**:
+```json
+{
+  "error": "Privilegi insufficienti"
+}
+```
+
+Per input non valido, viene restituito un errore con codice **400**:
+```json
+{
+  "error": "Username valido e numero di token ≥ 0 richiesto"
+}
+```
+
+Per utente non esistente, viene restituito un errore con codice **404**:
+```json
+{
+  "error": "Utente non trovato"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
 ```json
 {
   "error": "Errore del server"
