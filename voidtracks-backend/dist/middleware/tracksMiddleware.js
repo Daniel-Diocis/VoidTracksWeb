@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateTrackQuery = validateTrackQuery;
 exports.logTrackRequest = logTrackRequest;
-const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const factory = new messageFactory_1.MessageFactory();
 /**
@@ -18,7 +18,7 @@ const factory = new messageFactory_1.MessageFactory();
 function validateTrackQuery(req, res, next) {
     const q = req.query.q;
     if (q && typeof q !== "string") {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.BAD_REQUEST, "Il parametro 'q' deve essere una stringa");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.Q_NOT_STRING.status, errorMessages_1.ErrorMessages.Q_NOT_STRING.message);
     }
     next();
 }

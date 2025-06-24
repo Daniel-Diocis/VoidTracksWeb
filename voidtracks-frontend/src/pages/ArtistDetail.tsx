@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
+import { notify } from '../utils/toastManager';
 
 const PUBLIC_URL =
   "https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public";
@@ -42,6 +43,7 @@ export default function ArtistDetail() {
       })
       .then((data: Artist) => setArtist(data))
       .catch((err) => {
+        notify.error("Errore nel caricamento artista");
         console.error("Errore nel fetch artista:", err);
         setArtist(null);
       });

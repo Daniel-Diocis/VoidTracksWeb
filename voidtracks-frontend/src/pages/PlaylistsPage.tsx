@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import PlaylistList from '../components/PlaylistList';
 import PlaylistDetail from '../components/PlaylistDetail';
 import type { Playlist } from '../types';
+import { notify } from '../utils/toastManager';
 
 export default function PlaylistsPage() {
   const { token, logout } = useAuth();
@@ -22,6 +23,7 @@ export default function PlaylistsPage() {
         const data = await res.json();
 
         if (!res.ok) {
+          notify.error(data?.error || 'Errore nel caricamento delle playlist');
           console.error("Errore backend:", data?.error || "Errore generico");
         if (res.status === 401) {
           logout(); // funzione del tuo hook useAuth
@@ -39,6 +41,7 @@ export default function PlaylistsPage() {
       })
       .catch(err => {
         console.error("Errore caricamento playlist:", err);
+        notify.error('Errore di rete nel caricamento delle playlist');
       });
   }, [token]);
 
@@ -53,32 +56,55 @@ export default function PlaylistsPage() {
         },
         body: JSON.stringify({ nome: newName }),
       });
-      const newPlaylist = await res.json();
-      setPlaylists(prev => [newPlaylist, ...prev]);
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        notify.error(data.error || 'Errore nella creazione della playlist');
+        console.error('Errore creazione playlist:', data.error || data);
+        return;
+      }
+
+      setPlaylists(prev => [data, ...prev]);
       setNewName('');
-      setSelected(newPlaylist.id);
+      setSelected(data.id);
+      notify.success('Playlist creata!');
     } catch (err) {
+      notify.error('Errore di rete o del server');
       console.error('Errore creazione playlist:', err);
     }
   };
 
   const handleDeletePlaylist = async (id: number) => {
     if (!token) return;
-    if (!window.confirm('Sei sicuro di voler eliminare questa playlist?')) return;
+    if (!confirm('Sei sicuro di voler eliminare questa playlist?')) return;
+
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/playlists/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        notify.error(data.error || 'Errore durante l’eliminazione della playlist');
+        console.error('Errore eliminazione playlist:', data.error || data);
+        return;
+      }
+
       setPlaylists(prev => prev.filter(p => p.id !== id));
       if (selected === id) setSelected(null);
+      notify.success('Playlist eliminata');
     } catch (err) {
+      notify.error('Errore di rete o del server');
       console.error('Errore eliminazione playlist:', err);
     }
   };
 
   const handleRenamePlaylist = async (id: number, nuovoNome: string) => {
     if (!token || !nuovoNome.trim()) return;
+
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${id}`, {
         method: 'PATCH',
@@ -88,11 +114,21 @@ export default function PlaylistsPage() {
         },
         body: JSON.stringify({ nome: nuovoNome.trim() }),
       });
+
       const data = await res.json();
+
+      if (!res.ok) {
+        notify.error(data.error || 'Errore durante la rinomina');
+        console.error('Errore rinomina playlist:', data.error || data);
+        return;
+      }
+
       setPlaylists(prev =>
         prev.map(p => (p.id === id ? { ...p, nome: data.playlist.nome } : p))
       );
+      notify.success('Playlist rinominata');
     } catch (err) {
+      notify.error('Errore di rete o del server');
       console.error('Errore rinomina playlist:', err);
     }
   };

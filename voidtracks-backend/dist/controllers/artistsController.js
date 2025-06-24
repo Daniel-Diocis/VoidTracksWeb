@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllArtists = getAllArtists;
 exports.getArtistByName = getArtistByName;
 const sequelize_1 = require("sequelize");
-const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const Artist_1 = __importDefault(require("../models/Artist"));
 const Track_1 = __importDefault(require("../models/Track"));
@@ -28,7 +28,7 @@ async function getAllArtists(req, res) {
     }
     catch (error) {
         console.error("Errore recupero artisti:", error);
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore durante il recupero degli artisti");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -59,12 +59,12 @@ async function getArtistByName(req, res) {
             ],
         });
         if (!artist) {
-            return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.NOT_FOUND, "Artista non trovato");
+            return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.ARTIST_NOT_FOUND.status, errorMessages_1.ErrorMessages.ARTIST_NOT_FOUND.message);
         }
         res.json(artist);
     }
     catch (error) {
         console.error("Errore recupero artista per nome:", error);
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore durante il recupero dell'artista");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }

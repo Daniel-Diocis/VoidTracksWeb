@@ -1,11 +1,11 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { notify } from '../utils/toastManager';
 
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const auth = useContext(AuthContext);
@@ -14,7 +14,6 @@ function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
@@ -25,7 +24,7 @@ function Login() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Errore di login');
+        notify.error(data.error || 'Errore di login');
         return;
       }
 
@@ -40,7 +39,7 @@ function Login() {
       });
 
       if (!userRes.ok) {
-        setError('Errore nel recupero dei dati utente');
+        notify.warning('Errore nel recupero dei dati utente');
         return;
       }
 
@@ -58,14 +57,14 @@ function Login() {
         data.token,
         userData.user.tokens
       );
-
+      notify.success('Accesso effettuato con successo');
       // Redirect o azione post login
       navigate('/');
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message);
+        notify.error(err.message);
       } else {
-        setError('Errore di rete o server');
+        notify.error('Errore di rete o server');
       }
     }
   };
@@ -77,7 +76,6 @@ function Login() {
         className="bg-zinc-800 p-6 rounded-md shadow-md w-full max-w-sm"
       >
         <h2 className="text-2xl mb-4 text-center font-bold">Login</h2>
-        {error && <p className="mb-4 text-red-500">{error}</p>}
         <input
           type="text"
           placeholder="Username"

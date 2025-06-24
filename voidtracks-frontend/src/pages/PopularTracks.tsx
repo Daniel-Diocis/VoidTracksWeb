@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { notify } from '../utils/toastManager';
 
 interface PopularTrack {
   track_id: number;
@@ -23,7 +24,8 @@ function PopularTracks() {
         const data = await response.json();
         setTracks(data);
       } catch (error) {
-        console.error('Errore nel recupero dei brani più popolari:', error);
+        notify.error('Errore nel recupero dei brani più acquistati');
+        console.error('Errore nel recupero dei brani più acquistati:', error);
       } finally {
         setLoading(false);
       }

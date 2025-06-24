@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import type { PlaylistWithTracks, PurchaseWithTrack } from '../types';
-import axios from 'axios';
+import { notify } from '../utils/toastManager';
 
 export default function PlaylistDetail({
   playlistId,
@@ -33,12 +33,22 @@ export default function PlaylistDetail({
         const playlistData = await playlistRes.json();
         const purchasesData = await purchasesRes.json();
 
+        if (!playlistRes.ok) {
+          notify.error(playlistData.error || 'Errore nel caricamento della playlist');
+          return;
+        }
+        if (!purchasesRes.ok) {
+          notify.error(purchasesData.error || 'Errore nel caricamento degli acquisti');
+          return;
+        }
+
         playlistData.tracks ??= [];
         setPlaylist(playlistData);
         setNewName(playlistData.playlist.nome);
         setPurchasedTracks(purchasesData.data || []);
       } catch (err) {
         console.error('Errore fetch playlist:', err);
+        notify.error('Errore di rete durante il caricamento');
       }
     };
 
@@ -52,53 +62,93 @@ export default function PlaylistDetail({
   };
 
   const refreshPlaylist = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await res.json();
-    data.tracks ??= [];
-    setPlaylist(data);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        notify.error(data.error || 'Errore aggiornamento playlist');
+        return;
+      }
+
+      data.tracks ??= [];
+      setPlaylist(data);
+    } catch (err) {
+      console.error('Errore refresh playlist:', err);
+      notify.error('Errore di rete durante il refresh');
+    }
   };
 
   const handleAddTrack = async (trackId: string) => {
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/playlists/${playlistId}/tracks`,
-        { track_id: trackId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}/tracks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ track_id: trackId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        notify.error(data.error || 'Errore aggiunta brano');
+        return;
+      }
+      notify.success('Brano aggiunto con successo!');
       refreshPlaylist();
     } catch (err) {
       console.error("Errore aggiunta brano:", err);
-      alert('Errore aggiunta brano');
+      notify.error('Errore aggiunta brano');
     }
   };
 
   const handleRemoveTrack = async (trackId: string) => {
     if (!window.confirm('Rimuovere questo brano?')) return;
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_API_URL}/playlists/${playlistId}/tracks/${trackId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}/tracks/${trackId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        notify.error(data.error || 'Errore rimozione brano');
+        return;
+      }
+      notify.success('Brano rimosso con successo!');
       refreshPlaylist();
     } catch (err) {
-      console.error("Errore aggiunta brano:", err);
-      alert('Errore rimozione brano');
+      console.error("Errore rimozione brano:", err);
+      notify.error('Errore rimozione brano');
     }
   };
 
   const handleSetFavorite = async (trackId: string) => {
     try {
-      await axios.patch(
-        `${import.meta.env.VITE_API_URL}/playlists/${playlistId}/favorite`,
-        { trackId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}/favorite`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ trackId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        notify.error(data.error || 'Errore impostazione preferito');
+        return;
+      }
+      notify.success('Brano impostato come preferito!');
       refreshPlaylist();
     } catch (err) {
       console.error("Errore impostazione preferito:", err);
-      alert('Errore impostazione preferito');
+      notify.error('Errore impostazione preferito');
     }
   };
 

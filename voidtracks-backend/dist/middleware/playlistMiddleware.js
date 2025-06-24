@@ -9,7 +9,7 @@ exports.checkTrackOwnership = checkTrackOwnership;
 exports.checkTrackNotInPlaylist = checkTrackNotInPlaylist;
 exports.checkTrackIdParam = checkTrackIdParam;
 exports.checkTrackIdInFavoriteBody = checkTrackIdInFavoriteBody;
-const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const Playlist_1 = __importDefault(require("../models/Playlist"));
 const Purchase_1 = __importDefault(require("../models/Purchase"));
@@ -26,20 +26,14 @@ const factory = new messageFactory_1.MessageFactory();
  * @returns Risposta 404 se la playlist non esiste o non appartiene all'utente.
  */
 async function checkPlaylistOwnership(req, res, next) {
-    try {
-        const userId = req.user.id;
-        const playlistId = parseInt(req.params.id, 10);
-        const playlist = await Playlist_1.default.findOne({ where: { id: playlistId, user_id: userId } });
-        if (!playlist) {
-            return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.NOT_FOUND, "Playlist non trovata o accesso negato");
-        }
-        req.playlist = playlist;
-        next();
+    const userId = req.user.id;
+    const playlistId = parseInt(req.params.id, 10);
+    const playlist = await Playlist_1.default.findOne({ where: { id: playlistId, user_id: userId } });
+    if (!playlist) {
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.PLAYLIST_NOT_FOUND.status, errorMessages_1.ErrorMessages.PLAYLIST_NOT_FOUND.message);
     }
-    catch (error) {
-        console.error("Errore verifica proprietà playlist:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server");
-    }
+    req.playlist = playlist;
+    next();
 }
 /**
  * Verifica la presenza del campo `track_id` nel body della richiesta.
@@ -52,7 +46,7 @@ async function checkPlaylistOwnership(req, res, next) {
 function checkTrackIdInBody(req, res, next) {
     const { track_id } = req.body;
     if (!track_id) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.BAD_REQUEST, "ID del brano mancante");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.TRACK_ID_MISSING.status, errorMessages_1.ErrorMessages.TRACK_ID_MISSING.message);
     }
     next();
 }
@@ -65,19 +59,13 @@ function checkTrackIdInBody(req, res, next) {
  * @returns Risposta 403 se il brano non è stato acquistato.
  */
 async function checkTrackOwnership(req, res, next) {
-    try {
-        const userId = req.user.id;
-        const { track_id } = req.body;
-        const purchase = await Purchase_1.default.findOne({ where: { user_id: userId, track_id } });
-        if (!purchase) {
-            return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.FORBIDDEN, "Brano non acquistato");
-        }
-        next();
+    const userId = req.user.id;
+    const { track_id } = req.body;
+    const purchase = await Purchase_1.default.findOne({ where: { user_id: userId, track_id } });
+    if (!purchase) {
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.TRACK_NOT_PURCHASED.status, errorMessages_1.ErrorMessages.TRACK_NOT_PURCHASED.message);
     }
-    catch (error) {
-        console.error("Errore verifica possesso brano:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server");
-    }
+    next();
 }
 /**
  * Verifica che il brano non sia già presente nella playlist.
@@ -88,19 +76,13 @@ async function checkTrackOwnership(req, res, next) {
  * @returns Risposta 409 se il brano è già presente nella playlist.
  */
 async function checkTrackNotInPlaylist(req, res, next) {
-    try {
-        const playlistId = parseInt(req.params.id, 10);
-        const { track_id } = req.body;
-        const existing = await PlaylistTrack_1.default.findOne({ where: { playlist_id: playlistId, track_id } });
-        if (existing) {
-            return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.CONFLICT, "Brano già presente nella playlist");
-        }
-        next();
+    const playlistId = parseInt(req.params.id, 10);
+    const { track_id } = req.body;
+    const existing = await PlaylistTrack_1.default.findOne({ where: { playlist_id: playlistId, track_id } });
+    if (existing) {
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.TRACK_ALREADY_IN_PLAYLIST.status, errorMessages_1.ErrorMessages.TRACK_ALREADY_IN_PLAYLIST.message);
     }
-    catch (error) {
-        console.error("Errore verifica brano duplicato:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server");
-    }
+    next();
 }
 /**
  * Verifica la presenza del parametro `trackId` nella richiesta.
@@ -113,7 +95,7 @@ async function checkTrackNotInPlaylist(req, res, next) {
 function checkTrackIdParam(req, res, next) {
     const trackId = req.params.trackId;
     if (!trackId) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.BAD_REQUEST, "Parametro trackId mancante");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.TRACK_ID_MISSING.status, errorMessages_1.ErrorMessages.TRACK_ID_MISSING.message);
     }
     next();
 }
@@ -128,7 +110,7 @@ function checkTrackIdParam(req, res, next) {
 function checkTrackIdInFavoriteBody(req, res, next) {
     const { trackId } = req.body;
     if (!trackId) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.BAD_REQUEST, "trackId mancante nel body");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.TRACK_ID_MISSING.status, errorMessages_1.ErrorMessages.TRACK_ID_MISSING.message);
     }
     next();
 }

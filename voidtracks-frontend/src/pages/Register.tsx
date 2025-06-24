@@ -1,11 +1,11 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { notify } from '../utils/toastManager';
 
 function Register() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const auth = useContext(AuthContext);
@@ -13,7 +13,6 @@ function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
     try {
       const res = await fetch(`${API_URL}/auth/register`, {
@@ -25,7 +24,8 @@ function Register() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Errore durante la registrazione');
+        console.error(data.error);
+        notify.error(data.error || 'Errore durante la registrazione');
         return;
       }
 
@@ -37,7 +37,7 @@ function Register() {
       });
 
       if (!userRes.ok) {
-        setError('Registrazione completata, ma errore nel recupero dati utente');
+        notify.warning('Registrazione completata, ma errore nel recupero dati utente');
         return;
       }
 
@@ -48,14 +48,14 @@ function Register() {
         data.token,
         userData.user.tokens
       );
-
+      notify.success('Registrazione avvenuta con successo');
       // Vai alla home
       navigate('/');
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message);
+        notify.error(err.message);
       } else {
-        setError('Errore di rete o server');
+        notify.error('Errore di rete o server');
       }
     }
   };
@@ -67,7 +67,6 @@ function Register() {
         className="bg-zinc-800 p-6 rounded-md shadow-md w-full max-w-sm"
       >
         <h2 className="text-2xl mb-4 text-center font-bold">Registrati</h2>
-        {error && <p className="mb-4 text-red-500">{error}</p>}
         <input
           type="text"
           placeholder="Username"

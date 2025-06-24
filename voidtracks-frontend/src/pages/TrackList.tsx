@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
+import { notify } from '../utils/toastManager';
 
 type TrackBase = {
   id: string;
@@ -61,7 +62,10 @@ function TrackList() {
 
         setTracks(aggiornati);
       })
-      .catch(err => console.error('Errore nel fetch:', err));
+    .catch(err => {
+      console.error('Errore nel fetch:', err);
+      notify.error('Errore nel caricamento dei brani');
+    });
   }, [query]);
 
   // Controlla play/pause sull'audio HTML nativo
@@ -102,7 +106,7 @@ function TrackList() {
         <div className="fixed bottom-0 left-0 right-0 bg-zinc-800 p-4 flex items-center gap-4">
           <img
             src={`${PUBLIC_URL}/cover/${currentTrack.cover_path}`}
-            alt={`Cover ${currentTrack.titolo}`}
+            alt={`Cover dell'album ${currentTrack.album}`}
             className="w-16 h-16 object-cover rounded"
           />
           <div className="flex flex-col">
@@ -126,6 +130,7 @@ function TrackList() {
               setCurrentTrack(null);
             }}
             className="ml-4 text-white"
+            aria-label="Chiudi player"
           >
             Close
           </button>
@@ -133,8 +138,10 @@ function TrackList() {
       )}
 
       {/* Lista tracce */}
-      {tracks.length === 0 ? (
+      {tracks.length === 0 && !query ? (
         <p className="text-center">Caricamento...</p>
+      ) : tracks.length === 0 && query ? (
+        <p className="text-center">Nessun brano trovato per “{query}”.</p>
       ) : (
         <div
           className="grid gap-4"

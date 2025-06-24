@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authenticateToken = authenticateToken;
-const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const fs_1 = __importDefault(require("fs"));
@@ -35,11 +35,11 @@ function authenticateToken(req, res, next) {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.UNAUTHORIZED, "Token mancante");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.MISSING_TOKEN.status, errorMessages_1.ErrorMessages.MISSING_TOKEN.message);
     }
     jsonwebtoken_1.default.verify(token, publicKey, { algorithms: ["RS256"] }, (err, payload) => {
         if (err) {
-            return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.UNAUTHORIZED, "Token non valido o scaduto");
+            return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INVALID_TOKEN.status, errorMessages_1.ErrorMessages.INVALID_TOKEN.message);
         }
         req.user = payload;
         next();

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { notify } from '../utils/toastManager';
 
 interface Purchase {
   id: number;
@@ -37,6 +38,7 @@ function MyPurchases() {
             setPurchases(purchasesData);
             
         } catch (error) {
+        notify.error('Errore nel recupero degli acquisti:');
         console.error('Errore nel recupero acquisti:', error);
         } finally {
         setLoading(false);

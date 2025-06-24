@@ -2,6 +2,7 @@ import { useEffect, useState, useContext, useRef } from 'react';
 import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { notify } from '../utils/toastManager';
 
 type Track = {
   id: string;
@@ -73,11 +74,7 @@ const TracksMarket = () => {
         headers: { Authorization: `Bearer ${auth.token}` },
       })
         .then(async res => {
-          const data = await res.json();
-          if (!res.ok || !Array.isArray(data)) {
-            console.error("Errore nel recupero dei brani:", data?.error || "Formato non valido");
-            return;
-          }
+          if (!res.ok) throw new Error('Errore nel recupero degli acquisti');
           const json = await res.json();
           const purchases: { track_id: string; download_token: string; used_flag: boolean }[] = json.data;
           const ids = new Set(purchases.map(p => p.track_id));
@@ -116,7 +113,7 @@ const TracksMarket = () => {
   // Funzione acquisto
   const handleAcquista = async (track: Track) => {
     if (!auth || !auth.token) {
-      alert('Devi essere loggato per acquistare.');
+      notify.error('Devi essere loggato per acquistare.');
       return;
     }
 
@@ -132,13 +129,13 @@ const TracksMarket = () => {
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        alert(errorData.error || "Errore durante l'acquisto.");
+        notify.error(errorData.error || "Errore durante l'acquisto.");
         return;
       }
 
       const data = await res.json();
 
-      alert('Acquisto completato! Verrai reindirizzato alla pagina di download.');
+      notify.success('Acquisto completato! Verrai reindirizzato alla pagina di download.');
       setTimeout(() => {
         navigate(`/download/${data.download_token}`);
       }, 1000);
@@ -160,8 +157,8 @@ const TracksMarket = () => {
         setDownloadMap(prev => ({ ...prev, [track.id]: data.download_token }));
       }
     } catch (error) {
-      if (error instanceof Error) alert(error.message);
-      else alert('Errore di rete o del server.');
+      if (error instanceof Error) notify.error(error.message);
+      else notify.error('Errore di rete o del server.');
     }
   };
 

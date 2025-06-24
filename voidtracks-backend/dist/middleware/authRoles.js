@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authenticateUser = authenticateUser;
 exports.authenticateAdmin = authenticateAdmin;
-const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const factory = new messageFactory_1.MessageFactory();
 /**
@@ -18,7 +18,7 @@ const factory = new messageFactory_1.MessageFactory();
 function authenticateUser(req, res, next) {
     const user = req.user;
     if (!user) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.UNAUTHORIZED, "Accesso negato. Login richiesto.");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.NOT_USER.status, "Accesso negato. Login richiesto.");
     }
     next();
 }
@@ -36,10 +36,10 @@ function authenticateUser(req, res, next) {
 function authenticateAdmin(req, res, next) {
     const user = req.user;
     if (!user) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.UNAUTHORIZED, "Accesso negato. Login richiesto.");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.NOT_USER.status, errorMessages_1.ErrorMessages.NOT_USER.message);
     }
     if (user.role !== "admin") {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.FORBIDDEN, "Privilegi insufficienti.");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.NOT_ADMIN.status, errorMessages_1.ErrorMessages.NOT_ADMIN.message);
     }
     next();
 }

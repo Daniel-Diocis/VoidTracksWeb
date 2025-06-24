@@ -1,11 +1,10 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { notify } from '../utils/toastManager';
 
 function AdminPanel() {
   const [username, setUsername] = useState('');
   const [tokens, setTokens] = useState<number>(0);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const auth = useContext(AuthContext);
   const token = auth?.token; // preso dal contesto
@@ -13,8 +12,6 @@ function AdminPanel() {
 
   const handleRecharge = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage(null);
-    setError(null);
 
     try {
       const res = await fetch(`${API_URL}/admin/recharge`, {
@@ -29,14 +26,14 @@ function AdminPanel() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Errore durante la ricarica');
+        notify.error(data.error || 'Errore durante la ricarica');
         return;
       }
 
-      setMessage(data.message);
+      notify.success(data.message || 'Ricarica effettuata con successo');
     } catch (err) {
-      console.error('Errore durante la ricarica:', err);
-      setError('Errore di rete o server');
+      console.error('Errore durante la ricarica: ', err);
+      notify.error('Errore di rete o server');
     }
   };
 
@@ -47,9 +44,6 @@ function AdminPanel() {
         className="bg-zinc-800 p-6 rounded-md shadow-md w-full max-w-md"
       >
         <h2 className="text-2xl mb-4 text-center font-bold">Pannello Admin</h2>
-
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        {message && <p className="text-green-500 mb-4">{message}</p>}
 
         <input
           type="text"

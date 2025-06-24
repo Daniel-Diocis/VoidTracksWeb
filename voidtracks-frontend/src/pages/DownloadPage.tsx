@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { notify } from '../utils/toastManager';
 
 type TrackInfo = {
   titolo: string;
@@ -16,7 +17,6 @@ export default function DownloadPage() {
   const { download_token } = useParams();
   const [track, setTrack] = useState<TrackInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [downloaded, setDownloaded] = useState(false);
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function DownloadPage() {
         setTrack(data);
       })
       .catch(err => {
-        setError(err.message);
+        notify.error(err.message);
       })
       .finally(() => {
         setLoading(false);
@@ -39,10 +39,10 @@ export default function DownloadPage() {
     const handleDownload = () => {
     window.open(`${API_URL}/purchase/download/${download_token}`, '_blank');
     setDownloaded(true);
+    notify.success('Download avviato con successo');
     };
 
   if (loading) return <p className="text-center mt-10">Caricamento...</p>;
-  if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
   if (!track) return null;
 
   return (

@@ -12,6 +12,7 @@ const axios_1 = __importDefault(require("axios"));
 const uuid_1 = require("uuid");
 const sequelize_1 = require("sequelize");
 const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const Track_1 = __importDefault(require("../models/Track"));
 const Purchase_1 = __importDefault(require("../models/Purchase"));
@@ -52,7 +53,7 @@ async function createPurchase(req, res) {
     }
     catch (error) {
         console.error("Errore nell'acquisto:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante l'acquisto");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -77,7 +78,7 @@ async function downloadTrack(req, res) {
     }
     catch (error) {
         console.error("Errore durante il download:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante il download");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -113,7 +114,7 @@ async function getUserPurchases(req, res) {
     }
     catch (error) {
         console.error("Errore nel recupero acquisti:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server nel recupero acquisti");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -139,6 +140,6 @@ async function getPurchaseDetails(req, res) {
     }
     catch (error) {
         console.error("Errore GET /purchase/:token", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore interno");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }

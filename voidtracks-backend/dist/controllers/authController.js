@@ -7,6 +7,7 @@ exports.register = register;
 exports.login = login;
 exports.getPrivateUser = getPrivateUser;
 const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -57,7 +58,7 @@ async function register(req, res) {
     }
     catch (error) {
         console.error("Errore registrazione:", error);
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante la registrazione");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -95,7 +96,7 @@ async function login(req, res) {
     }
     catch (error) {
         console.error("Errore login:", error);
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante il login");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -122,6 +123,6 @@ async function getPrivateUser(req, res) {
     }
     catch (error) {
         console.error("Errore nel recupero dell’utente:", error);
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante il recupero dell'utente");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }

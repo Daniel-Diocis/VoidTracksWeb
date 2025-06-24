@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllTracks = getAllTracks;
 exports.getPopularTracks = getPopularTracks;
 const sequelize_1 = require("sequelize");
-const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const Track_1 = __importDefault(require("../models/Track"));
 const Purchase_1 = __importDefault(require("../models/Purchase"));
@@ -39,7 +39,7 @@ async function getAllTracks(req, res) {
     }
     catch (error) {
         console.error("Errore recupero brani:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore server durante il recupero dei brani");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -71,6 +71,6 @@ async function getPopularTracks(req, res) {
     }
     catch (error) {
         console.error("Errore nel recupero dei brani popolari:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore server durante il recupero dei brani popolari");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }

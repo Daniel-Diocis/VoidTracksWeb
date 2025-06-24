@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateArtistName = validateArtistName;
-const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const factory = new messageFactory_1.MessageFactory();
 /**
@@ -17,7 +17,7 @@ const factory = new messageFactory_1.MessageFactory();
 function validateArtistName(req, res, next) {
     const { nome } = req.params;
     if (!nome || typeof nome !== "string" || nome.trim().length === 0) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.BAD_REQUEST, "Nome artista non valido");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INVALID_ARTIST_NAME.status, errorMessages_1.ErrorMessages.INVALID_ARTIST_NAME.message);
     }
     next();
 }

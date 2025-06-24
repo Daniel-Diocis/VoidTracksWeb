@@ -12,6 +12,7 @@ exports.addTrackToPlaylist = addTrackToPlaylist;
 exports.removeTrackFromPlaylist = removeTrackFromPlaylist;
 exports.setFavoriteTrack = setFavoriteTrack;
 const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const Playlist_1 = __importDefault(require("../models/Playlist"));
 const PlaylistTrack_1 = __importDefault(require("../models/PlaylistTrack"));
@@ -34,7 +35,7 @@ async function listUserPlaylists(req, res) {
     }
     catch (error) {
         console.error("Errore nel recupero delle playlist:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante il recupero delle playlist");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -52,7 +53,7 @@ async function createPlaylist(req, res) {
     }
     catch (error) {
         console.error("Errore creazione playlist:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante la creazione della playlist");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -95,7 +96,7 @@ async function getPlaylistWithTracks(req, res) {
     }
     catch (error) {
         console.error("Errore nel recupero della playlist:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante il recupero della playlist");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -112,7 +113,7 @@ async function deletePlaylist(req, res) {
     }
     catch (error) {
         console.error("Errore eliminazione playlist:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante l'eliminazione della playlist");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -131,7 +132,7 @@ async function renamePlaylist(req, res) {
     }
     catch (error) {
         console.error("Errore durante la modifica della playlist:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante l'aggiornamento della playlist");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -153,7 +154,7 @@ async function addTrackToPlaylist(req, res) {
     }
     catch (error) {
         console.error("Errore aggiunta brano alla playlist:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante l'aggiunta del brano alla playlist");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -171,7 +172,7 @@ async function removeTrackFromPlaylist(req, res) {
     }
     catch (error) {
         console.error("Errore rimozione brano dalla playlist:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante la rimozione del brano dalla playlist");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
 /**
@@ -190,6 +191,6 @@ async function setFavoriteTrack(req, res) {
     }
     catch (error) {
         console.error("Errore aggiornamento brano preferito:", error);
-        factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante l'aggiornamento del brano preferito");
+        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }

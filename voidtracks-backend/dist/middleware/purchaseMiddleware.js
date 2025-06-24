@@ -11,6 +11,7 @@ exports.validateDownloadToken = validateDownloadToken;
 exports.loadPurchaseByToken = loadPurchaseByToken;
 const sequelize_1 = require("sequelize");
 const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const User_1 = __importDefault(require("../models/User"));
 const Track_1 = __importDefault(require("../models/Track"));
@@ -29,7 +30,7 @@ const factory = new messageFactory_1.MessageFactory();
 function validatePurchaseBody(req, res, next) {
     const { track_id } = req.body;
     if (!track_id || typeof track_id !== "string") {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.BAD_REQUEST, "Il campo 'track_id' è obbligatorio e deve essere una stringa");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.TRACK_ID_VALIDATE.status, errorMessages_1.ErrorMessages.TRACK_ID_VALIDATE.message);
     }
     next();
 }
@@ -49,10 +50,10 @@ async function checkUserAndTrackExist(req, res, next) {
     const user = await User_1.default.findByPk(userId);
     const track = await Track_1.default.findByPk(track_id);
     if (!user) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.NOT_FOUND, "Utente non trovato");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.USER_NOT_FOUND.status, errorMessages_1.ErrorMessages.USER_NOT_FOUND.message);
     }
     if (!track) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.NOT_FOUND, "Brano non trovato");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.TRACK_NOT_FOUND.status, errorMessages_1.ErrorMessages.TRACK_NOT_FOUND.message);
     }
     req.userInstance = user;
     req.trackInstance = track;
@@ -102,7 +103,7 @@ function checkUserTokens(req, res, next) {
     const user = req.userInstance;
     const track = req.trackInstance;
     if (user.tokens < track.costo) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.UNAUTHORIZED, "Token insufficienti per l'acquisto");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.UNSUFFICIENT_TOKENS.status, errorMessages_1.ErrorMessages.UNSUFFICIENT_TOKENS.message);
     }
     next();
 }
@@ -128,13 +129,13 @@ async function validateDownloadToken(req, res, next) {
         include: [Track_1.default],
     });
     if (!purchase) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.NOT_FOUND, "Link di download non valido");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INVALID_LINK.status, errorMessages_1.ErrorMessages.INVALID_LINK.message);
     }
     if (purchase.used_flag) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.FORBIDDEN, "Link già utilizzato");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.ALREADY_USED_LINK.status, errorMessages_1.ErrorMessages.ALREADY_USED_LINK.message);
     }
     if (new Date() > purchase.valid_until) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.FORBIDDEN, "Link scaduto");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.EXPIRED_LINK.status, errorMessages_1.ErrorMessages.EXPIRED_LINK.message);
     }
     req.purchaseInstance = purchase;
     next();
@@ -156,7 +157,7 @@ async function loadPurchaseByToken(req, res, next) {
         include: [Track_1.default],
     });
     if (!purchase || !purchase.Track) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.NOT_FOUND, "Token non valido");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INVALID_PURCHASE_TOKEN.status, errorMessages_1.ErrorMessages.INVALID_PURCHASE_TOKEN.message);
     }
     req.purchaseInstance = purchase;
     next();
