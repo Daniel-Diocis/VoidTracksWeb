@@ -15,8 +15,8 @@ interface PlaylistTrackAttributes {
 }
 
 /**
- * Attributi opzionali alla creazione di un'associazione.
- * `id` e `is_favorite` sono opzionali (valori di default gestiti da Sequelize).
+ * Attributi opzionali alla creazione di una nuova associazione.
+ * `id` e `is_favorite` sono gestiti da Sequelize.
  */
 interface PlaylistTrackCreationAttributes
   extends Optional<PlaylistTrackAttributes, "id" | "is_favorite"> {}
@@ -26,6 +26,7 @@ interface PlaylistTrackCreationAttributes
  *
  * - Contiene anche il flag `is_favorite` per indicare se il brano è preferito.
  * - Relazionato a `Playlist` e `Track` tramite chiavi esterne.
+ * - Ogni combinazione `playlist_id` + `track_id` è unica, per evitare duplicati.
  */
 class PlaylistTrack
   extends Model<PlaylistTrackAttributes, PlaylistTrackCreationAttributes>
@@ -37,8 +38,8 @@ class PlaylistTrack
   public is_favorite!: boolean;
 
   /**
-   * Associazione opzionale con il modello `Track`.
-   * Usata per eager loading nei controller.
+   * Brano associato a questa entry della playlist.
+   * Popolato automaticamente se si utilizza `include: [Track]` nelle query.
    */
   public Track?: import("./Track").default;
 }

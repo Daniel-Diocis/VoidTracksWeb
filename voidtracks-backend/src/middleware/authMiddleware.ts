@@ -2,19 +2,19 @@ import { Request, Response, NextFunction } from "express";
 import { body, validationResult } from 'express-validator';
 import { toZonedTime, format } from "date-fns-tz";
 import { StatusCodes } from "http-status-codes";
+import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
 import User from "../models/User";
 import bcrypt from "bcryptjs";
 
 const timeZone = "Europe/Rome";
 const factory = new MessageFactory();
-
 /**
- * Middleware di validazione per `username` e `password`.
+ * Middleware di validazione per i campi `username` e `password`.
  *
- * - Controlla che lo username abbia almeno 3 caratteri.
- * - Controlla che la password abbia almeno 6 caratteri.
- * - In caso di errore, restituisce un array di messaggi.
+ * - Verifica che lo username abbia almeno 3 caratteri.
+ * - Verifica che la password abbia almeno 6 caratteri.
+ * - In caso di errore, restituisce una risposta 400 con dettagli sugli errori.
  */
 export const validateAuthInput = [
   body('username')
@@ -32,12 +32,12 @@ export const validateAuthInput = [
 ];
 
 /**
- * Middleware di controllo per la registrazione.
+ * Middleware di verifica per la registrazione utente.
  *
- * - Verifica che lo username non sia già presente nel database.
- * - In caso di conflitto, restituisce errore 409.
+ * - Controlla se lo username esiste già nel database.
+ * - In caso positivo, restituisce errore HTTP 409 (Conflict).
  *
- * @param req - Oggetto della richiesta HTTP contenente `username`.
+ * @param req - Oggetto della richiesta contenente il campo `username`.
  * @param res - Oggetto della risposta HTTP.
  * @param next - Funzione per passare al middleware successivo.
  */
@@ -46,7 +46,7 @@ export async function checkUserExists(req: Request, res: Response, next: NextFun
     const { username } = req.body;
     const user = await User.findOne({ where: { username } });
     if (user) {
-      return factory.getStatusMessage(res, StatusCodes.CONFLICT, "Username già in uso");
+      return factory.getStatusMessage(res, ErrorMessages.USERNAME_ALREADY_EXISTS.status, ErrorMessages.USERNAME_ALREADY_EXISTS.message);
     }
     next();
   } catch (error) {
@@ -55,13 +55,13 @@ export async function checkUserExists(req: Request, res: Response, next: NextFun
 }
 
 /**
- * Middleware di autenticazione per il login.
+ * Middleware di autenticazione per il login utente.
  *
- * - Verifica che lo username esista.
- * - Confronta la password fornita con l’hash salvato nel DB.
- * - Se valido, aggiunge l’utente completo a `req.userRecord`.
+ * - Verifica l’esistenza dello username.
+ * - Confronta la password fornita con l’hash memorizzato nel DB.
+ * - Se le credenziali sono valide, assegna l’oggetto utente a `req.userRecord`.
  *
- * @param req - Oggetto della richiesta HTTP contenente `username` e `password`.
+ * @param req - Oggetto della richiesta contenente `username` e `password`.
  * @param res - Oggetto della risposta HTTP.
  * @param next - Funzione per passare al middleware successivo.
  */
@@ -70,12 +70,12 @@ export async function checkUserCredentials(req: Request, res: Response, next: Ne
     const { username, password } = req.body;
     const user = await User.findOne({ where: { username } });
     if (!user) {
-      return factory.getStatusMessage(res, StatusCodes.UNAUTHORIZED, "Credenziali non valide");
+      return factory.getStatusMessage(res, ErrorMessages.INVALID_CREDENTIALS.status, ErrorMessages.INVALID_CREDENTIALS.message);
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
-      return factory.getStatusMessage(res, StatusCodes.UNAUTHORIZED, "Credenziali non valide");
+      return factory.getStatusMessage(res, ErrorMessages.INVALID_CREDENTIALS.status, ErrorMessages.INVALID_CREDENTIALS.message);
     }
 
     (req as any).userRecord = user;
@@ -86,13 +86,13 @@ export async function checkUserCredentials(req: Request, res: Response, next: Ne
 }
 
 /**
- * Middleware per assegnare un token bonus giornaliero.
+ * Middleware per l’assegnazione del bonus giornaliero di 1 token.
  *
- * - Controlla se l’utente ha già ricevuto il bonus nella data corrente.
- * - Se non ancora assegnato, incrementa il numero di token e aggiorna la data.
- * - Aggiorna `req.userRecord` con l’utente aggiornato.
+ * - Verifica se l’utente ha già ricevuto il bonus nella data corrente (fuso orario: Europe/Rome).
+ * - In caso negativo, incrementa i token dell’utente e aggiorna `lastTokenBonusDate`.
+ * - L’oggetto utente aggiornato viene assegnato a `req.userRecord`.
  *
- * @param req - Oggetto della richiesta HTTP con `user` allegato dal middleware `authenticateToken`.
+ * @param req - Oggetto della richiesta contenente `user` da `authenticateToken`.
  * @param res - Oggetto della risposta HTTP.
  * @param next - Funzione per passare al middleware successivo.
  */
@@ -100,12 +100,12 @@ export async function dailyTokenBonus(req: Request, res: Response, next: NextFun
   try {
     const userPayload = (req as any).user;
     if (!userPayload) {
-      return factory.getStatusMessage(res, StatusCodes.UNAUTHORIZED, "Utente non autenticato");
+      return factory.getStatusMessage(res, ErrorMessages.NOT_AUTHENTICATED_USER.status, ErrorMessages.NOT_AUTHENTICATED_USER.message);
     }
 
     const user = await User.findByPk(userPayload.id);
     if (!user) {
-      return factory.getStatusMessage(res, StatusCodes.NOT_FOUND, "Utente non trovato");
+      return factory.getStatusMessage(res, ErrorMessages.USER_NOT_FOUND.status, ErrorMessages.USER_NOT_FOUND.message);
     }
 
     const now = new Date();

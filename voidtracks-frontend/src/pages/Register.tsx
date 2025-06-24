@@ -22,13 +22,12 @@ function Register() {
         body: JSON.stringify({ username, password }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
         setError(data.error || 'Errore durante la registrazione');
         return;
       }
-
-      const data = await res.json();
 
       // Chiamata per ottenere dati utente compresi i token
       const userRes = await fetch(`${API_URL}/auth/private`, {

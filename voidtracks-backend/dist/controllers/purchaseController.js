@@ -19,14 +19,15 @@ dotenv_1.default.config();
 const FILE_URL = process.env.FILE_URL;
 const factory = new messageFactory_1.MessageFactory();
 /**
- * Effettua l'acquisto di un brano.
- * - Scala i token dal saldo utente.
- * - Registra l'acquisto nel database.
- * - Genera un token temporaneo per il download.
+ * Effettua l'acquisto di un brano musicale.
  *
- * @param req - Richiesta HTTP contenente l'utente e il brano (dal middleware)
- * @param res - Risposta HTTP con i dati dell'acquisto
- * @returns JSON con ID acquisto e token di download
+ * - Scala il numero di token disponibili all'utente.
+ * - Registra l'acquisto nel database.
+ * - Genera un token temporaneo valido 10 minuti per il download.
+ *
+ * @param req - Richiesta HTTP contenente `userInstance` e `trackInstance` (iniettati dal middleware).
+ * @param res - Risposta HTTP contenente ID acquisto e token di download.
+ * @returns Risposta JSON con conferma acquisto e token.
  */
 async function createPurchase(req, res) {
     try {
@@ -55,12 +56,13 @@ async function createPurchase(req, res) {
     }
 }
 /**
- * Permette il download del brano acquistato, utilizzando il token di download.
- * - Marca il token come usato.
- * - Serve il file audio in streaming.
+ * Scarica il brano acquistato utilizzando il token di download.
  *
- * @param req - Richiesta HTTP con `purchaseInstance` popolato dal middleware
- * @param res - Risposta con il file MP3 in streaming
+ * - Marca il token come usato (`used_flag`).
+ * - Restituisce il file audio in streaming con intestazioni appropriate.
+ *
+ * @param req - Richiesta HTTP con `purchaseInstance` popolato dal middleware.
+ * @param res - Risposta HTTP con il file MP3 in streaming.
  */
 async function downloadTrack(req, res) {
     try {
@@ -79,11 +81,12 @@ async function downloadTrack(req, res) {
     }
 }
 /**
- * Restituisce la lista degli acquisti effettuati da un utente.
- * - Permette filtri opzionali per intervallo di date (`fromDate`, `toDate`)
+ * Restituisce tutti gli acquisti effettuati da un utente.
  *
- * @param req - Richiesta HTTP con l'utente autenticato (`user.id`) e filtri opzionali
- * @param res - Risposta JSON con elenco acquisti
+ * - È possibile filtrare gli acquisti tramite `fromDate` e `toDate` (opzionali).
+ *
+ * @param req - Richiesta HTTP contenente `user.id` e filtri opzionali tramite query string.
+ * @param res - Risposta HTTP con l’elenco degli acquisti effettuati.
  */
 async function getUserPurchases(req, res) {
     try {
@@ -114,11 +117,12 @@ async function getUserPurchases(req, res) {
     }
 }
 /**
- * Restituisce i dettagli di un singolo acquisto tramite il token di download.
- * - Indica se l'utente può ancora effettuare il download (non scaduto, non usato).
+ * Restituisce i dettagli di un acquisto tramite il token di download.
  *
- * @param req - Richiesta HTTP contenente `purchaseInstance`
- * @param res - Risposta con dettagli brano e flag `canDownload`
+ * - Verifica se il download è ancora disponibile (token valido e non ancora utilizzato).
+ *
+ * @param req - Richiesta HTTP contenente `purchaseInstance` fornito dal middleware.
+ * @param res - Risposta HTTP con i dettagli del brano e il flag `canDownload`.
  */
 async function getPurchaseDetails(req, res) {
     try {

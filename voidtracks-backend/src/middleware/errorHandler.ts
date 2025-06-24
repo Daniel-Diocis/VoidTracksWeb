@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
+import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
 
 const factory = new MessageFactory();
@@ -19,8 +19,8 @@ const factory = new MessageFactory();
 export function errorHandler(err: any, _req: Request, res: Response, _next: NextFunction) {
   console.error(err.stack);
 
-  const statusCode = err.status || StatusCodes.INTERNAL_SERVER_ERROR;
-  const message = err.message || "Errore del server";
+  const statusCode = err.status || ErrorMessages.INTERNAL_ERROR.status;
+  const message = err.message || ErrorMessages.INTERNAL_ERROR.message;
 
   return factory.getStatusMessage(res, statusCode, message);
 }

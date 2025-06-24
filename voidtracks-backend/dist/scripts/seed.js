@@ -8,12 +8,15 @@ const sequelize_1 = require("../db/sequelize");
 const User_1 = __importDefault(require("../models/User"));
 const sequelize = (0, sequelize_1.getSequelizeInstance)();
 /**
- * Tenta di connettersi al database, riprovando più volte in caso di errore.
- * Utile per garantire che il database sia pronto prima di eseguire il seed.
+ * Attende che il database sia disponibile prima di procedere.
  *
- * @param retries - Numero massimo di tentativi (default: 10)
- * @param delayMs - Millisecondi di attesa tra un tentativo e l'altro (default: 2000 ms)
- * @throws Errore se la connessione non riesce dopo tutti i tentativi
+ * - Tenta di autenticarsi più volte con un intervallo tra i tentativi.
+ * - Utile nei contesti Docker o in ambienti distribuiti dove il DB può impiegare
+ *   qualche secondo ad avviarsi.
+ *
+ * @param retries Numero massimo di tentativi (default: 10)
+ * @param delayMs Tempo di attesa in millisecondi tra i tentativi (default: 2000)
+ * @throws Errore se la connessione fallisce dopo tutti i tentativi
  */
 async function waitForDatabase(retries = 10, delayMs = 2000) {
     while (retries > 0) {
@@ -31,15 +34,16 @@ async function waitForDatabase(retries = 10, delayMs = 2000) {
     throw new Error("Impossibile connettersi al database dopo diversi tentativi.");
 }
 /**
- * Esegue il seeding del database, inserendo utenti di esempio.
- * - Crea tre utenti: un admin e due utenti standard
- * - Applica hash alle password
- * - Evita duplicati usando `findOrCreate`
+ * Inserisce utenti predefiniti nel database.
+ *
+ * - Crea un amministratore e due utenti normali.
+ * - Le password sono salvate in forma hashata.
+ * - Se l'utente esiste già (per `username`), non viene duplicato.
  */
 async function seed() {
     try {
-        await waitForDatabase(); // Verifica connessione al DB
-        await sequelize.sync(); // Sincronizza i modelli
+        await waitForDatabase(); // Verifica che il DB sia pronto
+        await sequelize.sync(); // Sincronizza i modelli con il DB
         const users = [
             {
                 username: "admin",

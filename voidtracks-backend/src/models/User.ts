@@ -4,23 +4,22 @@ import { getSequelizeInstance } from "../db/sequelize";
 const sequelize = getSequelizeInstance();
 
 /**
- * Attributi definiti per il modello `User`.
+ * Attributi del modello `User`, che rappresenta un utente registrato.
  */
 interface UserAttributes {
-  id: number;
-  username: string;
-  password_hash: string;
-  tokens: number;
-  role: "user" | "admin";
-  lastTokenBonusDate?: Date | null;
-  createdAt?: Date;
-  updatedAt?: Date;
+  id: number;                        // ID univoco dell'utente
+  username: string;                 // Nome utente (univoco)
+  password_hash: string;           // Hash della password
+  tokens: number;                  // Numero di token posseduti
+  role: "user" | "admin";          // Ruolo dell'utente
+  lastTokenBonusDate?: Date | null; // Ultima data di bonus giornaliero
+  createdAt?: Date;                // Timestamp di creazione (gestito da Sequelize)
+  updatedAt?: Date;                // Timestamp di aggiornamento (gestito da Sequelize)
 }
 
 /**
- * Attributi richiesti al momento della creazione di un nuovo utente.
- * Rende opzionali `id`, `tokens`, `role`, `lastTokenBonusDate`, `createdAt`, `updatedAt`,
- * che verranno gestiti automaticamente da Sequelize.
+ * Attributi opzionali alla creazione di un nuovo utente.
+ * - `id`, `tokens`, `role`, `lastTokenBonusDate`, `createdAt`, `updatedAt` sono gestiti da Sequelize.
  */
 interface UserCreationAttributes
   extends Optional<
@@ -29,10 +28,12 @@ interface UserCreationAttributes
   > {}
 
 /**
- * Modello Sequelize che rappresenta la tabella `users`.
+ * Modello Sequelize `User`.
  *
- * - Estende `Model` di Sequelize.
- * - Implementa l'interfaccia `UserAttributes` per tipizzazione forte.
+ * Mappa la tabella `users` del database e gestisce:
+ * - autenticazione (tramite `username` e `password_hash`)
+ * - autorizzazione (tramite `role`)
+ * - meccanismo dei token
  */
 class User
   extends Model<UserAttributes, UserCreationAttributes>
@@ -45,7 +46,6 @@ class User
   public role!: "user" | "admin";
   public lastTokenBonusDate?: Date | null;
 
-  // Timestamp generati automaticamente da Sequelize
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -53,9 +53,8 @@ class User
 /**
  * Inizializzazione del modello `User` con Sequelize.
  *
- * - Mappa gli attributi sul database.
- * - Imposta vincoli come `allowNull`, `defaultValue` e `unique`.
- * - Abilita i timestamp `created_at` e `updated_at`.
+ * - Imposta i vincoli sui campi (es. obbligatorietà, default, univocità)
+ * - Utilizza i timestamp `created_at` e `updated_at` con alias
  */
 User.init(
   {

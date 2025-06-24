@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { fn, col, Op } from "sequelize";
-import { StatusCodes } from "http-status-codes";
+import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
 import Track from "../models/Track";
 import Purchase from "../models/Purchase";
@@ -8,14 +8,14 @@ import Purchase from "../models/Purchase";
 const factory = new MessageFactory();
 
 /**
- * Restituisce l’elenco di tutti i brani presenti nel sistema.
+ * Restituisce l’elenco completo dei brani presenti nel sistema.
  *
- * - Se presente una query string `q`, filtra i risultati per titolo, artista o album.
- * - La ricerca è case-insensitive e parziale (`iLike`).
+ * - Se presente una query string `q`, i risultati vengono filtrati per titolo, artista o album.
+ * - La ricerca è parziale e case-insensitive (`iLike`).
  *
- * @param req - Oggetto della richiesta HTTP. Può contenere il parametro `q` in `req.query`.
+ * @param req - Oggetto della richiesta HTTP, con query string opzionale `q`.
  * @param res - Oggetto della risposta HTTP.
- * @returns Un array di oggetti Track in formato JSON.
+ * @returns Risposta JSON con un array di brani.
  */
 export async function getAllTracks(req: Request, res: Response) {
   try {
@@ -36,20 +36,20 @@ export async function getAllTracks(req: Request, res: Response) {
     res.json(tracks);
   } catch (error) {
     console.error("Errore recupero brani:", error);
-    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore server durante il recupero dei brani");
+    factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
   }
 }
 
 /**
- * Restituisce i 10 brani più acquistati.
+ * Restituisce i 10 brani più acquistati nel sistema.
  *
- * - Calcola il numero di acquisti per ciascun brano usando `Purchase`.
- * - Include le informazioni del brano (`titolo`, `artista`, `album`, `cover_path`).
+ * - Calcola il numero totale di acquisti per ciascun brano.
+ * - Include le informazioni principali del brano (titolo, artista, album, cover).
  * - Ordina i risultati per numero di acquisti in ordine decrescente.
  *
  * @param req - Oggetto della richiesta HTTP.
  * @param res - Oggetto della risposta HTTP.
- * @returns Un array di oggetti con `track_id`, `num_acquisti` e i dati del brano associato.
+ * @returns Risposta JSON con un array di oggetti: `track_id`, `num_acquisti`, e dettagli del brano.
  */
 export async function getPopularTracks(req: Request, res: Response) {
   try {
@@ -69,6 +69,6 @@ export async function getPopularTracks(req: Request, res: Response) {
     res.json(topTracks);
   } catch (error) {
     console.error("Errore nel recupero dei brani popolari:", error);
-    factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore server durante il recupero dei brani popolari");
+    factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
   }
 }

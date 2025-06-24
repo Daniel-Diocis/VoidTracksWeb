@@ -12,14 +12,14 @@ const Track_1 = __importDefault(require("../models/Track"));
 const Purchase_1 = __importDefault(require("../models/Purchase"));
 const factory = new messageFactory_1.MessageFactory();
 /**
- * Restituisce l’elenco di tutti i brani presenti nel sistema.
+ * Restituisce l’elenco completo dei brani presenti nel sistema.
  *
- * - Se presente una query string `q`, filtra i risultati per titolo, artista o album.
- * - La ricerca è case-insensitive e parziale (`iLike`).
+ * - Se presente una query string `q`, i risultati vengono filtrati per titolo, artista o album.
+ * - La ricerca è parziale e case-insensitive (`iLike`).
  *
- * @param req - Oggetto della richiesta HTTP. Può contenere il parametro `q` in `req.query`.
+ * @param req - Oggetto della richiesta HTTP, con query string opzionale `q`.
  * @param res - Oggetto della risposta HTTP.
- * @returns Un array di oggetti Track in formato JSON.
+ * @returns Risposta JSON con un array di brani.
  */
 async function getAllTracks(req, res) {
     try {
@@ -43,15 +43,15 @@ async function getAllTracks(req, res) {
     }
 }
 /**
- * Restituisce i 10 brani più acquistati.
+ * Restituisce i 10 brani più acquistati nel sistema.
  *
- * - Calcola il numero di acquisti per ciascun brano usando `Purchase`.
- * - Include le informazioni del brano (`titolo`, `artista`, `album`, `cover_path`).
+ * - Calcola il numero totale di acquisti per ciascun brano.
+ * - Include le informazioni principali del brano (titolo, artista, album, cover).
  * - Ordina i risultati per numero di acquisti in ordine decrescente.
  *
  * @param req - Oggetto della richiesta HTTP.
  * @param res - Oggetto della risposta HTTP.
- * @returns Un array di oggetti con `track_id`, `num_acquisti` e i dati del brano associato.
+ * @returns Risposta JSON con un array di oggetti: `track_id`, `num_acquisti`, e dettagli del brano.
  */
 async function getPopularTracks(req, res) {
     try {

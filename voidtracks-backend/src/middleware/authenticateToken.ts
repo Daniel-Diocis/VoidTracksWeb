@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
+import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
 import jwt from "jsonwebtoken";
 import fs from "fs";
@@ -20,15 +20,22 @@ const publicKey = fs.readFileSync(path.resolve(publicKeyPath), "utf8");
 const factory = new MessageFactory();
 
 /**
- * Middleware di autenticazione basato su JWT.
+ * Middleware di autenticazione JWT.
  *
- * - Verifica la presenza e la validità del token nell'header Authorization.
- * - Se il token è valido, aggiunge il payload decodificato all’oggetto `req`.
+ * Questo middleware verifica la presenza e la validità del token JWT fornito
+ * nell'header `Authorization` delle richieste HTTP.
  *
- * @param req - Oggetto della richiesta HTTP.
- * @param res - Oggetto della risposta HTTP.
- * @param next - Funzione per passare al middleware successivo.
- * @returns Risposta 401 se il token è mancante o non valido.
+ * Se il token è valido:
+ * - Decodifica il payload e lo assegna a `req.user`.
+ * - Prosegue al middleware successivo.
+ *
+ * In caso di token mancante o non valido:
+ * - Risponde con codice 401 Unauthorized e un messaggio descrittivo.
+ *
+ * @param req - Oggetto della richiesta HTTP (Express).
+ * @param res - Oggetto della risposta HTTP (Express).
+ * @param next - Funzione che richiama il middleware successivo.
+ * @returns Risposta HTTP 401 in caso di assenza o invalidità del token.
  */
 export function authenticateToken(
   req: Request,
@@ -39,12 +46,12 @@ export function authenticateToken(
   const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
-    return factory.getStatusMessage(res, StatusCodes.UNAUTHORIZED, "Token mancante");
+    return factory.getStatusMessage(res, ErrorMessages.MISSING_TOKEN.status, ErrorMessages.MISSING_TOKEN.message);
   }
 
   jwt.verify(token, publicKey, { algorithms: ["RS256"] }, (err, payload) => {
     if (err) {
-      return factory.getStatusMessage(res, StatusCodes.UNAUTHORIZED, "Token non valido o scaduto");
+      return factory.getStatusMessage(res, ErrorMessages.INVALID_TOKEN.status, ErrorMessages.INVALID_TOKEN.message);
     }
 
     (req as any).user = payload as JwtPayload;

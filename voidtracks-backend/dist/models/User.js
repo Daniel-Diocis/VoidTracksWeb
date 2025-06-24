@@ -4,19 +4,20 @@ const sequelize_1 = require("sequelize");
 const sequelize_2 = require("../db/sequelize");
 const sequelize = (0, sequelize_2.getSequelizeInstance)();
 /**
- * Modello Sequelize che rappresenta la tabella `users`.
+ * Modello Sequelize `User`.
  *
- * - Estende `Model` di Sequelize.
- * - Implementa l'interfaccia `UserAttributes` per tipizzazione forte.
+ * Mappa la tabella `users` del database e gestisce:
+ * - autenticazione (tramite `username` e `password_hash`)
+ * - autorizzazione (tramite `role`)
+ * - meccanismo dei token
  */
 class User extends sequelize_1.Model {
 }
 /**
  * Inizializzazione del modello `User` con Sequelize.
  *
- * - Mappa gli attributi sul database.
- * - Imposta vincoli come `allowNull`, `defaultValue` e `unique`.
- * - Abilita i timestamp `created_at` e `updated_at`.
+ * - Imposta i vincoli sui campi (es. obbligatorietà, default, univocità)
+ * - Utilizza i timestamp `created_at` e `updated_at` con alias
  */
 User.init({
     id: {

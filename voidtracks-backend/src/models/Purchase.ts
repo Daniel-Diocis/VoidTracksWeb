@@ -9,19 +9,19 @@ const sequelize = getSequelizeInstance();
  * Attributi della tabella `purchases`.
  */
 interface PurchaseAttributes {
-  id: string; // UUID della transazione
-  user_id: number; // riferimento all’utente acquirente
-  track_id: string; // riferimento al brano acquistato
-  purchased_at?: Date; // timestamp dell'acquisto
-  valid_until: Date; // data di scadenza per il download
-  used_flag: boolean; // indica se il download è già stato effettuato
-  costo: number; // costo in token
-  download_token: string; // token univoco per il download
+  id: string;                 // UUID della transazione
+  user_id: number;            // riferimento all’utente acquirente
+  track_id: string;           // riferimento al brano acquistato
+  purchased_at?: Date;        // timestamp dell'acquisto
+  valid_until: Date;          // data di scadenza per il download
+  used_flag: boolean;         // indica se il download è già stato effettuato
+  costo: number;              // costo in token
+  download_token: string;     // token univoco per il download
 }
 
 /**
- * Attributi opzionali alla creazione di una nuova `Purchase`.
- * - `id`, `purchased_at`, `used_flag` e `download_token` sono generati automaticamente.
+ * Attributi opzionali alla creazione di una nuovo acquisto.
+ * - `id`, `purchased_at`, `used_flag` e `download_token` sono gestiti da Sequelize.
  */
 interface PurchaseCreationAttributes
   extends Optional<
@@ -34,6 +34,8 @@ interface PurchaseCreationAttributes
  *
  * - Include riferimenti alle entità `User` e `Track`.
  * - Ogni riga rappresenta un download autorizzato e limitato nel tempo.
+ * - L’attributo `download_token` consente l’accesso sicuro e temporaneo al file.
+ * - Il flag `used_flag` impedisce download multipli non autorizzati.
  */
 class Purchase
   extends Model<PurchaseAttributes, PurchaseCreationAttributes>
@@ -116,11 +118,11 @@ Purchase.init(
     indexes: [
       {
         unique: true,
-        fields: ["user_id", "track_id"],
+        fields: ["user_id", "track_id"], // impedisce acquisti duplicati dello stesso brano
       },
       {
         unique: true,
-        fields: ["download_token"],
+        fields: ["download_token"], // assicura che ogni token sia unico per il download
       },
     ],
   }

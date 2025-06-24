@@ -27,15 +27,14 @@ interface SupabaseArtist {
 }
 
 /**
- * Sincronizza i brani dalla tabella `brani` di Supabase al database locale.
+ * Scarica i brani da Supabase e li sincronizza con il database locale.
  *
- * - Scarica tutti i brani da Supabase.
- * - Aggiorna i brani locali se `updated_at` è cambiato.
- * - Inserisce nuovi brani se non esistono localmente.
- * - Rimuove i brani locali che non esistono più su Supabase.
+ * - Aggiorna i brani locali se `updated_at` è diverso.
+ * - Inserisce nuovi brani se non esistono nel DB locale.
+ * - Rimuove i brani locali non più presenti su Supabase.
  *
- * @returns Un array di brani nuovi o aggiornati rispetto alla versione locale.
- * @throws Se la richiesta a Supabase fallisce o il database locale restituisce errore.
+ * @returns Array contenente i brani nuovi o aggiornati.
+ * @throws In caso di errore nella comunicazione con Supabase o nel DB locale.
  */
 export async function syncTracksFromSupabase() {
   try {
@@ -112,13 +111,13 @@ export async function syncTracksFromSupabase() {
 }
 
 /**
- * Sincronizza gli artisti dalla tabella `artisti` di Supabase al database locale.
+ * Scarica gli artisti da Supabase e li sincronizza con il database locale.
  *
- * - Aggiorna gli artisti già presenti se `updated_at` è diverso.
- * - Inserisce i nuovi artisti.
- * - Rimuove quelli non più presenti su Supabase.
+ * - Aggiorna gli artisti locali se `updated_at` è diverso.
+ * - Inserisce nuovi artisti non ancora presenti.
+ * - Rimuove quelli che non esistono più su Supabase.
  *
- * @throws Se la richiesta a Supabase fallisce o si verifica un errore sul database locale.
+ * @throws In caso di errore nella richiesta o nel salvataggio locale.
  */
 export async function syncArtistsFromSupabase() {
   try {
@@ -188,13 +187,13 @@ export async function syncArtistsFromSupabase() {
 }
 
 /**
- * Associa gli artisti locali ai brani sincronizzati in base ai nomi.
+ * Associa ogni brano sincronizzato agli artisti locali corrispondenti.
  *
- * - Per ogni brano ricevuto, effettua lo split dei nomi degli artisti.
- * - Cerca i corrispondenti artisti nel DB locale.
- * - Pulisce le associazioni precedenti e inserisce le nuove.
+ * - Effettua lo split dei nomi degli artisti per ogni brano.
+ * - Trova gli artisti corrispondenti nel DB locale usando `ILIKE`.
+ * - Pulisce le associazioni precedenti e aggiorna quelle corrette.
  *
- * @param tracksData - Array di oggetti `SupabaseTrack` sincronizzati (con campo `artista` come stringa).
+ * @param tracksData Array di brani sincronizzati da Supabase.
  */
 export async function syncTrackArtistsFromSupabase(tracksData: any[]) {
   for (const supaTrack of tracksData) {

@@ -23,7 +23,7 @@ const factory = new messageFactory_1.MessageFactory();
  *
  * @param req - Oggetto della richiesta HTTP, contenente `username` e `password` nel body.
  * @param res - Oggetto della risposta HTTP.
- * @returns La risposta HTTP con il token JWT e i dati dell’utente appena creato.
+ * @returns Risposta HTTP con il token JWT e i dati dell’utente appena creato.
  */
 async function register(req, res) {
     try {
@@ -67,9 +67,9 @@ async function register(req, res) {
  *   e allegato l'utente a `req.userRecord`.
  * - Genera un token JWT e restituisce i dati dell’utente.
  *
- * @param req - Oggetto della richiesta HTTP, con `userRecord` settato dal middleware.
+ * @param req - Oggetto della richiesta HTTP con `userRecord` settato dal middleware.
  * @param res - Oggetto della risposta HTTP.
- * @returns La risposta HTTP con il token JWT e i dati dell’utente autenticato.
+ * @returns Risposta HTTP con il token JWT e i dati dell’utente autenticato.
  */
 async function login(req, res) {
     try {
@@ -101,21 +101,27 @@ async function login(req, res) {
 /**
  * Restituisce i dati dell’utente autenticato.
  *
- * - Presuppone che il middleware `verifyToken` e opzionalmente `dailyTokenBonus`
+ * - Presuppone che i middleware `verifyToken` e (opzionalmente) `dailyTokenBonus`
  *   abbiano allegato l’oggetto utente aggiornato a `req.userRecord`.
  *
  * @param req - Oggetto della richiesta HTTP contenente `userRecord`.
  * @param res - Oggetto della risposta HTTP.
- * @returns La risposta HTTP con i dati aggiornati dell’utente.
+ * @returns Risposta HTTP con i dati aggiornati dell’utente.
  */
 async function getPrivateUser(req, res) {
-    const user = req.userRecord;
-    res.json({
-        user: {
-            id: user.id,
-            username: user.username,
-            role: user.role,
-            tokens: user.tokens,
-        },
-    });
+    try {
+        const user = req.userRecord;
+        res.json({
+            user: {
+                id: user.id,
+                username: user.username,
+                role: user.role,
+                tokens: user.tokens,
+            },
+        });
+    }
+    catch (error) {
+        console.error("Errore nel recupero dell’utente:", error);
+        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante il recupero dell'utente");
+    }
 }

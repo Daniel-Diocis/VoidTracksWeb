@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.errorHandler = errorHandler;
-const http_status_codes_1 = require("http-status-codes");
+const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const factory = new messageFactory_1.MessageFactory();
 /**
@@ -18,7 +18,7 @@ const factory = new messageFactory_1.MessageFactory();
  */
 function errorHandler(err, _req, res, _next) {
     console.error(err.stack);
-    const statusCode = err.status || http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR;
-    const message = err.message || "Errore del server";
+    const statusCode = err.status || errorMessages_1.ErrorMessages.INTERNAL_ERROR.status;
+    const message = err.message || errorMessages_1.ErrorMessages.INTERNAL_ERROR.message;
     return factory.getStatusMessage(res, statusCode, message);
 }

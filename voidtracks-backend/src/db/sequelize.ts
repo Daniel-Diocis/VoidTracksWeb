@@ -6,15 +6,14 @@ dotenv.config();
 let sequelizeInstance: Sequelize | null = null;
 
 /**
- * Restituisce un'istanza singleton di Sequelize configurata per PostgreSQL.
+ * Restituisce l'istanza condivisa di Sequelize configurata per PostgreSQL.
  *
- * - Utilizza la stringa di connessione `DATABASE_URL` definita nel file `.env`.
- * - Disabilita i log SQL per mantenere l'output pulito (`logging: false`).
- * - Garantisce che venga creata una sola istanza condivisa in tutta l'applicazione.
+ * - Utilizza la stringa di connessione `DATABASE_URL` dal file `.env`.
+ * - Disabilita i log SQL per mantenere l’output della console pulito (`logging: false`).
+ * - Implementa il pattern Singleton per garantire un'unica istanza in tutta l’applicazione.
  *
- * @returns {Sequelize} Istanza condivisa di Sequelize.
- *
- * @throws {Error} Se la variabile `DATABASE_URL` non è definita.
+ * @returns Istanza condivisa di Sequelize.
+ * @throws Errore se la variabile `DATABASE_URL` non è definita.
  */
 export function getSequelizeInstance(): Sequelize {
   if (!sequelizeInstance) {

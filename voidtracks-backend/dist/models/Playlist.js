@@ -4,10 +4,12 @@ const sequelize_1 = require("sequelize");
 const sequelize_2 = require("../db/sequelize");
 const sequelize = (0, sequelize_2.getSequelizeInstance)();
 /**
- * Modello Sequelize che rappresenta una playlist creata da un utente.
+ * Modello Sequelize `Playlist`.
  *
- * - Estende `Model` con tipizzazione forte.
- * - Ogni playlist è associata a un utente tramite `user_id`.
+ * Rappresenta una playlist personalizzata creata da un utente del sistema.
+ * Ogni playlist è identificata da un nome ed è associata a un utente (`user_id`).
+ *
+ * La playlist può contenere più brani, gestiti tramite la tabella ponte `PlaylistTrack`.
  */
 class Playlist extends sequelize_1.Model {
 }

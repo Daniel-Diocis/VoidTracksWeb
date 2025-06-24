@@ -8,6 +8,8 @@ const sequelize = (0, sequelize_2.getSequelizeInstance)();
  *
  * - Include riferimenti alle entità `User` e `Track`.
  * - Ogni riga rappresenta un download autorizzato e limitato nel tempo.
+ * - L’attributo `download_token` consente l’accesso sicuro e temporaneo al file.
+ * - Il flag `used_flag` impedisce download multipli non autorizzati.
  */
 class Purchase extends sequelize_1.Model {
 }
@@ -66,11 +68,11 @@ Purchase.init({
     indexes: [
         {
             unique: true,
-            fields: ["user_id", "track_id"],
+            fields: ["user_id", "track_id"], // impedisce acquisti duplicati dello stesso brano
         },
         {
             unique: true,
-            fields: ["download_token"],
+            fields: ["download_token"], // assicura che ogni token sia unico per il download
         },
     ],
 });

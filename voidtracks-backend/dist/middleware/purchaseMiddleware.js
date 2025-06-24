@@ -17,12 +17,14 @@ const Track_1 = __importDefault(require("../models/Track"));
 const Purchase_1 = __importDefault(require("../models/Purchase"));
 const factory = new messageFactory_1.MessageFactory();
 /**
- * Valida il corpo della richiesta per la rotta di acquisto.
+ * Valida il corpo della richiesta per l'acquisto.
+ *
  * Verifica che `track_id` sia presente e sia una stringa.
  *
- * @param req - Oggetto Request contenente il corpo della richiesta
- * @param res - Oggetto Response per inviare errori
- * @param next - Funzione per passare al middleware successivo
+ * @param req - Oggetto della richiesta HTTP.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ * @returns Risposta 400 se `track_id` è mancante o non valido.
  */
 function validatePurchaseBody(req, res, next) {
     const { track_id } = req.body;
@@ -32,33 +34,39 @@ function validatePurchaseBody(req, res, next) {
     next();
 }
 /**
- * Verifica che l'utente e il brano indicati esistano nel database.
- * Salva le istanze nei campi `userInstance` e `trackInstance` della request.
+ * Verifica l'esistenza dell'utente e del brano nel database.
  *
- * @param req - Oggetto Request con `user.id` e `track_id` dal body
- * @param res - Oggetto Response per inviare errori
- * @param next - Funzione per passare al middleware successivo
+ * Aggiunge `userInstance` e `trackInstance` all'oggetto `req`.
+ *
+ * @param req - Oggetto della richiesta HTTP contenente `user.id` e `track_id`.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ * @returns Risposta 404 se utente o brano non esistono.
  */
 async function checkUserAndTrackExist(req, res, next) {
     const userId = req.user.id;
     const { track_id } = req.body;
     const user = await User_1.default.findByPk(userId);
     const track = await Track_1.default.findByPk(track_id);
-    if (!user)
+    if (!user) {
         return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.NOT_FOUND, "Utente non trovato");
-    if (!track)
+    }
+    if (!track) {
         return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.NOT_FOUND, "Brano non trovato");
+    }
     req.userInstance = user;
     req.trackInstance = track;
     next();
 }
 /**
- * Controlla se esiste già un acquisto valido per lo stesso brano e utente.
- * In caso positivo, ritorna subito con il token esistente evitando duplicati.
+ * Verifica se esiste già un acquisto valido per lo stesso utente e brano.
  *
- * @param req - Oggetto Request con `user.id` e `track_id` dal body
- * @param res - Oggetto Response con token esistente
- * @param next - Funzione per passare al middleware successivo
+ * Se esistente, restituisce il token esistente ed evita la duplicazione.
+ *
+ * @param req - Oggetto della richiesta contenente `user.id` e `track_id`.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ * @returns Risposta 200 con il token già valido se presente.
  */
 async function checkDuplicatePurchase(req, res, next) {
     const userId = req.user.id;
@@ -81,11 +89,14 @@ async function checkDuplicatePurchase(req, res, next) {
     next();
 }
 /**
- * Verifica che l'utente abbia abbastanza token per acquistare il brano.
+ * Verifica che l'utente disponga di un numero sufficiente di token.
  *
- * @param req - Oggetto Request contenente `userInstance` e `trackInstance`
- * @param res - Oggetto Response per errore se token insufficienti
- * @param next - Funzione per passare al middleware successivo
+ * Confronta i token dell'utente con il costo del brano.
+ *
+ * @param req - Oggetto della richiesta contenente `userInstance` e `trackInstance`.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ * @returns Risposta 401 se i token disponibili non sono sufficienti.
  */
 function checkUserTokens(req, res, next) {
     const user = req.userInstance;
@@ -96,15 +107,19 @@ function checkUserTokens(req, res, next) {
     next();
 }
 /**
- * Valida il token di download prima di servire il file.
+ * Valida il token di download fornito come parametro.
+ *
  * Verifica che il token:
  * - Esista
- * - Non sia già usato
+ * - Non sia già stato usato
  * - Non sia scaduto
  *
- * @param req - Oggetto Request con `download_token` nei parametri
- * @param res - Oggetto Response per eventuali errori
- * @param next - Funzione per passare al middleware successivo
+ * Aggiunge `purchaseInstance` a `req` se valido.
+ *
+ * @param req - Oggetto della richiesta contenente `download_token` nei parametri.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ * @returns Risposta 404, 403 o successo.
  */
 async function validateDownloadToken(req, res, next) {
     const { download_token } = req.params;
@@ -125,12 +140,14 @@ async function validateDownloadToken(req, res, next) {
     next();
 }
 /**
- * Carica l'acquisto corrispondente al `download_token` fornito.
- * Utilizzato per visualizzare i dettagli (non valida usabilità del token).
+ * Carica i dettagli dell'acquisto tramite `download_token` senza verificarne la validità.
  *
- * @param req - Oggetto Request con `download_token` nei parametri
- * @param res - Oggetto Response per eventuali errori
- * @param next - Funzione per passare al middleware successivo
+ * Utile per consultare i dettagli associati al token.
+ *
+ * @param req - Oggetto della richiesta contenente `download_token` nei parametri.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ * @returns Risposta 404 se il token è invalido o non associato a un brano.
  */
 async function loadPurchaseByToken(req, res, next) {
     const { download_token } = req.params;

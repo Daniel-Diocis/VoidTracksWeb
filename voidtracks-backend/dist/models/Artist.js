@@ -6,9 +6,15 @@ const sequelize = (0, sequelize_2.getSequelizeInstance)();
 /**
  * Modello Sequelize `Artist`.
  *
- * Rappresenta un artista musicale che può essere collegato a uno o più `Track`.
- * Gli artisti possono essere sincronizzati da Supabase e avere dati come
- * biografia, genere, paese e immagine del profilo.
+ * Rappresenta un artista musicale memorizzato nel sistema.
+ * Ogni artista può essere associato a uno o più brani (`Track`) tramite relazione N:N.
+ *
+ * Gli artisti possono includere:
+ * - Nome, genere musicale e paese di origine
+ * - Descrizione testuale (biografia)
+ * - Immagine del profilo (path)
+ *
+ * I dati possono essere sincronizzati da una sorgente esterna come Supabase.
  */
 class Artist extends sequelize_1.Model {
 }

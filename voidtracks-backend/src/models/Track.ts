@@ -11,32 +11,33 @@ import Artist from "./Artist";
 const sequelize = getSequelizeInstance();
 
 /**
- * Attributi del modello `Track`.
+ * Attributi del modello `Track`, che rappresenta un brano musicale.
  */
 interface TrackAttributes {
-  id: string;
-  titolo: string;
-  artista: string;
-  album: string;
-  music_path: string;
-  cover_path: string;
-  costo: number;
-  createdAt?: Date;
-  updatedAt?: Date;
+  id: string;            // ID univoco del brano
+  titolo: string;        // Titolo del brano
+  artista: string;       // Nome dell’artista principale (stringa)
+  album: string;         // Nome dell’album
+  music_path: string;    // Percorso del file audio
+  cover_path: string;    // Percorso dell’immagine di copertina
+  costo: number;         // Costo del brano in token
+  createdAt?: Date;      // Timestamp di creazione
+  updatedAt?: Date;      // Timestamp di aggiornamento
 }
 
 /**
  * Attributi opzionali alla creazione di un nuovo brano.
- * `id`, `createdAt` e `updatedAt` saranno gestiti da Sequelize.
+ * - `id`, `createdAt` e `updatedAt` sono gestiti da Sequelize.
  */
 interface TrackCreationAttributes
   extends Optional<TrackAttributes, "id" | "createdAt" | "updatedAt"> {}
 
 /**
- * Modello Sequelize per rappresentare un brano musicale.
+ * Modello Sequelize `Track`.
  *
- * - Estende `Model` di Sequelize con tipi forti.
- * - Include metodi per gestire le associazioni con `Artist` (many-to-many).
+ * - Mappa la tabella `tracks` del database.
+ * - Include campi come titolo, artista, album, costo e percorsi file.
+ * - Supporta le associazioni many-to-many con il modello `Artist`.
  */
 class Track
   extends Model<TrackAttributes, TrackCreationAttributes>
@@ -54,14 +55,12 @@ class Track
   public readonly updatedAt!: Date;
 
   /**
-   * Sostituisce gli artisti associati al brano.
-   * Metodo generato da `belongsToMany`.
+   * Associa una lista di artisti al brano (sovrascrive eventuali associazioni).
    */
   public setArtists!: BelongsToManySetAssociationsMixin<Artist, string>;
 
   /**
-   * Aggiunge nuovi artisti alla lista associata al brano.
-   * Metodo generato da `belongsToMany`.
+   * Aggiunge uno o più artisti al brano senza rimuovere quelli esistenti.
    */
   public addArtists!: BelongsToManyAddAssociationsMixin<Artist, string>;
 }
@@ -69,8 +68,7 @@ class Track
 /**
  * Inizializzazione del modello `Track` con Sequelize.
  *
- * - Definisce i campi della tabella `tracks`.
- * - Gestisce i timestamp `created_at` e `updated_at`.
+ * - Imposta campi, vincoli e mapping per `created_at` e `updated_at`.
  */
 Track.init(
   {

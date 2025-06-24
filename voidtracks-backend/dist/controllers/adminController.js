@@ -8,14 +8,18 @@ const http_status_codes_1 = require("http-status-codes");
 const messageFactory_1 = require("../utils/messageFactory");
 const User_1 = __importDefault(require("../models/User"));
 const factory = new messageFactory_1.MessageFactory();
+/**
+ * Controller per ricaricare i token di un utente.
+ *
+ * - Presuppone che `username` e `tokens` siano già stati validati da un middleware precedente.
+ * - Cerca l'utente tramite username e aggiorna il numero di token.
+ *
+ * @param req - Oggetto della richiesta HTTP contenente `username` e `tokens` nel body.
+ * @param res - Oggetto della risposta HTTP.
+ * @returns Risposta JSON con messaggio di conferma e nuovo saldo token, oppure errore.
+ */
 async function rechargeTokens(req, res) {
     const { username, tokens } = req.body;
-    if (!username ||
-        typeof username !== "string" ||
-        typeof tokens !== "number" ||
-        tokens < 0) {
-        return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.BAD_REQUEST, "Username valido e numero di token ≥ 0 richiesto");
-    }
     try {
         const user = await User_1.default.findOne({ where: { username } });
         if (!user) {
@@ -23,7 +27,7 @@ async function rechargeTokens(req, res) {
         }
         user.tokens = tokens;
         await user.save();
-        return res.json({
+        res.json({
             message: `Ricarica completata per ${user.username}`,
             tokens: user.tokens,
         });

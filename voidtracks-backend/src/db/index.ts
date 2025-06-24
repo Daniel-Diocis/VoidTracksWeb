@@ -11,36 +11,35 @@ import TrackArtist from "../models/TrackArtist";
 const sequelize = getSequelizeInstance();
 
 /**
- * Associazioni tra modelli Sequelize.
+ * Definizione delle associazioni tra i modelli Sequelize.
  *
- * Definisce le relazioni tra le entità del sistema:
- * - Un utente può effettuare più acquisti e creare più playlist.
- * - Ogni acquisto è associato a un utente e a un brano.
- * - Una playlist contiene più brani tramite la tabella intermedia PlaylistTrack.
- * - Ogni brano può essere associato a più artisti e viceversa, tramite la tabella TrackArtist.
+ * - Un utente può effettuare più acquisti e possedere più playlist.
+ * - Ogni acquisto è collegato a un utente e a un brano.
+ * - Ogni playlist può contenere più brani tramite la tabella intermedia `PlaylistTrack`.
+ * - Ogni brano può essere associato a più artisti e viceversa tramite la tabella `TrackArtist`.
  */
 
-// Relazione User (1) → (N) Purchase
+// User (1) → (N) Purchase
 User.hasMany(Purchase, { foreignKey: "user_id" });
 Purchase.belongsTo(User, { foreignKey: "user_id" });
 
-// Relazione Track (1) → (N) Purchase
+// Track (1) → (N) Purchase
 Track.hasMany(Purchase, { foreignKey: "track_id" });
 Purchase.belongsTo(Track, { foreignKey: "track_id" });
 
-// Relazione User (1) → (N) Playlist
+// User (1) → (N) Playlist
 User.hasMany(Playlist, { foreignKey: "user_id" });
 Playlist.belongsTo(User, { foreignKey: "user_id" });
 
-// Relazione Playlist (1) → (N) PlaylistTrack
+// Playlist (1) → (N) PlaylistTrack
 Playlist.hasMany(PlaylistTrack, { foreignKey: "playlist_id" });
 PlaylistTrack.belongsTo(Playlist, { foreignKey: "playlist_id" });
 
-// Relazione Track (1) → (N) PlaylistTrack
+// Track (1) → (N) PlaylistTrack
 Track.hasMany(PlaylistTrack, { foreignKey: "track_id" });
 PlaylistTrack.belongsTo(Track, { foreignKey: "track_id" });
 
-// Relazione Track (N) ↔ (N) Artist tramite TrackArtist
+// Track (N) ↔ (N) Artist tramite TrackArtist
 Track.belongsToMany(Artist, {
   through: TrackArtist,
   foreignKey: "track_id",
@@ -53,7 +52,7 @@ Artist.belongsToMany(Track, {
 });
 
 /**
- * Esportazione dei modelli e dell'istanza Sequelize.
+ * Esporta l'istanza Sequelize e i modelli associati.
  */
 export {
   sequelize,

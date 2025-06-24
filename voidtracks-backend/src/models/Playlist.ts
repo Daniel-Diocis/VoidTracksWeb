@@ -16,16 +16,18 @@ interface PlaylistAttributes {
 
 /**
  * Attributi opzionali alla creazione di una nuova playlist.
- * - `id`, `createdAt` e `updatedAt` sono gestiti automaticamente da Sequelize.
+ * - `id`, `createdAt` e `updatedAt` sono gestiti da Sequelize.
  */
 interface PlaylistCreationAttributes
   extends Optional<PlaylistAttributes, "id" | "createdAt" | "updatedAt"> {}
 
 /**
- * Modello Sequelize che rappresenta una playlist creata da un utente.
+ * Modello Sequelize `Playlist`.
  *
- * - Estende `Model` con tipizzazione forte.
- * - Ogni playlist è associata a un utente tramite `user_id`.
+ * Rappresenta una playlist personalizzata creata da un utente del sistema.
+ * Ogni playlist è identificata da un nome ed è associata a un utente (`user_id`).
+ *
+ * La playlist può contenere più brani, gestiti tramite la tabella ponte `PlaylistTrack`.
  */
 class Playlist
   extends Model<PlaylistAttributes, PlaylistCreationAttributes>

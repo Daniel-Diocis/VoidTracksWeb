@@ -8,6 +8,7 @@ const sequelize = (0, sequelize_2.getSequelizeInstance)();
  *
  * - Contiene anche il flag `is_favorite` per indicare se il brano è preferito.
  * - Relazionato a `Playlist` e `Track` tramite chiavi esterne.
+ * - Ogni combinazione `playlist_id` + `track_id` è unica, per evitare duplicati.
  */
 class PlaylistTrack extends sequelize_1.Model {
 }

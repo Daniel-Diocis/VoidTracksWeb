@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -21,7 +22,7 @@ const factory = new MessageFactory();
  *
  * @param req - Oggetto della richiesta HTTP, contenente `username` e `password` nel body.
  * @param res - Oggetto della risposta HTTP.
- * @returns La risposta HTTP con il token JWT e i dati dell’utente appena creato.
+ * @returns Risposta HTTP con il token JWT e i dati dell’utente appena creato.
  */
 export async function register(req: Request, res: Response) {
   try {
@@ -62,7 +63,7 @@ export async function register(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Errore registrazione:", error);
-    return factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante la registrazione");
+    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
   }
 }
 
@@ -73,9 +74,9 @@ export async function register(req: Request, res: Response) {
  *   e allegato l'utente a `req.userRecord`.
  * - Genera un token JWT e restituisce i dati dell’utente.
  *
- * @param req - Oggetto della richiesta HTTP, con `userRecord` settato dal middleware.
+ * @param req - Oggetto della richiesta HTTP con `userRecord` settato dal middleware.
  * @param res - Oggetto della risposta HTTP.
- * @returns La risposta HTTP con il token JWT e i dati dell’utente autenticato.
+ * @returns Risposta HTTP con il token JWT e i dati dell’utente autenticato.
  */
 export async function login(req: Request, res: Response) {
   try {
@@ -106,29 +107,34 @@ export async function login(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Errore login:", error);
-    return factory.getStatusMessage(res, StatusCodes.INTERNAL_SERVER_ERROR, "Errore del server durante il login");
+    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
   }
 }
 
 /**
  * Restituisce i dati dell’utente autenticato.
  *
- * - Presuppone che il middleware `verifyToken` e opzionalmente `dailyTokenBonus`
+ * - Presuppone che i middleware `verifyToken` e (opzionalmente) `dailyTokenBonus`
  *   abbiano allegato l’oggetto utente aggiornato a `req.userRecord`.
  *
  * @param req - Oggetto della richiesta HTTP contenente `userRecord`.
  * @param res - Oggetto della risposta HTTP.
- * @returns La risposta HTTP con i dati aggiornati dell’utente.
+ * @returns Risposta HTTP con i dati aggiornati dell’utente.
  */
 export async function getPrivateUser(req: Request, res: Response) {
-  const user = (req as any).userRecord;
+  try {
+    const user = (req as any).userRecord;
 
-  res.json({
-    user: {
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      tokens: user.tokens,
-    },
-  });
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        tokens: user.tokens,
+      },
+    });
+  } catch (error) {
+    console.error("Errore nel recupero dell’utente:", error);
+    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+  }
 }

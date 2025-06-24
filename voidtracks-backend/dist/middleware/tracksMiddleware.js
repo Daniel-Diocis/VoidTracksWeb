@@ -6,14 +6,14 @@ const http_status_codes_1 = require("http-status-codes");
 const messageFactory_1 = require("../utils/messageFactory");
 const factory = new messageFactory_1.MessageFactory();
 /**
- * Middleware di validazione per il parametro `q` della query string.
+ * Valida il parametro di query `q` per la ricerca dei brani.
  *
- * - Verifica che, se presente, `q` sia una stringa.
- * - In caso contrario, restituisce un errore HTTP 400.
+ * Se presente, verifica che sia una stringa.
  *
  * @param req - Oggetto della richiesta HTTP contenente `req.query.q`.
  * @param res - Oggetto della risposta HTTP.
  * @param next - Funzione per passare al middleware successivo.
+ * @returns Risposta 400 se `q` non è una stringa.
  */
 function validateTrackQuery(req, res, next) {
     const q = req.query.q;
@@ -23,10 +23,9 @@ function validateTrackQuery(req, res, next) {
     next();
 }
 /**
- * Middleware di logging per le ricerche di brani.
+ * Registra nel log la query di ricerca dei brani, se presente.
  *
- * - Se è presente una query `q`, stampa in console il valore cercato.
- * - Utile per monitorare le richieste effettuate al controller dei brani.
+ * Utile per il tracciamento e debug delle richieste al servizio tracce.
  *
  * @param req - Oggetto della richiesta HTTP.
  * @param _res - Oggetto della risposta HTTP (non utilizzato).

@@ -12,28 +12,47 @@ const router = Router();
 
 /**
  * @route POST /register
- * @description Registra un nuovo utente nel sistema.
- * - Valida i campi `username` e `password`.
- * - Verifica che lo username non sia già utilizzato.
- * - Crea l’utente e restituisce il token JWT.
+ * @summary Registra un nuovo utente nel sistema.
+ *
+ * @description
+ * - Valida i campi `username` e `password` nel body della richiesta.
+ * - Verifica che lo username non sia già in uso.
+ * - Registra l'utente e restituisce un token JWT.
+ *
+ * @middleware validateAuthInput - Controlla che `username` e `password` siano validi.
+ * @middleware checkUserExists - Verifica che lo username non sia già registrato.
+ * @controller register - Registra l’utente e restituisce il token JWT.
  */
 router.post("/register", validateAuthInput, checkUserExists, register);
 
 /**
  * @route POST /login
- * @description Esegue il login di un utente.
- * - Valida i campi `username` e `password`.
- * - Verifica che username e password corrispondano a un utente esistente.
- * - Restituisce un token JWT e i dati utente.
+ * @summary Autentica un utente esistente.
+ *
+ * @description
+ * - Valida i campi `username` e `password` nel body della richiesta.
+ * - Verifica che le credenziali corrispondano a un utente registrato.
+ * - Restituisce un token JWT e i dati dell’utente.
+ *
+ * @middleware validateAuthInput - Controlla che `username` e `password` siano presenti e validi.
+ * @middleware checkUserCredentials - Verifica che le credenziali siano corrette.
+ * @controller login - Esegue il login e restituisce il token JWT.
  */
 router.post("/login", validateAuthInput, checkUserCredentials, login);
 
 /**
  * @route GET /private
- * @description Restituisce i dati dell’utente autenticato.
- * - Verifica il token JWT (middleware `authenticateToken`).
- * - Assegna eventualmente un token bonus giornaliero.
- * - Restituisce i dati aggiornati dell’utente.
+ * @summary Restituisce i dati dell’utente autenticato.
+ *
+ * @description
+ * - Richiede un token JWT valido nell'header `Authorization`.
+ * - Verifica il token e identifica l'utente.
+ * - Assegna un token bonus giornaliero se applicabile.
+ * - Restituisce le informazioni aggiornate dell’utente.
+ *
+ * @middleware authenticateToken - Verifica la validità del token JWT.
+ * @middleware dailyTokenBonus - Applica un eventuale bonus giornaliero.
+ * @controller getPrivateUser - Restituisce i dati aggiornati dell'utente.
  */
 router.get("/private", authenticateToken, dailyTokenBonus, getPrivateUser);
 

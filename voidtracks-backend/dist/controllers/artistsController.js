@@ -11,6 +11,16 @@ const messageFactory_1 = require("../utils/messageFactory");
 const Artist_1 = __importDefault(require("../models/Artist"));
 const Track_1 = __importDefault(require("../models/Track"));
 const factory = new messageFactory_1.MessageFactory();
+/**
+ * Restituisce tutti gli artisti presenti nel database.
+ *
+ * - Esegue una query su tutti i record della tabella `Artist`.
+ * - In caso di successo, restituisce un array di artisti in formato JSON.
+ *
+ * @param req - Oggetto della richiesta HTTP.
+ * @param res - Oggetto della risposta HTTP.
+ * @returns Risposta JSON contenente la lista di tutti gli artisti oppure errore.
+ */
 async function getAllArtists(req, res) {
     try {
         const artists = await Artist_1.default.findAll();
@@ -21,6 +31,16 @@ async function getAllArtists(req, res) {
         return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Errore durante il recupero degli artisti");
     }
 }
+/**
+ * Restituisce un artista in base al nome (case-insensitive), includendo i brani associati.
+ *
+ * - Esegue una ricerca `iLike` sul nome artista per ignorare maiuscole/minuscole.
+ * - Include nella risposta l'elenco dei brani collegati (senza attributi della tabella pivot).
+ *
+ * @param req - Oggetto della richiesta HTTP con parametro `nome`.
+ * @param res - Oggetto della risposta HTTP.
+ * @returns Risposta JSON con i dati dell’artista e dei suoi brani, oppure errore.
+ */
 async function getArtistByName(req, res) {
     const { nome } = req.params;
     try {
@@ -30,11 +50,13 @@ async function getArtistByName(req, res) {
                     [sequelize_1.Op.iLike]: nome,
                 },
             },
-            include: [{
+            include: [
+                {
                     model: Track_1.default,
-                    attributes: ['id', 'titolo', 'album', 'music_path', 'cover_path'],
-                    through: { attributes: [] } // esclude dati della tabella di join
-                }]
+                    attributes: ["id", "titolo", "album", "music_path", "cover_path"],
+                    through: { attributes: [] },
+                },
+            ],
         });
         if (!artist) {
             return factory.getStatusMessage(res, http_status_codes_1.StatusCodes.NOT_FOUND, "Artista non trovato");
