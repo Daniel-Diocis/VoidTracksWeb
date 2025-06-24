@@ -21,22 +21,19 @@ import {
 
 const router = Router();
 
-// Applica autenticazione JWT a tutte le rotte
-router.use(authenticateToken);
-
 /**
  * @route GET /playlists
  * @summary Restituisce tutte le playlist dell'utente autenticato.
  * @controller listUserPlaylists
  */
-router.get("/", listUserPlaylists);
+router.get("/", authenticateToken, listUserPlaylists);
 
 /**
  * @route POST /playlists
  * @summary Crea una nuova playlist per l'utente autenticato.
  * @controller createPlaylist
  */
-router.post("/", createPlaylist);
+router.post("/", authenticateToken, createPlaylist);
 
 /**
  * @route GET /playlists/:id
@@ -44,7 +41,7 @@ router.post("/", createPlaylist);
  * @middleware checkPlaylistOwnership - Verifica che la playlist appartenga all’utente.
  * @controller getPlaylistWithTracks
  */
-router.get("/:id", checkPlaylistOwnership, getPlaylistWithTracks);
+router.get("/:id", authenticateToken, checkPlaylistOwnership, getPlaylistWithTracks);
 
 /**
  * @route DELETE /playlists/:id
@@ -52,7 +49,7 @@ router.get("/:id", checkPlaylistOwnership, getPlaylistWithTracks);
  * @middleware checkPlaylistOwnership - Verifica che la playlist appartenga all’utente.
  * @controller deletePlaylist
  */
-router.delete("/:id", checkPlaylistOwnership, deletePlaylist);
+router.delete("/:id", authenticateToken, checkPlaylistOwnership, deletePlaylist);
 
 /**
  * @route PATCH /playlists/:id
@@ -60,7 +57,7 @@ router.delete("/:id", checkPlaylistOwnership, deletePlaylist);
  * @middleware checkPlaylistOwnership - Verifica che la playlist appartenga all’utente.
  * @controller renamePlaylist
  */
-router.patch("/:id", checkPlaylistOwnership, renamePlaylist);
+router.patch("/:id", authenticateToken, checkPlaylistOwnership, renamePlaylist);
 
 /**
  * @route POST /playlists/:id/tracks
@@ -74,6 +71,7 @@ router.patch("/:id", checkPlaylistOwnership, renamePlaylist);
  */
 router.post(
   "/:id/tracks",
+  authenticateToken,
   checkPlaylistOwnership,
   checkTrackIdInBody,
   checkTrackOwnership,
@@ -91,6 +89,7 @@ router.post(
  */
 router.delete(
   "/:id/tracks/:trackId",
+  authenticateToken,
   checkPlaylistOwnership,
   checkTrackIdParam,
   removeTrackFromPlaylist
@@ -106,6 +105,7 @@ router.delete(
  */
 router.patch(
   "/:id/favorite",
+  authenticateToken,
   checkPlaylistOwnership,
   checkTrackIdInFavoriteBody,
   setFavoriteTrack

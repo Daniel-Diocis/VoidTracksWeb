@@ -1,15 +1,5 @@
 import { StatusCodes } from "http-status-codes";
 
-const abc : number = StatusCodes.BAD_REQUEST
-
-export enum CustomStatusCodes {
-    bad = StatusCodes.BAD_REQUEST,
-    UNAUTHORIZED = 401,
-    not = StatusCodes.NOT_FOUND,
-    INTERNAL_SERVER_ERROR = 500,
-    OK = 200,
-}
-
 export const ErrorMessages = {
 
     NOT_USER: { status: StatusCodes.UNAUTHORIZED, message: "Accesso negato. Login richiesto." },
