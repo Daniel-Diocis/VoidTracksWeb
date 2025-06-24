@@ -9,31 +9,203 @@ Gli amministratori possono gestire gli utenti e ricaricare token.
 La seguente tabella mostra le rotte:
 
 | Metodo | Rotta                          | Parametri                          |
-|--------|-------------------------------|----------------------------------|
-| POST   | /auth/register                | username, password               |
-| POST   | /auth/login                   | username, password               |
-| GET    | /auth/private                 | token (header Authorization)    |
-| GET    | /tracks                       | Nessuno                         |
-| GET    | /tracks/popular               | Nessuno                         |
-| POST   | /purchase                    | token (header Authorization), track_id |
-| GET    | /purchase/download/:download_token | download_token (route param)     |
-| GET    | /purchase                    | token (header Authorization), fromDate?, toDate? (query) |
-| GET    | /purchase/:download_token     | download_token (route param)     |
-| GET    | /playlists                   | token (header Authorization)    |
-| POST   | /playlists                   | token (header Authorization), nome |
-| GET    | /playlists/:id               | token (header Authorization), id (route param) |
-| DELETE | /playlists/:id               | token (header Authorization), id (route param) |
-| PATCH  | /playlists/:id               | token (header Authorization), id (route param), nome |
-| POST   | /playlists/:id/tracks        | token (header Authorization), id (route param), track_id |
+|--------|--------------------------------|------------------------------------|
+| POST   | /auth/register                 | username, password                 |
+| POST   | /auth/login                    | username, password                 |
+| GET    | /auth/private                  | token (header Authorization)       |
+| GET    | /tracks                        | Nessuno                            |
+| GET    | /tracks/popular                | Nessuno                            |
+| POST   | /purchase                      | token (header Authorization), track_id |
+| GET    | /purchase/download/:download_token | download_token (route param)   |
+| GET    | /purchase                      | token (header Authorization), fromDate?, toDate? (query) |
+| GET    | /purchase/:download_token      | download_token (route param)       |
+| GET    | /playlists                     | token (header Authorization)       |
+| POST   | /playlists                     | token (header Authorization), nome |
+| GET    | /playlists/:id                 | token (header Authorization), id (route param) |
+| DELETE | /playlists/:id                 | token (header Authorization), id (route param) |
+| PATCH  | /playlists/:id                 | token (header Authorization), id (route param), nome |
+| POST   | /playlists/:id/tracks          |  token (header Authorization), id (route param), track_id |
 | DELETE | /playlists/:id/tracks/:trackId | token (header Authorization), id (route param), trackId (route param) |
-| PATCH  | /playlists/:id/favorite      | token (header Authorization), id (route param), trackId |
-| PATCH  | /admin/recharge              | token (header Authorization), username, tokens |
+| PATCH  | /playlists/:id/favorite        | token (header Authorization), id (route param), trackId |
+| PATCH  | /admin/recharge                | token (header Authorization), username, tokens |
+| GET    | /artists                       | Nessuno                            |
+| GET    | /artists/byName/:nome          | Nessuno                            |
+
+## Pattern utilizzati
+
+### Singleton Pattern
+
+Il Singleton Pattern è un pattern creazionale che garantisce l’esistenza di una sola istanza di una determinata classe, fornendo un punto di accesso globale a tale istanza. È particolarmente utile quando si desidera evitare la creazione di oggetti multipli e non necessari, ad esempio per la connessione al database.
+
+Nel nostro progetto, il pattern è stato applicato nella gestione della connessione a PostgreSQL tramite Sequelize. La funzione getSequelizeInstance() restituisce sempre la stessa istanza del client Sequelize, evitando connessioni ridondanti.
+
+Questo approccio garantisce:
+- una connessione condivisa e consistente all’interno di tutta l’applicazione;
+- l’inizializzazione lazy, ovvero l’istanza viene creata solo al primo utilizzo;
+- una maggiore efficienza e controllo delle risorse.
+
+```ts
+import { Sequelize } from "sequelize";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+let sequelizeInstance: Sequelize | null = null;
+
+/**
+ * Restituisce l'istanza condivisa di Sequelize configurata per PostgreSQL.
+ *
+ * - Utilizza la stringa di connessione `DATABASE_URL` dal file `.env`.
+ * - Disabilita i log SQL per mantenere l’output della console pulito (`logging: false`).
+ * - Implementa il pattern Singleton per garantire un'unica istanza in tutta l’applicazione.
+ *
+ * @returns Istanza condivisa di Sequelize.
+ * @throws Errore se la variabile `DATABASE_URL` non è definita.
+ */
+export function getSequelizeInstance(): Sequelize {
+  if (!sequelizeInstance) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error("DATABASE_URL is not defined in environment variables");
+    }
+
+    sequelizeInstance = new Sequelize(connectionString, {
+      dialect: "postgres",
+      logging: false,
+    });
+  }
+
+  return sequelizeInstance;
+}
+```
+
+Questa implementazione garantisce un’unica connessione gestita in modo centralizzato, migliorando la manutenibilità e l’efficienza dell’intera architettura backend.
+
+### Factory Pattern
+
+Il Factory Pattern è un pattern creazionale utilizzato per astrarre la logica di creazione di oggetti e centralizzarne l’istanziazione, migliorando la modularità, la leggibilità e la manutenibilità del codice. In particolare, questo pattern risulta utile quando si desidera produrre oggetti o risposte diverse a seconda di determinati parametri, evitando il codice duplicato.
+
+Nel progetto VoidTracks, il Factory Pattern è stato impiegato per generare messaggi di risposta coerenti e centralizzati nei controller e nei middleware. La classe MessageFactory fornisce un metodo getStatusMessage che prende in input:
+- l’oggetto Response di Express,
+- un codice di stato HTTP (es. 400, 404, 401, etc.),
+- un eventuale messaggio personalizzato.
+
+Restituisce quindi una risposta JSON strutturata, con la frase standard del codice HTTP (es. "Bad Request") e, se presente, una descrizione personalizzata aggiuntiva.
+
+```ts
+import { Response } from "express";
+import { StatusCodes, ReasonPhrases } from "http-status-codes";
+
+/**
+ * Factory per la generazione centralizzata di messaggi di errore HTTP.
+ *
+ * Fornisce un metodo per restituire risposte JSON con codici di stato coerenti
+ * e messaggi descrittivi, combinando le costanti `StatusCodes` e `ReasonPhrases`.
+ */
+export class MessageFactory {
+  /**
+   * Restituisce una risposta JSON con il codice di stato e un messaggio formattato.
+   *
+   * - Se fornito, `message` viene concatenato alla frase standard HTTP per maggiore chiarezza.
+   * - In caso contrario, viene utilizzata solo la frase standard (es. "Bad Request").
+   *
+   * @param res - Oggetto `Response` di Express.
+   * @param statusCode - Codice di stato HTTP da restituire.
+   * @param message - Messaggio opzionale da includere nella risposta.
+   * @returns L'oggetto `Response` con status e JSON del messaggio.
+   */
+  getStatusMessage(res: Response, statusCode: number, message?: string) {
+    const statusKey = Object.keys(StatusCodes).find(
+      key => StatusCodes[key as keyof typeof StatusCodes] === statusCode
+    ) as keyof typeof ReasonPhrases;
+
+    const reasonPhrase = ReasonPhrases[statusKey] || "Errore";
+    const errorMessage = message ? `${reasonPhrase}: ${message}` : reasonPhrase;
+
+    return res.status(statusCode).json({ error: errorMessage });
+  }
+}
+```
+
+In combinazione con il file errorMessages.ts, che funge da registro dei messaggi e codici HTTP, la MessageFactory consente di standardizzare tutte le risposte dell’API, mantenendo coerenza e semplicità anche nella gestione degli errori.
+
+```ts
+import { StatusCodes } from "http-status-codes";
+
+export const ErrorMessages = {
+
+    NOT_USER: { status: StatusCodes.UNAUTHORIZED, message: "Accesso negato. Login richiesto." },
+    NOT_ADMIN: { status: StatusCodes.FORBIDDEN, message: "Privilegi insufficienti." },
+    INVALID_RECHARGE_INPUT: { status: StatusCodes.BAD_REQUEST, message: "Username valido e numero di token ≥ 0 richiesto" },
+    USER_NOT_FOUND: { status: StatusCodes.NOT_FOUND, message: "Utente non trovato" },
+    
+    INVALID_ARTIST_NAME: { status: StatusCodes.BAD_REQUEST, message: "Nome artista non valido" },
+    ARTIST_NOT_FOUND: { status: StatusCodes.NOT_FOUND, message: "Artista non trovato" },
+
+    MISSING_TOKEN: { status: StatusCodes.UNAUTHORIZED, message: "Token mancante" },
+    INVALID_TOKEN: { status: StatusCodes.UNAUTHORIZED, message: "Token non valido o scaduto" },
+
+    USERNAME_ALREADY_EXISTS: { status: StatusCodes.CONFLICT, message: "Username già in uso" },
+    INVALID_CREDENTIALS: { status: StatusCodes.UNAUTHORIZED, message: "Credenziali non valide" },
+    NOT_AUTHENTICATED_USER: { status: StatusCodes.UNAUTHORIZED, message: "Utente non autenticato" },
+    
+    PLAYLIST_NOT_FOUND: { status: StatusCodes.NOT_FOUND, message: "Playlist non trovata o accesso negato" },
+    TRACK_ID_MISSING: { status: StatusCodes.BAD_REQUEST, message: "ID del brano mancante" },
+    TRACK_NOT_PURCHASED: { status: StatusCodes.FORBIDDEN, message: "Brano non acquistato" },
+    TRACK_ALREADY_IN_PLAYLIST: { status: StatusCodes.CONFLICT, message: "Brano già presente nella playlist" },
+
+    TRACK_ID_VALIDATE: { status: StatusCodes.BAD_REQUEST, message: "Il campo 'track_id' è obbligatorio e deve essere una stringa" },
+    TRACK_NOT_FOUND: { status: StatusCodes.NOT_FOUND, message: "Brano non trovato" },
+    UNSUFFICIENT_TOKENS: { status: StatusCodes.UNAUTHORIZED, message: "Token insufficienti per l'acquisto" },
+    INVALID_LINK: { status: StatusCodes.NOT_FOUND, message: "Link di download non valido" },
+    ALREADY_USED_LINK: { status: StatusCodes.FORBIDDEN, message: "Link già utilizzato" },
+    EXPIRED_LINK: { status: StatusCodes.FORBIDDEN, message: "Link scaduto" },
+    INVALID_PURCHASE_TOKEN: { status: StatusCodes.NOT_FOUND, message: "Token non valido" },
+
+    Q_NOT_STRING: { status: StatusCodes.BAD_REQUEST, message: "Il parametro 'q' deve essere una stringa" },
+    
+    INTERNAL_ERROR: { status: StatusCodes.INTERNAL_SERVER_ERROR, message: "Errore del server" },
+} as const;
+```
+
+Questa implementazione consente di separare la logica applicativa dalla gestione dei messaggi di errore, facilitando la scalabilità del progetto e l’integrazione di nuove casistiche.
+
+### Chain of Responsibility Pattern
+
+Il Chain of Responsibility Pattern è un pattern comportamentale che consente di passare una richiesta attraverso una catena di gestori (handler). Ogni gestore decide se elaborare la richiesta o passarla al successivo nella catena. Questo approccio consente una struttura flessibile, estendibile e disaccoppiata.
+
+Nel progetto VoidTracks, il pattern è stato applicato nella definizione delle rotte Express: ogni rotta include una catena di middleware, ognuno responsabile di un singolo controllo o trasformazione sulla richiesta.
+
+**Esempio: auth.ts**
+
+Nel file routes/auth.ts, la rotta /register è composta da tre middleware che formano la catena:
+```ts
+router.post("/register", validateAuthInput, checkUserExists, register);
+```
+
+1. validateAuthInput: verifica la validità di username e password (formato, presenza, ecc.).
+2. checkUserExists: controlla se lo username è già presente nel database.
+3. register: se tutto è corretto, viene eseguita la logica del controller.
+
+Ogni middleware può:
+- interrompere la catena e restituire un errore, se fallisce una condizione;
+- continuare con next() se la verifica è superata.
+
+**Altri esempi di catene**
+
+```ts
+router.post("/login", validateAuthInput, checkUserCredentials, login);
+router.get("/private", authenticateToken, dailyTokenBonus, getPrivateUser);
+```
+
+Questa struttura consente di mantenere ogni controllo singolo, testabile e riutilizzabile, riducendo la complessità nei controller e migliorando la leggibilità complessiva del codice.
+
 
 ## Funzionamento del Progetto
 
 Di seguito viene descritto il funzionamento delle principali rotte API del progetto **VoidTracks**, con esempi di richieste, risposte e meccanismi sottostanti.
 
-## POST: /auth/register
+### POST: /auth/register
 
 **Richiesta**
 
@@ -145,7 +317,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## POST: /auth/login
+### POST: /auth/login
 
 **Richiesta**
 
@@ -254,7 +426,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## GET:/auth/private
+### GET:/auth/private
 Questa rotta permette di ottenere i dati completi dell’utente autenticato, inclusi i token residui, inviando il token JWT nell’header di autorizzazione.
 
 **Richiesta**
@@ -356,7 +528,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## GET: /tracks
+### GET: /tracks
 
 Restituisce l’elenco di tutti i brani presenti nel database, eventualmente filtrati da una query testuale su titolo, artista o album.
 
@@ -444,7 +616,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## GET: /tracks/popular
+### GET: /tracks/popular
 
 Restituisce i 10 brani più acquistati, ordinati in base al numero di acquisti in ordine decrescente.
 
@@ -516,7 +688,7 @@ In caso di errore interno del server, viene restituito un errore con codice **50
 }
 ```
 
-## POST /purchase
+### POST /purchase
 
 Permette a un utente autenticato di acquistare un brano. Se l’utente ha già acquistato il brano e il link è ancora valido (entro 10 minuti dall'acquisto), viene restituito lo stesso download_token. In caso contrario, viene effettuato un nuovo acquisto e scalati i token all’utente.
 
@@ -667,7 +839,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## GET: /purchase/download/:download_token
+### GET: /purchase/download/:download_token
 
 Permette di scaricare il file audio associato a un acquisto, utilizzando un token temporaneo di download. Il token è valido solo se esiste, non è scaduto e non è ancora stato utilizzato.
 
@@ -752,14 +924,14 @@ Token non trovato:
 Token già utilizzato:
 ```json
 {
-  "error": "Not Found: Link già utilizzato"
+  "error": "Forbidden: Link già utilizzato"
 }
 ```
 
 Token scaduto:
 ```json
 {
-  "error": "Not Found: Link scaduto"
+  "error": "Forbidden: Link scaduto"
 }
 ```
 
@@ -771,7 +943,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## GET: /purchase
+### GET: /purchase
 
 Recupera la lista di tutti gli acquisti effettuati dall’utente autenticato. È possibile applicare filtri opzionali per data (fromDate e toDate) tramite query string. La rotta è protetta da autenticazione JWT.
 
@@ -882,7 +1054,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## GET: /purchase/:download_token
+### GET: /purchase/:download_token
 
 Restituisce i dettagli di un singolo acquisto tramite il token di download. Questa rotta non esegue controlli sulla validità temporale o sull’utilizzo del token: serve esclusivamente a mostrare le informazioni del brano associato e verificare se è ancora scaricabile.
 
@@ -960,7 +1132,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## GET: /playlists
+### GET: /playlists
 
 Restituisce tutte le playlist create dall’utente autenticato, ordinate dalla più recente alla meno recente.
 
@@ -1059,7 +1231,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## POST: /playlists
+### POST: /playlists
 
 Crea una nuova playlist associata all’utente autenticato.
 
@@ -1153,7 +1325,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## GET: /playlists/:id
+### GET: /playlists/:id
 
 Restituisce i dettagli di una specifica playlist, inclusi tutti i brani associati.
 
@@ -1258,10 +1430,10 @@ oppure:
 }
 ```
 
-Se la playlist non è stata trovata, viene restituito un errore con codice 403:
+Se la playlist non è stata trovata, viene restituito un errore con codice **403**:
 ```json
 {
-  "error": "Playlist non trovata"
+  "error": "Not Found: Playlist non trovata"
 }
 ```
 
@@ -1273,7 +1445,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## DELETE: /playlists/:id
+### DELETE: /playlists/:id
 
 Elimina una playlist esistente appartenente all’utente autenticato.
 
@@ -1367,10 +1539,10 @@ oppure:
 }
 ```
 
-Se la playlist non è stata trovata, viene restituito un errore con codice 403:
+Se la playlist non è stata trovata, viene restituito un errore con codice **403**:
 ```json
 {
-  "error": "Playlist non trovata"
+  "error": "Not Found: Playlist non trovata"
 }
 ```
 
@@ -1382,7 +1554,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## PATCH: /playlists/:id
+### PATCH: /playlists/:id
 
 Rinomina una playlist esistente appartenente all’utente autenticato.
 
@@ -1463,10 +1635,10 @@ oppure:
 }
 ```
 
-Se la playlist non è stata trovata, viene restituito un errore con codice 403:
+Se la playlist non è stata trovata, viene restituito un errore con codice **403**:
 ```json
 {
-  "error": "Playlist non trovata"
+  "error": "Not Found: Playlist non trovata"
 }
 ```
 
@@ -1478,7 +1650,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## POST: /playlists/:id/tracks
+### POST: /playlists/:id/tracks
 
 Aggiunge un brano acquistato a una playlist dell’utente autenticato.
 
@@ -1590,7 +1762,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## DELETE: /playlists/:id/tracks/:trackId
+### DELETE: /playlists/:id/tracks/:trackId
 
 Rimuove un brano da una playlist dell’utente autenticato.
 
@@ -1669,10 +1841,10 @@ oppure:
 }
 ```
 
-Se la playlist non è stata trovata, viene restituito un errore con codice 403:
+Se la playlist non è stata trovata, viene restituito un errore con codice **403**:
 ```json
 {
-  "error": "Playlist non trovata"
+  "error": "Not Found: Playlist non trovata"
 }
 ```
 
@@ -1684,7 +1856,7 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## PATCH: /playlists/:id/favorite
+### PATCH: /playlists/:id/favorite
 
 Imposta un brano come preferito in una playlist dell’utente autenticato.
 L’operazione azzera il campo is_favorite per tutti gli altri brani della stessa playlist.
@@ -1772,10 +1944,10 @@ oppure:
 }
 ```
 
-Se la playlist non è stata trovata, viene restituito un errore con codice 403:
+Se la playlist non è stata trovata, viene restituito un errore con codice **403**:
 ```json
 {
-  "error": "Playlist non trovata"
+  "error": "Not Found: Playlist non trovata"
 }
 ```
 
@@ -1787,9 +1959,9 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-## PATCH: /admin/recharge
+### PATCH: /admin/recharge
 
-Permette a un utente con ruolo admin di ricaricare un certo numero di token a un utente specificato tramite il suo username.
+Permette a un amministratore autenticato di ricaricare i token a un utente esistente, specificando lo username e il numero di token da aggiungere.
 
 **Richiesta**
 
@@ -1869,40 +2041,191 @@ sequenceDiagram
 Se token mancante o non valido, viene restituito un errore con codice **401**:
 ```json
 {
-  "error": "Token mancante"
+  "error": "Unauthorized: Token mancante"
 }
 ```
 
 oppure
 ```json
 {
-  "error": "Token non valido o scaduto"
+  "error": "Unauthorized: Token non valido o scaduto"
 }
 ```
 
 Se l'utente non è admin, viene restituito un errore con codice **403**:
 ```json
 {
-  "error": "Privilegi insufficienti"
+  "error": "Forbidden: Privilegi insufficienti"
 }
 ```
 
 Per input non valido, viene restituito un errore con codice **400**:
 ```json
 {
-  "error": "Username valido e numero di token ≥ 0 richiesto"
+  "error": "Bad Request: Username valido e numero di token ≥ 0 richiesto"
 }
 ```
 
 Per utente non esistente, viene restituito un errore con codice **404**:
 ```json
 {
-  "error": "Utente non trovato"
+  "error": "Not Found: Utente non trovato"
 }
 ```
 
 Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
 
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+### GET: /artists
+
+Restituisce la lista completa degli artisti presenti nel sistema. Non richiede autenticazione.
+
+**Richiesta**
+
+Non richiede body.
+Accetta un parametro di query facoltativo:
+```http
+GET /artists
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il controller getAllArtists interroga il database per restituire tutti i record Artist.
+
+**Diagramma di sequenza**
+
+Il meccanismo che si innesca all'atto della chiamata è descritto dal seguente diagramma:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Controller
+  participant DB
+
+  Client->>App: GET /artists
+  App->>Controller: getAllArtists(req)
+  Controller->>DB: Artist.findAll()
+  DB-->>Controller: lista artisti
+  Controller-->>App: res.status(200).json(artists)
+
+  App->>Client: res.status(200)
+  App->>Client: res.json(artists)
+```
+
+**Risposta in caso di successo**
+
+Viene restituito un array JSON contenente tutti gli artisti:
+
+```json
+[
+  {
+    "id": 5e5a2c20-fd4f-4c2b-ac23-63312715686b,
+    "nome": "C.R.O",
+    "createdAt": "2025-06-13T12:54:36.000Z",
+    "updatedAt": "2025-06-13T12:54:36.000Z"
+  },
+  ...
+]
+```
+
+**Risposta in caso di errore**
+
+Per errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+### GET: /artists/byName/:nome
+
+Restituisce un artista e tutti i suoi brani, effettuando una ricerca per nome (case-insensitive). Non richiede autenticazione.
+
+**Richiesta**
+
+La richiesta è una semplice chiamata GET che accetta il nome dell’artista come parametro URL. Esempio:
+```http
+GET /artists/byName/Mac%20Miller
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware validateArtistName controlla che il parametro nome sia valido.
+- Il controller getArtistByName esegue:
+  - Ricerca dell’artista tramite iLike.
+  - Inclusione dei suoi brani (Track), escludendo la tabella pivot.
+
+**Diagramma di sequenza**
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant Controller
+  participant DB
+
+  Client->>App: GET /artists/byName/Mac Miller
+
+  App->>Middleware: validateArtistName
+  Middleware-->>App: next()
+
+  App->>Controller: getArtistByName(req)
+  Controller->>DB: Artist.findOne({ where: { nome: { iLike: nome } }, include: Track })
+  DB-->>Controller: artista + brani
+  Controller-->>App: res.status(200).json(artist)
+
+  App->>Client: res.status(200)
+  App->>Client: res.json(artist)
+```
+
+**Risposta in caso di successo**
+
+Restituisce la playlist, con i suoi brani:
+```json
+{
+  "id": 1,
+  "nome": "Mac Miller",
+  "Tracks": [
+    {
+      "id": "1a58d8b2-2c5b-451e-a6fd-50a4d0e4af4c",
+      "titolo": "Self Care",
+      "album": "Swimming",
+      "music_path": "Mac Miller - Self Care.mp3",
+      "cover_path": "Mac Miller - Swimming.jpg"
+    }
+  ]
+}
+```
+
+
+**Risposta in caso di errore**
+
+Se manca il parametro nome o non è valido, viene restituito un errore con codice **400**:
+
+```json
+{
+  "error": "Bad Request: Nome artista non valido"
+}
+```
+
+Se l'artista non è stato trovato, viene restituito un errore con codice **404**:
+```json
+{
+  "error": "Not Found: Artista non trovato"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
 ```json
 {
   "error": "Errore del server"
