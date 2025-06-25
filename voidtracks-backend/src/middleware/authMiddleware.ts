@@ -126,6 +126,7 @@ export async function checkNotifications(req: Request, res: Response, next: Next
     const notifications = await Notification.findAll({
       where: { user_id: userId, seen: false },
       order: [["created_at", "DESC"]],
+      include: [{ model: User, as: "user" }],
     });
 
     (req as any).unreadNotifications = notifications;

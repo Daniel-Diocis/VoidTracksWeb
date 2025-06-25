@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllRequests = getAllRequests;
 exports.createRequest = createRequest;
@@ -7,6 +10,7 @@ exports.unvoteRequest = unvoteRequest;
 const db_1 = require("../db");
 const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
+const User_1 = __importDefault(require("../models/User"));
 const factory = new messageFactory_1.MessageFactory();
 /**
  * Restituisce tutte le richieste con i voti associati, ordinate per numero di voti.
@@ -54,14 +58,19 @@ async function getAllRequests(req, res) {
  */
 async function createRequest(req, res) {
     try {
-        const user = req.user;
         const { brano, artista } = req.body;
+        const userToken = req.user;
+        const dbUser = await User_1.default.findByPk(userToken.id);
+        if (!dbUser) {
+            return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.USER_NOT_FOUND.status, "Utente non trovato");
+        }
         const newRequest = await db_1.Request.create({
             brano,
             artista,
-            user_id: user.id,
+            user_id: dbUser.id,
         });
-        await user.update({ tokens: user.tokens - 3 });
+        dbUser.tokens -= 3;
+        await dbUser.save();
         res.status(201).json(newRequest);
     }
     catch (error) {

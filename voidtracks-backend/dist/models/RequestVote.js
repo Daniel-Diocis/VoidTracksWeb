@@ -21,8 +21,8 @@ RequestVote.init({
         primaryKey: true,
     },
 }, {
-    sequelize,
     tableName: "request_votes",
+    sequelize,
     timestamps: false,
 });
 exports.default = RequestVote;

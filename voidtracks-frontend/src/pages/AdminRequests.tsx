@@ -36,7 +36,9 @@ function AdminRequests() {
         return;
       }
 
-      setRequests(data);
+      setRequests(
+        data.sort((a: RequestItem, b: RequestItem) => b.voti - a.voti)
+      );
     } catch (err) {
       console.error('Errore fetch richieste:', err);
       notify.error('Errore di rete');
@@ -113,12 +115,14 @@ function AdminRequests() {
                     type="number"
                     min={0}
                     value={tokensToAdd[req.id] ?? 0}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const parsed = parseInt(val, 10);
                       setTokensToAdd(prev => ({
                         ...prev,
-                        [req.id]: parseInt(e.target.value, 10),
-                      }))
-                    }
+                        [req.id]: isNaN(parsed) ? 0 : parsed,
+                      }));
+                    }}
                     className="w-20 px-2 py-1 rounded bg-zinc-700 text-white border border-zinc-600"
                   />
                 </div>

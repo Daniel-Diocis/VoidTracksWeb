@@ -36,8 +36,8 @@ RequestVote.init(
     },
   },
   {
-    sequelize,
     tableName: "request_votes",
+    sequelize,
     timestamps: false,
   }
 );

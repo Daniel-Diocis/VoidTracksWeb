@@ -32,5 +32,7 @@ Notification.init({
     sequelize,
     tableName: "notifications",
     timestamps: true, // attiva createdAt e updatedAt
+    createdAt: "created_at",
+    updatedAt: "updated_at",
 });
 exports.default = Notification;

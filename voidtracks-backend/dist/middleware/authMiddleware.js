@@ -124,6 +124,7 @@ async function checkNotifications(req, res, next) {
         const notifications = await Notification_1.default.findAll({
             where: { user_id: userId, seen: false },
             order: [["created_at", "DESC"]],
+            include: [{ model: User_1.default, as: "user" }],
         });
         req.unreadNotifications = notifications;
         console.log("Notifiche non lette trovate:", notifications.map(n => n.message));

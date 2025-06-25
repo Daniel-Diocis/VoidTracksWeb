@@ -114,6 +114,12 @@ async function approveRequest(req, res) {
             seen: false
         }));
         await Notification_1.default.bulkCreate(notifications);
+        console.log("Creator ID:", creator === null || creator === void 0 ? void 0 : creator.id);
+        console.log("Notifica creator:", {
+            user_id: creator === null || creator === void 0 ? void 0 : creator.id,
+            message: `La tua richiesta per "${request.brano}" di ${request.artista} è stata approvata. +${tokensToAdd} token accreditati!`,
+        });
+        console.log("Notifiche votanti:", notifications);
         return res.json({ message: "Richiesta approvata, token accreditati, notifiche inviate" });
     }
     catch (err) {

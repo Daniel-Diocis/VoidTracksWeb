@@ -15,17 +15,17 @@ interface RequestItem {
 }
 
 export default function UserRequests() {
-  const { token, logout } = useAuth();
+  const { token, logout, setTokens } = useAuth();
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [brano, setBrano] = useState("");
   const [artista, setArtista] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const API = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const fetchRequests = async () => {
     try {
-      const res = await fetch(`${API}/requests`, {
+      const res = await fetch(`${API_URL}/requests`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -51,7 +51,7 @@ export default function UserRequests() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API}/requests`, {
+      const res = await fetch(`${API_URL}/requests`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -71,6 +71,18 @@ export default function UserRequests() {
       notify.success("Richiesta inviata!");
       setBrano("");
       setArtista("");
+
+      // Aggiorna i token dopo la richiesta
+      const userRes = await fetch(`${API_URL}/auth/private`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        if (typeof userData.user.tokens === 'number') {
+          setTokens(userData.user.tokens);
+        }
+      }
+
       fetchRequests();
     } catch (err) {
       console.error("Errore creazione richiesta:", err);
@@ -82,7 +94,7 @@ export default function UserRequests() {
 
   const handleVote = async (id: number) => {
     try {
-      const res = await fetch(`${API}/requests/${id}/vote`, {
+      const res = await fetch(`${API_URL}/requests/${id}/vote`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -103,7 +115,7 @@ export default function UserRequests() {
 
   const handleUnvote = async (id: number) => {
     try {
-      const res = await fetch(`${API}/requests/${id}/vote`, {
+      const res = await fetch(`${API_URL}/requests/${id}/vote`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

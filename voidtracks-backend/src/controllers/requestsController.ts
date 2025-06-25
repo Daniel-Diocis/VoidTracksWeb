@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Request as RequestModel, RequestVote } from "../db";
 import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
+import User from "../models/User"
 
 const factory = new MessageFactory();
 
@@ -56,16 +57,26 @@ export async function getAllRequests(req: Request, res: Response) {
  */
 export async function createRequest(req: Request, res: Response) {
   try {
-    const user = (req as any).user;
     const { brano, artista } = req.body;
+    const userToken = (req as any).user;
+    const dbUser = await User.findByPk(userToken.id);
+
+    if (!dbUser) {
+      return factory.getStatusMessage(
+        res,
+        ErrorMessages.USER_NOT_FOUND.status,
+        "Utente non trovato"
+      );
+    }
 
     const newRequest = await RequestModel.create({
       brano,
       artista,
-      user_id: user.id,
+      user_id: dbUser.id,
     });
 
-    await user.update({ tokens: user.tokens - 3 });
+    dbUser.tokens -= 3;
+    await dbUser.save();
 
     res.status(201).json(newRequest);
   } catch (error) {

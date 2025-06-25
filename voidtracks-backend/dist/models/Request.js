@@ -48,8 +48,8 @@ Request.init({
         field: "updated_at",
     },
 }, {
-    sequelize,
     tableName: "requests",
+    sequelize,
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
