@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateRechargeInput = validateRechargeInput;
+exports.validateTokenAmount = validateTokenAmount;
 const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const factory = new messageFactory_1.MessageFactory();
@@ -22,6 +23,13 @@ function validateRechargeInput(req, res, next) {
         typeof tokens !== "number" ||
         tokens < 0) {
         return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INVALID_RECHARGE_INPUT.status, errorMessages_1.ErrorMessages.INVALID_RECHARGE_INPUT.message);
+    }
+    next();
+}
+function validateTokenAmount(req, res, next) {
+    const { tokensToAdd } = req.body;
+    if (typeof tokensToAdd !== "number" || tokensToAdd < 0) {
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INVALID_INPUT.status, errorMessages_1.ErrorMessages.INVALID_INPUT.message);
     }
     next();
 }

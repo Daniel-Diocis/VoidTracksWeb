@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ErrorMessages = void 0;
 const http_status_codes_1 = require("http-status-codes");
 exports.ErrorMessages = {
-    NOT_USER: { status: http_status_codes_1.StatusCodes.UNAUTHORIZED, message: "Accesso negato. Login richiesto." },
-    NOT_ADMIN: { status: http_status_codes_1.StatusCodes.FORBIDDEN, message: "Privilegi insufficienti." },
+    NOT_USER: { status: http_status_codes_1.StatusCodes.UNAUTHORIZED, message: "Accesso negato. Login richiesto" },
+    NOT_ADMIN: { status: http_status_codes_1.StatusCodes.FORBIDDEN, message: "Privilegi insufficienti" },
     INVALID_RECHARGE_INPUT: { status: http_status_codes_1.StatusCodes.BAD_REQUEST, message: "Username valido e numero di token ≥ 0 richiesto" },
     USER_NOT_FOUND: { status: http_status_codes_1.StatusCodes.NOT_FOUND, message: "Utente non trovato" },
     INVALID_ARTIST_NAME: { status: http_status_codes_1.StatusCodes.BAD_REQUEST, message: "Nome artista non valido" },
@@ -26,9 +26,13 @@ exports.ErrorMessages = {
     EXPIRED_LINK: { status: http_status_codes_1.StatusCodes.FORBIDDEN, message: "Link scaduto" },
     INVALID_PURCHASE_TOKEN: { status: http_status_codes_1.StatusCodes.NOT_FOUND, message: "Token non valido" },
     Q_NOT_STRING: { status: http_status_codes_1.StatusCodes.BAD_REQUEST, message: "Il parametro 'q' deve essere una stringa" },
-    INVALID_TRACK_NAME: { status: http_status_codes_1.StatusCodes.BAD_REQUEST, message: "Nome brano non valido." },
-    DUPLICATE_REQUEST: { status: http_status_codes_1.StatusCodes.CONFLICT, message: "Richiesta già presente e in attesa." },
+    INVALID_TRACK_NAME: { status: http_status_codes_1.StatusCodes.BAD_REQUEST, message: "Nome brano non valido" },
+    DUPLICATE_REQUEST: { status: http_status_codes_1.StatusCodes.CONFLICT, message: "Richiesta già presente e in attesa" },
+    ALREADY_ADDED: { status: http_status_codes_1.StatusCodes.CONFLICT, message: "Questo brano è già stato aggiunto" },
     ALREADY_VOTED: { status: http_status_codes_1.StatusCodes.CONFLICT, message: "Hai già votato questa richiesta." },
-    NOT_VOTED: { status: http_status_codes_1.StatusCodes.NOT_FOUND, message: "Non hai votato questa richiesta." },
+    NOT_VOTED: { status: http_status_codes_1.StatusCodes.NOT_FOUND, message: "Non hai votato questa richiesta" },
+    REQUEST_NOT_FOUND: { status: http_status_codes_1.StatusCodes.NOT_FOUND, message: "Richiesta non trovata" },
+    REQUEST_NOT_EDITABLE: { status: http_status_codes_1.StatusCodes.UNAUTHORIZED, message: "La richiesta non è più modificabile" },
+    INVALID_INPUT: { status: http_status_codes_1.StatusCodes.BAD_REQUEST, message: "Il numero di token deve essere un numero positivo" },
     INTERNAL_ERROR: { status: http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, message: "Errore del server" },
 };

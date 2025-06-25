@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticateToken } from "../middleware/authenticateToken";
 import { authenticateAdmin } from "../middleware/authRoles";
-import { validateRechargeInput } from "../middleware/adminMiddleware";
+import { validateRechargeInput, validateTokenAmount } from "../middleware/adminMiddleware";
 import { checkRequestWaiting } from "../middleware/requestsMiddleware";
 import { rechargeTokens, getPendingRequests, approveRequest, rejectRequest } from "../controllers/adminController";
 
@@ -44,6 +44,7 @@ router.patch(
   authenticateToken,
   authenticateAdmin,
   checkRequestWaiting,
+  validateTokenAmount,
   approveRequest
 );
 

@@ -47,5 +47,6 @@ router.post("/login", authMiddleware_1.validateAuthInput, authMiddleware_1.check
  * @middleware dailyTokenBonus - Applica un eventuale bonus giornaliero.
  * @controller getPrivateUser - Restituisce i dati aggiornati dell'utente.
  */
-router.get("/private", authenticateToken_1.authenticateToken, authMiddleware_1.dailyTokenBonus, authController_1.getPrivateUser);
+router.get("/private", authenticateToken_1.authenticateToken, authMiddleware_1.dailyTokenBonus, authMiddleware_1.checkNotifications, authController_1.getPrivateUser);
+router.patch("/notifications/mark-as-seen", authenticateToken_1.authenticateToken, authController_1.markNotificationsAsSeen);
 exports.default = router;

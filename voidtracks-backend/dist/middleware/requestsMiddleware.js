@@ -1,6 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkRequestWaiting = exports.checkHasVoted = exports.checkAlreadyVoted = exports.checkRequestExists = exports.checkUserHasTokens = exports.checkDuplicateRequest = exports.validateRequestCreation = void 0;
+exports.validateRequestCreation = validateRequestCreation;
+exports.checkDuplicateRequest = checkDuplicateRequest;
+exports.checkUserHasTokens = checkUserHasTokens;
+exports.checkRequestExists = checkRequestExists;
+exports.checkAlreadyVoted = checkAlreadyVoted;
+exports.checkHasVoted = checkHasVoted;
+exports.checkRequestWaiting = checkRequestWaiting;
 const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const db_1 = require("../db");
@@ -9,7 +15,7 @@ const factory = new messageFactory_1.MessageFactory();
 /**
  * Valida i campi brano e artista
  */
-const validateRequestCreation = (req, res, next) => {
+function validateRequestCreation(req, res, next) {
     const { brano, artista } = req.body;
     if (!brano || typeof brano !== "string" || brano.trim().length < 2) {
         return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INVALID_TRACK_NAME.status, errorMessages_1.ErrorMessages.INVALID_TRACK_NAME.message);
@@ -18,30 +24,44 @@ const validateRequestCreation = (req, res, next) => {
         return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INVALID_ARTIST_NAME.status, errorMessages_1.ErrorMessages.INVALID_ARTIST_NAME.message);
     }
     next();
-};
-exports.validateRequestCreation = validateRequestCreation;
+}
 /**
- * Verifica se esiste già una richiesta identica in attesa
+ * Verifica se esiste già una richiesta identica in attesa o già approvata
  */
-const checkDuplicateRequest = async (req, res, next) => {
+async function checkDuplicateRequest(req, res, next) {
     const { brano, artista } = req.body;
+    const normalizedBrano = brano.trim().toLowerCase();
+    const normalizedArtista = artista.trim().toLowerCase();
     const existing = await db_1.Request.findOne({
         where: {
-            brano: { [sequelize_1.Op.iLike]: brano },
-            artista: { [sequelize_1.Op.iLike]: artista },
-            status: "waiting"
+            [sequelize_1.Op.or]: [
+                {
+                    brano: { [sequelize_1.Op.iLike]: normalizedBrano },
+                    artista: { [sequelize_1.Op.iLike]: normalizedArtista },
+                    status: "waiting"
+                },
+                {
+                    brano: { [sequelize_1.Op.iLike]: normalizedBrano },
+                    artista: { [sequelize_1.Op.iLike]: normalizedArtista },
+                    status: "satisfied"
+                }
+            ]
         }
     });
     if (existing) {
-        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.DUPLICATE_REQUEST.status, errorMessages_1.ErrorMessages.DUPLICATE_REQUEST.message);
+        if (existing.status === "waiting") {
+            return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.DUPLICATE_REQUEST.status, errorMessages_1.ErrorMessages.DUPLICATE_REQUEST.message);
+        }
+        else if (existing.status === "satisfied") {
+            return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.ALREADY_ADDED.status, errorMessages_1.ErrorMessages.ALREADY_ADDED.message);
+        }
     }
     next();
-};
-exports.checkDuplicateRequest = checkDuplicateRequest;
+}
 /**
  * Verifica se l’utente ha abbastanza token per creare la richiesta
  */
-const checkUserHasTokens = async (req, res, next) => {
+async function checkUserHasTokens(req, res, next) {
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     const user = await db_1.User.findByPk(userId);
@@ -50,21 +70,22 @@ const checkUserHasTokens = async (req, res, next) => {
     }
     res.locals.user = user; // memorizziamo l'oggetto user per il controller
     next();
-};
-exports.checkUserHasTokens = checkUserHasTokens;
-const checkRequestExists = async (req, res, next) => {
+}
+/**
+ * Verifica che la richiesta esista
+ */
+async function checkRequestExists(req, res, next) {
     const requestId = Number(req.params.id);
     const request = await db_1.Request.findByPk(requestId);
     if (!request) {
         return factory.getStatusMessage(res, 404, "Richiesta non trovata");
     }
     next();
-};
-exports.checkRequestExists = checkRequestExists;
+}
 /**
  * Verifica se l’utente ha già votato per una richiesta
  */
-const checkAlreadyVoted = async (req, res, next) => {
+async function checkAlreadyVoted(req, res, next) {
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     const requestId = Number(req.params.id);
@@ -73,12 +94,11 @@ const checkAlreadyVoted = async (req, res, next) => {
         return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.ALREADY_VOTED.status, errorMessages_1.ErrorMessages.ALREADY_VOTED.message);
     }
     next();
-};
-exports.checkAlreadyVoted = checkAlreadyVoted;
+}
 /**
  * Verifica se l’utente ha effettivamente votato (per poterlo rimuovere)
  */
-const checkHasVoted = async (req, res, next) => {
+async function checkHasVoted(req, res, next) {
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     const requestId = Number(req.params.id);
@@ -87,22 +107,20 @@ const checkHasVoted = async (req, res, next) => {
         return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.NOT_VOTED.status, errorMessages_1.ErrorMessages.NOT_VOTED.message);
     }
     next();
-};
-exports.checkHasVoted = checkHasVoted;
+}
 /**
  * Verifica che la richiesta esista ed abbia status "waiting"
  */
-const checkRequestWaiting = async (req, res, next) => {
+async function checkRequestWaiting(req, res, next) {
     const requestId = Number(req.params.id);
     const request = await db_1.Request.findByPk(requestId);
     if (!request) {
-        return factory.getStatusMessage(res, 404, "Richiesta non trovata");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.REQUEST_NOT_FOUND.status, errorMessages_1.ErrorMessages.REQUEST_NOT_FOUND.message);
     }
     if (request.status !== "waiting") {
-        return factory.getStatusMessage(res, 400, "La richiesta non è più modificabile");
+        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.REQUEST_NOT_EDITABLE.status, errorMessages_1.ErrorMessages.REQUEST_NOT_EDITABLE.message);
     }
     // la salviamo per uso successivo nel controller
     res.locals.request = request;
     next();
-};
-exports.checkRequestWaiting = checkRequestWaiting;
+}

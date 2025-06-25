@@ -92,3 +92,13 @@ CREATE TABLE request_votes (
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE (request_id, user_id) -- Ogni utente può votare una richiesta una sola volta
 );
+
+-- Tabella notifiche
+CREATE TABLE notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  message VARCHAR(255) NOT NULL,
+  seen BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);

@@ -29,3 +29,17 @@ export function validateRechargeInput(req: Request, res: Response, next: NextFun
 
   next();
 }
+
+export function validateTokenAmount(req: Request, res: Response, next: NextFunction) {
+  const { tokensToAdd } = req.body;
+
+  if (typeof tokensToAdd !== "number" || tokensToAdd < 0) {
+    return factory.getStatusMessage(
+      res,
+      ErrorMessages.INVALID_INPUT.status,
+      ErrorMessages.INVALID_INPUT.message
+    );
+  }
+
+  next();
+}

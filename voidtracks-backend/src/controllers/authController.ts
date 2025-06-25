@@ -5,6 +5,7 @@ import { MessageFactory } from "../utils/messageFactory";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
+import Notification from "../models/Notification";
 import fs from "fs";
 
 const privateKey = fs.readFileSync(
@@ -124,6 +125,7 @@ export async function login(req: Request, res: Response) {
 export async function getPrivateUser(req: Request, res: Response) {
   try {
     const user = (req as any).userRecord;
+    const unreadNotifications = (req as any).unreadNotifications || [];
 
     res.json({
       user: {
@@ -132,9 +134,41 @@ export async function getPrivateUser(req: Request, res: Response) {
         role: user.role,
         tokens: user.tokens,
       },
+      notifications: unreadNotifications,
     });
   } catch (error) {
     console.error("Errore nel recupero dell’utente:", error);
-    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    return factory.getStatusMessage(
+      res,
+      ErrorMessages.INTERNAL_ERROR.status,
+      ErrorMessages.INTERNAL_ERROR.message
+    );
+  }
+}
+
+export async function markNotificationsAsSeen(req: Request, res: Response) {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return factory.getStatusMessage(
+        res,
+        ErrorMessages.NOT_AUTHENTICATED_USER.status,
+        ErrorMessages.NOT_AUTHENTICATED_USER.message
+      );
+    }
+
+    await Notification.update(
+      { seen: true },
+      { where: { user_id: userId, seen: false } }
+    );
+
+    return res.sendStatus(StatusCodes.NO_CONTENT); // 204
+  } catch (err) {
+    console.error("Errore nel marcare notifiche come lette:", err);
+    return factory.getStatusMessage(
+      res,
+      ErrorMessages.INTERNAL_ERROR.status,
+      ErrorMessages.INTERNAL_ERROR.message
+    );
   }
 }

@@ -11,12 +11,12 @@ interface RequestItem {
   createdAt: string;
   updatedAt: string;
   voti: number;
+  hasVoted: boolean;
 }
 
 export default function UserRequests() {
   const { token, logout } = useAuth();
   const [requests, setRequests] = useState<RequestItem[]>([]);
-  const [voted, setVoted] = useState<Set<number>>(new Set());
   const [brano, setBrano] = useState("");
   const [artista, setArtista] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,13 +25,18 @@ export default function UserRequests() {
 
   const fetchRequests = async () => {
     try {
-      const res = await fetch(`${API}/requests`);
+      const res = await fetch(`${API}/requests`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const data = await res.json();
 
-      if (!res.ok) {
-        notify.error(data.error || "Errore nel caricamento richieste");
-        return;
-      }
+    if (!res.ok) {
+      notify.error(data.error || "Errore nel caricamento richieste");
+      if (res.status === 401) logout(); // utile anche qui
+      return;
+    }
 
       setRequests(data);
     } catch (err) {
@@ -89,7 +94,6 @@ export default function UserRequests() {
         return;
       }
 
-      setVoted((prev) => new Set(prev).add(id));
       fetchRequests();
     } catch (err) {
       console.error("Errore voto:", err);
@@ -110,11 +114,6 @@ export default function UserRequests() {
         return;
       }
 
-      setVoted((prev) => {
-        const updated = new Set(prev);
-        updated.delete(id);
-        return updated;
-      });
       fetchRequests();
     } catch (err) {
       console.error("Errore unvote:", err);
@@ -161,11 +160,11 @@ export default function UserRequests() {
           <li key={r.id} className="border rounded p-4 mb-3">
             <p className="font-semibold">{r.brano} - {r.artista}</p>
             <p className="text-sm text-gray-500">
-              {r.voti} voto{r.voti === 1 ? "" : "i"} – {r.status}
+              {r.voti} vot{r.voti === 1 ? "o" : "i"} – {r.status}
             </p>
             {token && (
               <div className="mt-2">
-                {voted.has(r.id) ? (
+                {r.hasVoted ? (
                   <button
                     onClick={() => handleUnvote(r.id)}
                     className="text-red-600 text-sm underline"

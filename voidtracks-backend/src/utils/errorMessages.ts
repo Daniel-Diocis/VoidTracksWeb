@@ -2,8 +2,8 @@ import { StatusCodes } from "http-status-codes";
 
 export const ErrorMessages = {
 
-    NOT_USER: { status: StatusCodes.UNAUTHORIZED, message: "Accesso negato. Login richiesto." },
-    NOT_ADMIN: { status: StatusCodes.FORBIDDEN, message: "Privilegi insufficienti." },
+    NOT_USER: { status: StatusCodes.UNAUTHORIZED, message: "Accesso negato. Login richiesto" },
+    NOT_ADMIN: { status: StatusCodes.FORBIDDEN, message: "Privilegi insufficienti" },
     INVALID_RECHARGE_INPUT: { status: StatusCodes.BAD_REQUEST, message: "Username valido e numero di token ≥ 0 richiesto" },
     USER_NOT_FOUND: { status: StatusCodes.NOT_FOUND, message: "Utente non trovato" },
     
@@ -32,10 +32,15 @@ export const ErrorMessages = {
 
     Q_NOT_STRING: { status: StatusCodes.BAD_REQUEST, message: "Il parametro 'q' deve essere una stringa" },
 
-    INVALID_TRACK_NAME: { status: StatusCodes.BAD_REQUEST, message: "Nome brano non valido." },
-    DUPLICATE_REQUEST: { status: StatusCodes.CONFLICT, message: "Richiesta già presente e in attesa." },
+    INVALID_TRACK_NAME: { status: StatusCodes.BAD_REQUEST, message: "Nome brano non valido" },
+    DUPLICATE_REQUEST: { status: StatusCodes.CONFLICT, message: "Richiesta già presente e in attesa" },
+    ALREADY_ADDED: { status: StatusCodes.CONFLICT, message: "Questo brano è già stato aggiunto" },
     ALREADY_VOTED: { status: StatusCodes.CONFLICT, message: "Hai già votato questa richiesta." },
-    NOT_VOTED: { status: StatusCodes.NOT_FOUND, message: "Non hai votato questa richiesta." },
+    NOT_VOTED: { status: StatusCodes.NOT_FOUND, message: "Non hai votato questa richiesta" },
+    REQUEST_NOT_FOUND: { status: StatusCodes.NOT_FOUND, message: "Richiesta non trovata" },
+    REQUEST_NOT_EDITABLE: { status: StatusCodes.UNAUTHORIZED, message: "La richiesta non è più modificabile" },
+
+    INVALID_INPUT: { status: StatusCodes.BAD_REQUEST, message: "Il numero di token deve essere un numero positivo" },
     
     INTERNAL_ERROR: { status: StatusCodes.INTERNAL_SERVER_ERROR, message: "Errore del server" },
 } as const;

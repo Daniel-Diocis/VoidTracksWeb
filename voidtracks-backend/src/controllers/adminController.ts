@@ -4,6 +4,8 @@ import { MessageFactory } from "../utils/messageFactory";
 import User from "../models/User";
 import RequestModel from "../models/Request";
 import RequestVote from "../models/RequestVote";
+import Notification from "../models/Notification";
+import { Op } from "sequelize";
 
 const factory = new MessageFactory();
 
@@ -91,17 +93,46 @@ export async function getPendingRequests(req: Request, res: Response) {
 /**
  * Approva una richiesta impostandone lo stato su "satisfied".
  */
-export const approveRequest = async (_req: Request, res: Response) => {
+export async function approveRequest(req: Request, res: Response) {
   const request = res.locals.request as RequestModel;
+  const { tokensToAdd } = req.body;
 
   try {
-    await request.update({ status: "satisfied" });
-    return res.json({ message: "Richiesta approvata con successo" });
+    await request.update({ status: "satisfied", tokens: tokensToAdd });
+
+    const creator = await User.findByPk(request.user_id);
+    if (creator) {
+      creator.tokens += tokensToAdd;
+      await creator.save();
+
+      await Notification.create({
+        user_id: creator.id,
+        message: `La tua richiesta per "${request.brano}" di ${request.artista} è stata approvata. +${tokensToAdd} token accreditati!`,
+        seen: false
+      });
+    }
+
+    const votes = await RequestVote.findAll({ where: { request_id: request.id } });
+    const voterIds = votes.map(v => v.user_id).filter(id => id !== request.user_id);
+
+    const notifications = voterIds.map(user_id => ({
+      user_id,
+      message: `La richiesta per "${request.brano}" di ${request.artista} che hai votato è stata approvata!`,
+      seen: false
+    }));
+
+    await Notification.bulkCreate(notifications);
+
+    return res.json({ message: "Richiesta approvata, token accreditati, notifiche inviate" });
   } catch (err) {
     console.error("Errore approvazione richiesta:", err);
-    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    return factory.getStatusMessage(
+      res,
+      ErrorMessages.INTERNAL_ERROR.status,
+      ErrorMessages.INTERNAL_ERROR.message
+    );
   }
-};
+}
 
 /**
  * Rifiuta una richiesta impostandone lo stato su "rejected".

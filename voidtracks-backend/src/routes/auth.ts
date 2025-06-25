@@ -3,10 +3,11 @@ import {
   validateAuthInput, 
   checkUserExists, 
   checkUserCredentials, 
-  dailyTokenBonus 
+  dailyTokenBonus,
+  checkNotifications
 } from "../middleware/authMiddleware";
 import { authenticateToken } from "../middleware/authenticateToken";
-import { register, login, getPrivateUser } from "../controllers/authController";
+import { register, login, getPrivateUser, markNotificationsAsSeen } from "../controllers/authController";
 
 const router = Router();
 
@@ -54,6 +55,8 @@ router.post("/login", validateAuthInput, checkUserCredentials, login);
  * @middleware dailyTokenBonus - Applica un eventuale bonus giornaliero.
  * @controller getPrivateUser - Restituisce i dati aggiornati dell'utente.
  */
-router.get("/private", authenticateToken, dailyTokenBonus, getPrivateUser);
+router.get("/private", authenticateToken, dailyTokenBonus, checkNotifications, getPrivateUser);
+
+router.patch("/notifications/mark-as-seen", authenticateToken, markNotificationsAsSeen);
 
 export default router;

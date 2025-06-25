@@ -51,7 +51,7 @@ function App() {
           {/* Rotte admin */}
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/admin/richieste" element={<AdminRequests />} />
+            <Route path="/admin/requests" element={<AdminRequests />} />
           </Route>
 
           {/* Catch all */}

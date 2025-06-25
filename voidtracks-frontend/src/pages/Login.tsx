@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { notify } from '../utils/toastManager';
+import { notify, notifyWithOptions } from '../utils/toastManager';
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -48,7 +48,31 @@ function Login() {
       // Dopo questa riga, appena ricevuti i dati userData:
       console.log('Dati ricevuti da /auth/private:', userData);
 
-      // Chiamata al contesto
+      // Mostra le notifiche non lette
+      const notifications = userData.notifications || [];
+
+      if (notifications.length > 0) {
+        let remaining = notifications.length;
+
+        notifications.forEach((n: { message: string }) => {
+          notifyWithOptions.success(n.message, {
+            onClose: () => {
+              remaining -= 1;
+              if (remaining === 0) {
+                // Dopo che l'utente le ha viste/chiuse tutte
+                fetch(`${API_URL}/auth/notifications/mark-as-seen`, {
+                  method: "PATCH",
+                  headers: {
+                    Authorization: `Bearer ${data.token}`,
+                  },
+                }).catch((err) => console.error("Errore PATCH notifiche:", err));
+              }
+            },
+          });
+        });
+      }
+
+      // Continua con login nel contesto
       auth?.login(
         {
           username: userData.user.username,

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RequestVote = exports.Request = exports.TrackArtist = exports.Artist = exports.PlaylistTrack = exports.Playlist = exports.Purchase = exports.Track = exports.User = exports.sequelize = void 0;
+exports.Notification = exports.RequestVote = exports.Request = exports.TrackArtist = exports.Artist = exports.PlaylistTrack = exports.Playlist = exports.Purchase = exports.Track = exports.User = exports.sequelize = void 0;
 const sequelize_1 = require("./sequelize");
 const User_1 = __importDefault(require("../models/User"));
 exports.User = User_1.default;
@@ -23,6 +23,8 @@ const Request_1 = __importDefault(require("../models/Request"));
 exports.Request = Request_1.default;
 const RequestVote_1 = __importDefault(require("../models/RequestVote"));
 exports.RequestVote = RequestVote_1.default;
+const Notification_1 = __importDefault(require("../models/Notification"));
+exports.Notification = Notification_1.default;
 const sequelize = (0, sequelize_1.getSequelizeInstance)();
 exports.sequelize = sequelize;
 /**
@@ -68,3 +70,6 @@ RequestVote_1.default.belongsTo(User_1.default, { foreignKey: "user_id" });
 // Request (1) → (N) RequestVote
 Request_1.default.hasMany(RequestVote_1.default, { foreignKey: "request_id", onDelete: "CASCADE", as: "votes" });
 RequestVote_1.default.belongsTo(Request_1.default, { foreignKey: "request_id" });
+// User (1) → (N) Notification
+User_1.default.hasMany(Notification_1.default, { foreignKey: "user_id", onDelete: "CASCADE" });
+Notification_1.default.belongsTo(User_1.default, { foreignKey: "user_id", as: "user" });

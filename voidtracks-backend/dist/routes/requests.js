@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const requestsController_1 = require("../controllers/requestsController");
 const authenticateToken_1 = require("../middleware/authenticateToken");
 const requestsMiddleware_1 = require("../middleware/requestsMiddleware");
+const requestsController_1 = require("../controllers/requestsController");
 const router = (0, express_1.Router)();
-router.get("/", requestsController_1.getAllRequests);
+router.get("/", authenticateToken_1.authenticateToken, requestsController_1.getAllRequests);
 router.post("/", authenticateToken_1.authenticateToken, requestsMiddleware_1.validateRequestCreation, requestsMiddleware_1.checkDuplicateRequest, requestsMiddleware_1.checkUserHasTokens, requestsController_1.createRequest);
 router.post("/:id/vote", authenticateToken_1.authenticateToken, requestsMiddleware_1.checkAlreadyVoted, requestsController_1.voteRequest);
 router.delete("/:id/vote", authenticateToken_1.authenticateToken, requestsMiddleware_1.checkHasVoted, requestsController_1.unvoteRequest);

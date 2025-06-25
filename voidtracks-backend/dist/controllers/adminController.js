@@ -3,14 +3,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.rejectRequest = exports.approveRequest = void 0;
+exports.rejectRequest = void 0;
 exports.rechargeTokens = rechargeTokens;
 exports.getPendingRequests = getPendingRequests;
+exports.approveRequest = approveRequest;
 const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const User_1 = __importDefault(require("../models/User"));
 const Request_1 = __importDefault(require("../models/Request"));
 const RequestVote_1 = __importDefault(require("../models/RequestVote"));
+const Notification_1 = __importDefault(require("../models/Notification"));
 const factory = new messageFactory_1.MessageFactory();
 /**
  * Controller per ricaricare i token di un utente.
@@ -89,18 +91,36 @@ async function getPendingRequests(req, res) {
 /**
  * Approva una richiesta impostandone lo stato su "satisfied".
  */
-const approveRequest = async (_req, res) => {
+async function approveRequest(req, res) {
     const request = res.locals.request;
+    const { tokensToAdd } = req.body;
     try {
-        await request.update({ status: "satisfied" });
-        return res.json({ message: "Richiesta approvata con successo" });
+        await request.update({ status: "satisfied", tokens: tokensToAdd });
+        const creator = await User_1.default.findByPk(request.user_id);
+        if (creator) {
+            creator.tokens += tokensToAdd;
+            await creator.save();
+            await Notification_1.default.create({
+                user_id: creator.id,
+                message: `La tua richiesta per "${request.brano}" di ${request.artista} è stata approvata. +${tokensToAdd} token accreditati!`,
+                seen: false
+            });
+        }
+        const votes = await RequestVote_1.default.findAll({ where: { request_id: request.id } });
+        const voterIds = votes.map(v => v.user_id).filter(id => id !== request.user_id);
+        const notifications = voterIds.map(user_id => ({
+            user_id,
+            message: `La richiesta per "${request.brano}" di ${request.artista} che hai votato è stata approvata!`,
+            seen: false
+        }));
+        await Notification_1.default.bulkCreate(notifications);
+        return res.json({ message: "Richiesta approvata, token accreditati, notifiche inviate" });
     }
     catch (err) {
         console.error("Errore approvazione richiesta:", err);
         return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
-};
-exports.approveRequest = approveRequest;
+}
 /**
  * Rifiuta una richiesta impostandone lo stato su "rejected".
  */

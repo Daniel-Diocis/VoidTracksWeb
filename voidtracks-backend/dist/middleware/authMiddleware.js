@@ -7,12 +7,14 @@ exports.validateAuthInput = void 0;
 exports.checkUserExists = checkUserExists;
 exports.checkUserCredentials = checkUserCredentials;
 exports.dailyTokenBonus = dailyTokenBonus;
+exports.checkNotifications = checkNotifications;
 const express_validator_1 = require("express-validator");
 const date_fns_tz_1 = require("date-fns-tz");
 const http_status_codes_1 = require("http-status-codes");
 const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const User_1 = __importDefault(require("../models/User"));
+const Notification_1 = __importDefault(require("../models/Notification"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const timeZone = "Europe/Rome";
 const factory = new messageFactory_1.MessageFactory();
@@ -112,4 +114,23 @@ async function dailyTokenBonus(req, res, next) {
     }
     req.userRecord = user;
     next();
+}
+async function checkNotifications(req, res, next) {
+    var _a;
+    try {
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        if (!userId)
+            return next();
+        const notifications = await Notification_1.default.findAll({
+            where: { user_id: userId, seen: false },
+            order: [["created_at", "DESC"]],
+        });
+        req.unreadNotifications = notifications;
+        console.log("Notifiche non lette trovate:", notifications.map(n => n.message));
+        next();
+    }
+    catch (err) {
+        console.error("Errore nel recupero notifiche:", err);
+        next(); // non bloccare la chain
+    }
 }

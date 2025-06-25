@@ -5,6 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
 import User from "../models/User";
+import Notification from "../models/Notification";
 import bcrypt from "bcryptjs";
 
 const timeZone = "Europe/Rome";
@@ -115,4 +116,23 @@ export async function dailyTokenBonus(req: Request, res: Response, next: NextFun
 
   (req as any).userRecord = user;
   next();
+}
+
+export async function checkNotifications(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return next();
+
+    const notifications = await Notification.findAll({
+      where: { user_id: userId, seen: false },
+      order: [["created_at", "DESC"]],
+    });
+
+    (req as any).unreadNotifications = notifications;
+    console.log("Notifiche non lette trovate:", notifications.map(n => n.message));
+    next();
+  } catch (err) {
+    console.error("Errore nel recupero notifiche:", err);
+    next(); // non bloccare la chain
+  }
 }

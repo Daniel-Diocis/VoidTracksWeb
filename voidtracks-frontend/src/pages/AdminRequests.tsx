@@ -20,6 +20,7 @@ function AdminRequests() {
 
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tokensToAdd, setTokensToAdd] = useState<Record<number, number>>({});
 
   const fetchRequests = async () => {
     try {
@@ -45,12 +46,18 @@ function AdminRequests() {
   };
 
   const handleAction = async (id: number, action: 'approve' | 'reject') => {
+    const body = action === 'approve'
+      ? JSON.stringify({ tokensToAdd: tokensToAdd[id] ?? 0 })
+      : null;
+
     try {
       const res = await fetch(`${API_URL}/admin/requests/${id}/${action}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        body,
       });
 
       const data = await res.json();
@@ -62,6 +69,11 @@ function AdminRequests() {
 
       notify.success(data.message || 'Operazione completata');
       setRequests(prev => prev.filter(r => r.id !== id));
+      setTokensToAdd(prev => {
+        const updated = { ...prev };
+        delete updated[id];
+        return updated;
+      });
     } catch (err) {
       console.error(`Errore ${action} richiesta:`, err);
       notify.error('Errore di rete');
@@ -95,11 +107,28 @@ function AdminRequests() {
                 <p className="text-xs text-zinc-500">
                   Inviata il {new Date(req.createdAt).toLocaleDateString()}
                 </p>
+                <div className="mt-2">
+                  <label className="text-sm mr-2">Token da assegnare:</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={tokensToAdd[req.id] ?? 0}
+                    onChange={(e) =>
+                      setTokensToAdd(prev => ({
+                        ...prev,
+                        [req.id]: parseInt(e.target.value, 10),
+                      }))
+                    }
+                    className="w-20 px-2 py-1 rounded bg-zinc-700 text-white border border-zinc-600"
+                  />
+                </div>
               </div>
+
               <div className="flex gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => handleAction(req.id, 'approve')}
-                  className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-medium"
+                  disabled={(tokensToAdd[req.id] ?? 0) < 0}
+                  className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Approva
                 </button>

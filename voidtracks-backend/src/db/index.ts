@@ -9,6 +9,7 @@ import Artist from "../models/Artist";
 import TrackArtist from "../models/TrackArtist";
 import Request from "../models/Request";
 import RequestVote from "../models/RequestVote";
+import Notification from "../models/Notification";
 
 const sequelize = getSequelizeInstance();
 
@@ -65,6 +66,10 @@ RequestVote.belongsTo(User, { foreignKey: "user_id" });
 Request.hasMany(RequestVote, { foreignKey: "request_id", onDelete: "CASCADE", as: "votes" });
 RequestVote.belongsTo(Request, { foreignKey: "request_id" });
 
+// User (1) → (N) Notification
+User.hasMany(Notification, { foreignKey: "user_id", onDelete: "CASCADE" });
+Notification.belongsTo(User, { foreignKey: "user_id", as: "user" });
+
 /**
  * Esporta l'istanza Sequelize e i modelli associati.
  */
@@ -78,5 +83,6 @@ export {
   Artist,
   TrackArtist,
   Request,
-  RequestVote
+  RequestVote,
+  Notification
 };
