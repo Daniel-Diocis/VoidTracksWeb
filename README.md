@@ -13,8 +13,11 @@ La seguente tabella mostra le rotte:
 | POST   | /auth/register                 | username, password                 |
 | POST   | /auth/login                    | username, password                 |
 | GET    | /auth/private                  | token (header Authorization)       |
+| PATCH  | /notifications/mark-as-seen    | token (header Authorization)       |
 | GET    | /tracks                        | Nessuno                            |
 | GET    | /tracks/popular                | Nessuno                            |
+| GET    | /artists                       | Nessuno                            |
+| GET    | /artists/byName/:nome          | Nessuno                            |
 | POST   | /purchase                      | token (header Authorization), track_id |
 | GET    | /purchase/download/:download_token | download_token (route param)   |
 | GET    | /purchase                      | token (header Authorization), fromDate?, toDate? (query) |
@@ -27,9 +30,12 @@ La seguente tabella mostra le rotte:
 | POST   | /playlists/:id/tracks          |  token (header Authorization), id (route param), track_id |
 | DELETE | /playlists/:id/tracks/:trackId | token (header Authorization), id (route param), trackId (route param) |
 | PATCH  | /playlists/:id/favorite        | token (header Authorization), id (route param), trackId |
+| GET    | /requests/                     | token (header Authorization)       |
+| POST:  | /requests/                     | token (header Authorization), brano, artista   |
+| POST   | /requests/:id/vote             | token (header Authorization), id (route param)       |
+| DELETE | /requests/:id/vote             | token (header Authorization), id (route param)       |
 | PATCH  | /admin/recharge                | token (header Authorization), username, tokens |
-| GET    | /artists                       | Nessuno                            |
-| GET    | /artists/byName/:nome          | Nessuno                            |
+| PATCH  | /admin/requests/:id/approve    | token (header Authorization), id (route param), tokensToAdd |
 
 ## Pattern utilizzati
 
@@ -440,7 +446,7 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Verifica il token JWT fornito nell’header.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Se il token è valido, recupera dal database i dati dell’utente associato.
 - Se l’utente non ha ancora ricevuto il bonus giornaliero, assegna un token aggiuntivo e aggiorna la data.
 - Restituisce i dati aggiornati dell’utente come risposta.
@@ -517,6 +523,88 @@ Se l’utente non viene trovato nel database, viene restituito un errore con cod
 ```json
 {
   "error": "Not Found: Utente non trovato"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+### PATCH: /notifications/mark-as-seen
+
+Segna come lette tutte le notifiche non lette dell’utente autenticato (dopo avergliele fatte leggere ovviamente).
+
+**Richiesta**
+
+Richiede un token JWT valido nell’header Authorization:
+```http
+PATCH /notifications/mark-as-seen
+Authorization: Bearer <token>
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
+- Il controller markNotificationsAsSeen:
+  - Recupera l’id utente da req.user.
+  - Aggiorna tutte le notifiche con seen: false e user_id corrispondente, impostando seen: true.
+  - Restituisce una risposta 204 No Content.
+
+**Diagramma di sequenza**
+
+Il meccanismo che si innesca all'atto della chiamata è descritto dal seguente diagramma:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant DB
+  participant Controller
+
+  Client->>App: PATCH /notifications/mark-as-seen
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Controller: markNotificationsAsSeen
+  Controller->>DB: Notification.update({ seen: true }, { where: { user_id, seen: false } })
+  DB-->>Controller: update completato
+  Controller-->>App: res.sendStatus(204)
+
+  App->>Client: res.status(204)
+```
+
+**Risposta in caso di successo**
+
+Restituisce 204 No Content se l’operazione è completata correttamente (nessun corpo nella risposta):
+
+```http
+HTTP/1.1 204 No Content
+```
+
+**Risposta in caso di errore**
+
+Se token mancante o non valido, viene restituito un errore con codice **401**:
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
 }
 ```
 
@@ -688,6 +776,156 @@ In caso di errore interno del server, viene restituito un errore con codice **50
 }
 ```
 
+### GET: /artists
+
+Restituisce la lista completa degli artisti presenti nel sistema. Non richiede autenticazione.
+
+**Richiesta**
+
+Non richiede body.
+Accetta un parametro di query facoltativo:
+```http
+GET /artists
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il controller getAllArtists interroga il database per restituire tutti i record Artist.
+
+**Diagramma di sequenza**
+
+Il meccanismo che si innesca all'atto della chiamata è descritto dal seguente diagramma:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Controller
+  participant DB
+
+  Client->>App: GET /artists
+  App->>Controller: getAllArtists(req)
+  Controller->>DB: Artist.findAll()
+  DB-->>Controller: lista artisti
+  Controller-->>App: res.status(200).json(artists)
+
+  App->>Client: res.status(200)
+  App->>Client: res.json(artists)
+```
+
+**Risposta in caso di successo**
+
+Viene restituito un array JSON contenente tutti gli artisti:
+
+```json
+[
+  {
+    "id": 5e5a2c20-fd4f-4c2b-ac23-63312715686b,
+    "nome": "C.R.O",
+    "createdAt": "2025-06-13T12:54:36.000Z",
+    "updatedAt": "2025-06-13T12:54:36.000Z"
+  },
+  ...
+]
+```
+
+**Risposta in caso di errore**
+
+Per errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+### GET: /artists/byName/:nome
+
+Restituisce un artista e tutti i suoi brani, effettuando una ricerca per nome (case-insensitive). Non richiede autenticazione.
+
+**Richiesta**
+
+La richiesta è una semplice chiamata GET che accetta il nome dell’artista come parametro URL. Esempio:
+```http
+GET /artists/byName/Mac%20Miller
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware validateArtistName controlla che il parametro nome sia valido.
+- Il controller getArtistByName esegue:
+  - Ricerca dell’artista tramite iLike.
+  - Inclusione dei suoi brani (Track), escludendo la tabella pivot.
+
+**Diagramma di sequenza**
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant Controller
+  participant DB
+
+  Client->>App: GET /artists/byName/Mac Miller
+
+  App->>Middleware: validateArtistName
+  Middleware-->>App: next()
+
+  App->>Controller: getArtistByName(req)
+  Controller->>DB: Artist.findOne({ where: { nome: { iLike: nome } }, include: Track })
+  DB-->>Controller: artista + brani
+  Controller-->>App: res.status(200).json(artist)
+
+  App->>Client: res.status(200)
+  App->>Client: res.json(artist)
+```
+
+**Risposta in caso di successo**
+
+Restituisce la playlist, con i suoi brani:
+```json
+{
+  "id": 1,
+  "nome": "Mac Miller",
+  "Tracks": [
+    {
+      "id": "1a58d8b2-2c5b-451e-a6fd-50a4d0e4af4c",
+      "titolo": "Self Care",
+      "album": "Swimming",
+      "music_path": "Mac Miller - Self Care.mp3",
+      "cover_path": "Mac Miller - Swimming.jpg"
+    }
+  ]
+}
+```
+
+**Risposta in caso di errore**
+
+Se manca il parametro nome o non è valido, viene restituito un errore con codice **400**:
+
+```json
+{
+  "error": "Bad Request: Nome artista non valido"
+}
+```
+
+Se l'artista non è stato trovato, viene restituito un errore con codice **404**:
+```json
+{
+  "error": "Not Found: Artista non trovato"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+```json
+{
+  "error": "Errore del server"
+}
+```
+
 ### POST /purchase
 
 Permette a un utente autenticato di acquistare un brano. Se l’utente ha già acquistato il brano e il link è ancora valido (entro 10 minuti dall'acquisto), viene restituito lo stesso download_token. In caso contrario, viene effettuato un nuovo acquisto e scalati i token all’utente.
@@ -709,7 +947,7 @@ Content-Type: application/json
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il middleware authenticateToken verifica l’identità dell’utente.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Il middleware validatePurchaseBody valida l’input (track_id).
 - Il middlewarecheckUserAndTrackExist controlla che l’utente e il brano esistano nel database.
 - Il middlewarecheckDuplicatePurchase verifica se esiste già un acquisto valido (non scaduto e non ancora utilizzato).
@@ -729,12 +967,15 @@ sequenceDiagram
   participant Client
   participant App
   participant Middleware
+  participant JWTService
   participant DB
   participant Controller
 
   Client->>App: POST /purchase (track_id)
 
   App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
   Middleware-->>App: next()
 
   App->>Middleware: validatePurchaseBody
@@ -958,7 +1199,7 @@ Authorization: Bearer <JWT>
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il middleware authenticateToken verifica l’identità dell’utente.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Il controller getUserPurchases:
   - Estrae l’id dell’utente da req.user.
   - Applica eventuali filtri fromDate e toDate sulla colonna purchased_at.
@@ -1026,7 +1267,6 @@ sequenceDiagram
 }
 ```
 
-
 **Risposta in caso di errore**
 
 Se il token è mancante o non valido, viene restituito un errore con codice **401**:
@@ -1044,7 +1284,6 @@ oppure:
   "error": "Unauthorized: Token non valido o scaduto"
 }
 ```
-
 
 Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
 
@@ -1147,7 +1386,7 @@ Authorization: Bearer <token>
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il middleware authenticateToken verifica l’identità dell’utente tramite JWT.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Il controller listUserPlaylists:
   - Estrae l’ID dell’utente autenticato da req.user.
   - Recupera tutte le playlist associate a quell’utente.
@@ -1204,7 +1443,6 @@ Se esistono playlist create dall’utente, viene restituito un array JSON conten
 ]
 ```
 
-
 **Risposta in caso di errore**
 
 Se il token è mancante o non valido, viene restituito un errore con codice **401**:
@@ -1251,7 +1489,7 @@ Content-Type: application/json
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il middleware authenticateToken verifica l’identità dell’utente tramite JWT.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Il controller createPlaylist:
   - Estrae l’ID dell’utente da req.user.
   - Legge il campo nome dal corpo della richiesta.
@@ -1298,7 +1536,6 @@ Se la playlist viene creata correttamente, il server restituisce un oggetto JSON
 }
 ```
 
-
 **Risposta in caso di errore**
 
 Se il token è mancante o non valido, viene restituito un errore con codice **401**:
@@ -1340,7 +1577,7 @@ Authorization: Bearer <token>
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il middleware authenticateToken: Verifica il token JWT e recupera l’ID utente.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Il middleware checkPlaylistOwnership: Verifica che la playlist appartenga all’utente.
 - Il controller getPlaylistWithTracks:
   - Ottiene i dettagli della playlist (id, nome, createdAt, updatedAt).
@@ -1411,7 +1648,6 @@ Restituisce la playlist, con i suoi brani:
 }
 ```
 
-
 **Risposta in caso di errore**
 
 Se il token è mancante o non valido, viene restituito un errore con codice **401**:
@@ -1467,7 +1703,7 @@ Body della richiesta:
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il middleware authenticateToken: Verifica il token JWT e recupera l’ID utente.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Il middleware checkPlaylistOwnership: Verifica che la playlist appartenga all’utente.
 - Il controller renamePlaylist:
   - Legge il nuovo nome dal body.
@@ -1570,7 +1806,7 @@ Content-Type: application/json
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il middleware authenticateToken: Verifica il token JWT e recupera l’ID utente.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Il middleware checkPlaylistOwnership: Verifica che la playlist appartenga all’utente.
 - Il controller deletePlaylist:
   - Elimina la playlist identificata da :id.
@@ -1670,7 +1906,7 @@ Content-Type: application/json
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il middleware authenticateToken verifica l’identità dell’utente tramite JWT.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Il middleware checkPlaylistOwnership: verifica che la playlist appartenga all’utente.
 - Il middleware checkTrackIdInBody: controlla che track_id sia presente nel corpo.
 - Il middleware checkTrackOwnership: verifica che l’utente abbia acquistato il brano.
@@ -1684,12 +1920,15 @@ sequenceDiagram
   participant Client
   participant App
   participant Middleware
+  participant JWTService
   participant DB
   participant Controller
 
   Client->>App: POST /playlists/:id/tracks
 
   App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
   Middleware-->>App: next()
 
   App->>Middleware: checkPlaylistOwnership
@@ -1777,7 +2016,7 @@ Authorization: Bearer <token>
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il middleware authenticateToken: Verifica il token JWT e recupera l’ID utente.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Il middleware checkPlaylistOwnership verifica che la playlist appartenga all’utente.
 - Il middleware checkTrackIdParam controlla la presenza del parametro trackId nell’URL.
 - Il controller removeTrackFromPlaylist: rimuove il brano dalla playlist.
@@ -1789,12 +2028,15 @@ sequenceDiagram
   participant Client
   participant App
   participant Middleware
+  participant JWTService
   participant DB
   participant Controller
 
   Client->>App: DELETE /playlists/:id/tracks/:trackId
 
   App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
   Middleware-->>App: next()
 
   App->>Middleware: checkPlaylistOwnership
@@ -1877,7 +2119,7 @@ Content-Type: application/json
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il middleware authenticateToken: Verifica il token JWT e recupera l’ID utente.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Il middleware checkPlaylistOwnership: Verifica che la playlist appartenga all’utente.
 - Il middleware checkTrackIdInFavoriteBody: controlla la presenza del campo trackId nel body.
 - Il controller checkTrackIdInFavoriteBody: controlla la presenza del campo trackId nel body.
@@ -1890,12 +2132,15 @@ sequenceDiagram
   participant Client
   participant App
   participant Middleware
+  participant JWTService
   participant DB
   participant Controller
 
   Client->>App: PATCH /playlists/:id/favorite
 
   App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
   Middleware-->>App: next()
 
   App->>Middleware: checkPlaylistOwnership
@@ -1959,6 +2204,674 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
+### GET: /requests
+
+Restituisce tutte le richieste con stato "waiting" ordinate per numero di voti, indicando anche se l’utente loggato ha già votato ciascuna richiesta.
+
+**Richiesta**
+
+Richiede un token JWT valido nell’Authorization header:
+```http
+GET /requests
+Authorization: Bearer <token>
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
+- Il controller getAllRequests:
+  - Recupera tutte le richieste con status = "waiting" dal database.
+  - Include i voti associati tramite RequestVote.
+  - Recupera le richieste già votate dall’utente.
+  - Costruisce la risposta con: numero di voti e flag hasVoted.
+
+**Diagramma di sequenza**
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant DB
+  participant Controller
+
+  Client->>App: GET /requests
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Controller: getAllRequests(req)
+
+  Controller->>DB: Request.findAll({ status: "waiting", include: votes })
+  DB-->>Controller: richieste con voti
+
+  Controller->>DB: RequestVote.findAll({ user_id: req.user.id })
+  DB-->>Controller: lista voti utente
+
+  Controller-->>App: res.status(200).json(richieste annotate)
+
+  App->>Client: res.status(200)
+  App->>Client: res.json([...])
+```
+
+**Risposta in caso di successo**
+
+Restituisce le richieste in stato di waiting:
+```json
+[
+  {
+    "id": 5,
+    "brano": "Numb",
+    "artista": "Linkin Park",
+    "status": "waiting",
+    "tokens": 0,
+    "createdAt": "2025-06-25T15:20:00.000Z",
+    "updatedAt": "2025-06-23T15:20:00.000Z",
+    "voti": 3,
+    "hasVoted": true
+  },
+  {
+    "id": 6,
+    "brano": "Agosto",
+    "artista": "Bad Bunny",
+    "status": "waiting",
+    "tokens": 0,
+    "createdAt": "2025-06-25T15:22:00.000Z",
+    "updatedAt": "2025-06-25T15:22:00.000Z",
+    "voti": 1,
+    "hasVoted": false
+  }
+]
+```
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+### POST: /requests
+
+Permette a un utente autenticato di inviare una nuova richiesta di brano.
+
+**Richiesta**
+
+Richiede un token JWT valido nel header Authorization e un corpo JSON contenente i campi brano e artista:
+```http
+POST /requests
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "brano": "DNA",
+  "artista": "Kendrick Lamar"
+}
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
+- Il middleware validateRequestInput controlla la presenza dei campi brano e artista.
+- Il controller createRequest:
+  - Controlla che non esistano richieste duplicate in stato waiting o satisfied.
+  - Se tutto è valido, crea una nuova richiesta con status "waiting" e tokens = 0.
+
+**Diagramma di sequenza**
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant DB
+  participant Controller
+
+  Client->>App: POST /requests
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Middleware: validateRequestInput
+  Middleware-->>App: next()
+
+  App->>Controller: createRequest
+  Controller->>DB: Request.findOne (duplicati)
+  DB-->>Controller: Nessun duplicato
+  Controller->>DB: Request.create
+  DB-->>Controller: richiesta salvata
+  Controller-->>App: res.status(201).json({ message, request })
+
+  App->>Client: res.status(201)
+  App->>Client: res.json({ message: "Richiesta creata con successo", request })
+```
+
+**Risposta in caso di successo**
+
+Se la richiesta viene creata correttamente:
+```json
+{
+  "message": "Richiesta creata con successo",
+  "request": {
+    "id": 7,
+    "brano": "DNA",
+    "artista": "Kendrick Lamar",
+    "status": "waiting",
+    "tokens": 0,
+    "createdAt": "2025-06-25T21:21:00.000Z",
+    "updatedAt": "2025-06-25T21:21:00.000Z"
+  }
+}
+```
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Se la richiesta è già presente, viene restituito un errore con codice **409**:
+```json
+{
+  "error": "Conflict: Esiste già una richiesta identica"
+}
+```
+
+Se i campi brano o artista sono assenti o con altro formato, viene restituito un errore con codice **400**:
+```json
+{
+  "error": "Bad Request: Dati non validi"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+### POST: /requests/:id/vote
+
+Permette a un utente autenticato di votare una richiesta esistente, incrementando il numero totale di voti. È possibile esprimere un solo voto per richiesta.
+
+**Richiesta**
+
+Richiede un token JWT valido nell’header Authorization.
+```http
+POST /requests/42/vote
+Authorization: Bearer <token>
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
+- Il middleware checkAlreadyVoted controlla che l’utente non abbia già votato quella richiesta.
+- Il controller voteRequest: registra il voto nella tabella RequestVote.
+
+**Diagramma di sequenza**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant DB
+  participant Controller
+
+  Client->>App: POST /requests/:id/vote
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Middleware: checkAlreadyVoted
+  Middleware->>DB: RequestVote.findOne
+  DB-->>Middleware: Nessun voto trovato
+  Middleware-->>App: next()
+
+  App->>Controller: voteRequest
+  Controller->>DB: RequestVote.create
+  DB-->>Controller: Voto registrato
+  Controller-->>App: res.status(201).json({ message })
+
+  App->>Client: res.status(201)
+  App->>Client: { "message": "Voto aggiunto" }
+```
+
+**Risposta in caso di successo**
+
+Viene restituito il seguente messagio:
+```json
+{
+  "message": "Voto aggiunto"
+}
+```
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Se l'utente ha già votato, viene restituito un errore con codice **400**:
+```json
+{
+  "error": "Bad Request: Hai già votato questa richiesta"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+### DELETE: /requests/:id/vote
+
+Permette a un utente autenticato di rimuovere il proprio voto da una richiesta, se precedentemente espresso.
+
+**Richiesta**
+
+Richiede un token JWT valido nell’header Authorization.
+```http
+DELETE /requests/42/vote
+Authorization: Bearer <token>
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
+- Il middleware checkHasVoted: controlla che l’utente abbia già votato quella richiesta.
+- Il controller unvoteRequest: elimina il voto dalla tabella RequestVote.
+
+**Diagramma di sequenza**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant DB
+  participant Controller
+
+  Client->>App: DELETE /requests/:id/vote
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Middleware: checkHasVoted
+  Middleware->>DB: RequestVote.findOne
+  DB-->>Middleware: Voto trovato
+  Middleware-->>App: next()
+
+  App->>Controller: unvoteRequest
+  Controller->>DB: RequestVote.destroy
+  DB-->>Controller: Voto eliminato
+  Controller-->>App: res.status(200).json({ message })
+
+  App->>Client: res.status(200)
+  App->>Client: { "message": "Voto rimosso" }
+```
+
+**Risposta in caso di successo**
+
+Viene restituito il seguente messagio:
+```json
+{
+  "message": "Voto rimosso"
+}
+```
+
+**Risposta in caso di errore**
+
+Se il token è mancante o non valido, viene restituito un errore con codice **401**:
+
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure:
+
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Se non è stato trovato il voto da annullare, viene restituito un errore con codice **400**:
+```json
+{
+  "error": "Bad Request: Non hai votato questa richiesta"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+### GET: /requests
+
+Permette a un amministratore autenticato di ricaricare i token a un utente esistente, specificando lo username e il numero di token da aggiungere.
+
+**Richiesta**
+
+La richiesta deve contenere un token JWT valido con ruolo admin nell’header Authorization:
+```http
+GET /admin/requests
+Authorization: Bearer <JWT>
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
+- Il middleware authenticateAdmin controlla che il ruolo dell’utente sia admin.
+- Il controller getAllRequests:
+  - Recupera tutte le richieste con stato "waiting".
+  - Include i voti associati a ciascuna richiesta (via RequestVote).
+  - Recupera le richieste votate dall’utente autenticato.
+  - Costruisce la risposta JSON con i seguenti campi per ogni richiesta:
+    - id, brano, artista, status, tokens, createdAt, updatedAt
+    - voti (numero di voti)
+    - hasVoted (booleano: true/false)
+
+**Diagramma di sequenza**
+
+Il meccanismo che si innesca all'atto della chiamata è descritto dal seguente diagramma:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant Controller
+  participant DB
+
+  Client->>App: GET /requests
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Controller: getAllRequests(req)
+
+  Controller->>DB: Request.findAll({ status: "waiting", include: RequestVote })
+  DB-->>Controller: elenco richieste con voti
+
+  Controller->>DB: RequestVote.findAll({ user_id: req.user.id })
+  DB-->>Controller: lista richieste votate
+
+  Controller-->>App: res.status(200).json(richieste con voti e hasVoted)
+
+  App->>Client: res.status(200)
+  App->>Client: JSON con richieste
+```
+
+**Risposta in caso di successo**
+
+```json
+[
+  {
+    "id": 7,
+    "brano": "DNA",
+    "artista": "Kendrick Lamar",
+    "status": "waiting",
+    "tokens": 0,
+    "createdAt": "2025-06-25T21:21:00.000Z",
+    "updatedAt": "2025-06-25T21:21:00.000Z",
+    "voti": 3,
+    "hasVoted": true
+  },
+  {
+    "id": 6,
+    "brano": "Agosto",
+    "artista": "Bad Bunny",
+    "status": "waiting",
+    "tokens": 0,
+    "createdAt": "2025-06-25T15:22:00.000Z",
+    "updatedAt": "2025-06-25T15:22:00.000Z",
+    "voti": 1,
+    "hasVoted": false
+  }
+]
+```
+
+**Risposta in caso di errore**
+
+Se token mancante o non valido, viene restituito un errore con codice **401**:
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Se l'utente non è admin, viene restituito un errore con codice **403**:
+```json
+{
+  "error": "Forbidden: Privilegi insufficienti"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
+### PATCH: /admin/requests/:id/approve
+
+Permette a un amministratore autenticato di approvare una richiesta di brano in stato waiting, impostandola come satisfied e assegnando un numero specificato di token all’utente che l’ha inviata.
+
+**Richiesta**
+
+Richiede un token JWT valido con ruolo admin nell’header Authorization, e un campo tokensToAdd nel corpo della richiesta:
+```http
+PATCH /admin/requests/42/approve
+Authorization: Bearer <JWT>
+Content-Type: application/json
+
+{
+  "tokensToAdd": 5
+}
+```
+
+**Meccanismo**
+
+Il meccanismo è il seguente:
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
+- Il middleware authenticateAdmin controlla che il ruolo dell’utente sia admin.
+- Il middleware checkRequestWaiting verifica che la richiesta sia in stato waiting.
+- Il middleware validateTokenAmount valida il campo tokensToAdd (intero ≥ 0).
+- Il controller approveRequest:
+  - Imposta lo stato della richiesta su satisfied.
+  - Aggiunge tokensToAdd al saldo token dell’utente che ha effettuato la richiesta.
+  - Salva le modifiche e restituisce un messaggio di conferma.
+
+**Diagramma di sequenza**
+
+Il meccanismo che si innesca all'atto della chiamata è descritto dal seguente diagramma:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant App
+  participant Middleware
+  participant JWTService
+  participant DB
+  participant Controller
+
+  Client->>App: PATCH /admin/requests/:id/approve
+
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
+  Middleware-->>App: next()
+
+  App->>Middleware: authenticateAdmin
+  Middleware-->>App: next()
+
+  App->>Middleware: checkRequestWaiting
+  Middleware->>DB: Request.findByPk(:id)
+  DB-->>Middleware: stato = "waiting"
+  Middleware-->>App: next()
+
+  App->>Middleware: validateTokenAmount
+  Middleware-->>App: next()
+
+  App->>Controller: approveRequest
+  Controller->>DB: Request.update(status = "satisfied")
+  Controller->>DB: User.findByPk(request.user_id)
+  Controller->>DB: user.tokens += tokensToAdd → user.save()
+  DB-->>Controller: ok
+  Controller-->>App: res.status(200).json({ message })
+
+  App->>Client: res.status(200)
+  App->>Client: { "message": "Richiesta approvata, 5 token assegnati" }
+```
+
+**Risposta in caso di successo**
+
+```json
+{
+  "message": "Richiesta approvata, 5 token assegnati"
+}
+```
+
+
+**Risposta in caso di errore**
+
+Se token mancante o non valido, viene restituito un errore con codice **401**:
+```json
+{
+  "error": "Unauthorized: Token mancante"
+}
+```
+
+oppure
+```json
+{
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Se l'utente non è admin, viene restituito un errore con codice **403**:
+```json
+{
+  "error": "Forbidden: Privilegi insufficienti"
+}
+```
+
+Se il campo tokensToAdd è assente o non valido, viene restituito un errore con codice **400**:
+```json
+{
+  "error": "Bad Request: Numero di token non valido"
+}
+```
+
+Se la richiesta non è in stato waiting, viene restituito un errore con codice **409**:
+```json
+{
+  "error": "Conflict: La richiesta non è più approvabile"
+}
+```
+
+Se la richiesta non è stata trovata, viene restituito un errore con codice **404**:
+```json
+{
+  "error": "Not Found: Richiesta non trovata"
+}
+```
+
+Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
+```json
+{
+  "error": "Errore del server"
+}
+```
+
 ### PATCH: /admin/recharge
 
 Permette a un amministratore autenticato di ricaricare i token a un utente esistente, specificando lo username e il numero di token da aggiungere.
@@ -1969,18 +2882,12 @@ La richiesta deve contenere un token JWT valido con ruolo admin nell’header Au
 ```http
 PATCH /admin/recharge
 Authorization: Bearer <JWT>
-Content-Type: application/json
-
-{
-  "username": "utenteUno",
-  "tokens": 10
-}
 ```
 
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il middleware authenticateToken verifica l’identità dell’utente.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Il middleware authenticateAdmin controlla che il ruolo dell’utente sia admin.
 - Il middleware validateRechargeInput convalida i campi username (stringa) e tokens (numero ≥ 0).
 - Il controller rechargeTokens:
@@ -2035,7 +2942,6 @@ sequenceDiagram
 }
 ```
 
-
 **Risposta in caso di errore**
 
 Se token mancante o non valido, viene restituito un errore con codice **401**:
@@ -2081,22 +2987,29 @@ Per altri errori lato server viene restituito un errore con codice **500** e un 
 }
 ```
 
-### GET: /artists
+### PATCH: /admin/requests/:id/reject
 
-Restituisce la lista completa degli artisti presenti nel sistema. Non richiede autenticazione.
+Permette a un amministratore autenticato di rifiutare una richiesta di brano in stato waiting, impostando il suo stato su rejected.
 
 **Richiesta**
 
-Non richiede body.
-Accetta un parametro di query facoltativo:
+Richiede un token JWT valido con ruolo admin nell’header Authorization:
 ```http
-GET /artists
+PATCH /admin/requests/42/reject
+Authorization: Bearer <JWT>
 ```
 
 **Meccanismo**
 
 Il meccanismo è il seguente:
-- Il controller getAllArtists interroga il database per restituire tutti i record Artist.
+- Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
+- Il middleware authenticateAdmin controlla che il ruolo dell’utente sia admin.
+- Il middleware checkRequestWaiting verifica che la richiesta sia in stato waiting.
+- Il middleware validateTokenAmount valida il campo tokensToAdd (intero ≥ 0).
+- Il controller rejectRequest:
+  - Cambia lo stato della richiesta da waiting a rejected.
+  - Salva la modifica.
+  - Restituisce un messaggio di conferma.
 
 **Diagramma di sequenza**
 
@@ -2107,127 +3020,108 @@ sequenceDiagram
   autonumber
   participant Client
   participant App
-  participant Controller
-  participant DB
-
-  Client->>App: GET /artists
-  App->>Controller: getAllArtists(req)
-  Controller->>DB: Artist.findAll()
-  DB-->>Controller: lista artisti
-  Controller-->>App: res.status(200).json(artists)
-
-  App->>Client: res.status(200)
-  App->>Client: res.json(artists)
-```
-
-**Risposta in caso di successo**
-
-Viene restituito un array JSON contenente tutti gli artisti:
-
-```json
-[
-  {
-    "id": 5e5a2c20-fd4f-4c2b-ac23-63312715686b,
-    "nome": "C.R.O",
-    "createdAt": "2025-06-13T12:54:36.000Z",
-    "updatedAt": "2025-06-13T12:54:36.000Z"
-  },
-  ...
-]
-```
-
-**Risposta in caso di errore**
-
-Per errori lato server viene restituito un errore con codice **500** e un messaggio generico:
-```json
-{
-  "error": "Errore del server"
-}
-```
-
-### GET: /artists/byName/:nome
-
-Restituisce un artista e tutti i suoi brani, effettuando una ricerca per nome (case-insensitive). Non richiede autenticazione.
-
-**Richiesta**
-
-La richiesta è una semplice chiamata GET che accetta il nome dell’artista come parametro URL. Esempio:
-```http
-GET /artists/byName/Mac%20Miller
-```
-
-**Meccanismo**
-
-Il meccanismo è il seguente:
-- Il middleware validateArtistName controlla che il parametro nome sia valido.
-- Il controller getArtistByName esegue:
-  - Ricerca dell’artista tramite iLike.
-  - Inclusione dei suoi brani (Track), escludendo la tabella pivot.
-
-**Diagramma di sequenza**
-```mermaid
-sequenceDiagram
-  autonumber
-  participant Client
-  participant App
   participant Middleware
-  participant Controller
+  participant JWTService
   participant DB
+  participant Controller
 
-  Client->>App: GET /artists/byName/Mac Miller
+  Client->>App: PATCH /admin/requests/:id/reject
 
-  App->>Middleware: validateArtistName
+  App->>Middleware: authenticateToken
+  Middleware->>JWTService: verify(token)
+  JWTService-->>Middleware: payload
   Middleware-->>App: next()
 
-  App->>Controller: getArtistByName(req)
-  Controller->>DB: Artist.findOne({ where: { nome: { iLike: nome } }, include: Track })
-  DB-->>Controller: artista + brani
-  Controller-->>App: res.status(200).json(artist)
+  App->>Middleware: authenticateAdmin
+  Middleware-->>App: next()
+
+  App->>Middleware: checkRequestWaiting
+  Middleware->>DB: Request.findByPk(:id)
+  DB-->>Middleware: stato = "waiting"
+  Middleware-->>App: next()
+
+  App->>Controller: rejectRequest
+  Controller->>DB: Request.update(status = "rejected")
+  DB-->>Controller: ok
+  Controller-->>App: res.status(200).json({ message })
 
   App->>Client: res.status(200)
-  App->>Client: res.json(artist)
+  App->>Client: { "message": "Richiesta rifiutata" }
 ```
 
 **Risposta in caso di successo**
 
-Restituisce la playlist, con i suoi brani:
 ```json
 {
-  "id": 1,
-  "nome": "Mac Miller",
-  "Tracks": [
-    {
-      "id": "1a58d8b2-2c5b-451e-a6fd-50a4d0e4af4c",
-      "titolo": "Self Care",
-      "album": "Swimming",
-      "music_path": "Mac Miller - Self Care.mp3",
-      "cover_path": "Mac Miller - Swimming.jpg"
-    }
-  ]
+  "message": "Richiesta rifiutata"
 }
 ```
-
 
 **Risposta in caso di errore**
 
-Se manca il parametro nome o non è valido, viene restituito un errore con codice **400**:
-
+Se token mancante o non valido, viene restituito un errore con codice **401**:
 ```json
 {
-  "error": "Bad Request: Nome artista non valido"
+  "error": "Unauthorized: Token mancante"
 }
 ```
 
-Se l'artista non è stato trovato, viene restituito un errore con codice **404**:
+oppure
 ```json
 {
-  "error": "Not Found: Artista non trovato"
+  "error": "Unauthorized: Token non valido o scaduto"
+}
+```
+
+Se l'utente non è admin, viene restituito un errore con codice **403**:
+```json
+{
+  "error": "Forbidden: Privilegi insufficienti"
+}
+```
+
+Se il campo tokensToAdd è assente o non valido, viene restituito un errore con codice **400**:
+```json
+{
+  "error": "Bad Request: Numero di token non valido"
+}
+```
+
+Se la richiesta non è in stato waiting, viene restituito un errore con codice **409**:
+```json
+{
+  "error": "Conflict: La richiesta non è più approvabile"
+}
+```
+
+Se la richiesta non è stata trovata, viene restituito un errore con codice **404**:
+```json
+{
+  "error": "Not Found: Richiesta non trovata"
 }
 ```
 
 Per altri errori lato server viene restituito un errore con codice **500** e un messaggio generico:
+
 ```json
 {
   "error": "Errore del server"
 }
 ```
+
+
+## Testing
+
+Per testare il progetto correttamente, è importante seguire alcuni passaggi chiave per configurare l’ambiente di sviluppo e avviare i test in modo efficace. Ecco una guida nei seguenti passaggi:
+
+1. **Scarica il progetto**: Clona il repository tramite URL Git oppure scarica il file ZIP ed estrailo.
+2. **Importa le richieste API**: Apri Visual Studio Code e usa l’estensione *Thunder Client* per importare il file con le chiamate API contenuto nella cartella `collection` dentro la cartella `backend`.
+3. **Configura l’ambiente**: Compila il file `.env` con i dati richiesti, prendendo come riferimento l’esempio fornito nel file `.env.example`.
+4. **Installa Docker**: Se non lo hai già fatto, scarica Docker dal sito ufficiale e installalo per gestire i container del progetto.
+5. **Avvia i servizi**: Apri un terminale nella cartella backend e lancia il comando:
+  ```bash
+docker-compose up --build
+```
+6. **Esegui i test**: Utilizza *Thunder Client* direttamente da Visual Studio Code per inviare richieste alle API ed esaminare le risposte.
+
+Ricorda di fare riferimento alla documentazione del progetto per ulteriori dettagli, chiarimenti o passaggi specifici. Seguire correttamente le istruzioni ti aiuterà a configurare l’ambiente, eseguire i test e verificare che tutto funzioni come previsto.
