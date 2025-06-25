@@ -8,22 +8,28 @@ const sequelize = getSequelizeInstance();
  * Attributi del modello `Request`, che rappresenta una richiesta di brano da parte di un utente.
  */
 interface RequestAttributes {
-  id: number;
-  brano: string;
-  artista: string;
-  user_id: number;
-  status: "waiting" | "satisfied" | "rejected";
-  tokens: number;
-  createdAt?: Date;
-  updatedAt?: Date;
+  id: number;                              // ID univoco della richiesta
+  brano: string;                           // Nome del brano richiesto
+  artista: string;                         // Nome dell'artista richiesto
+  user_id: number;                         // ID dell'utente che ha effettuato la richiesta
+  status: "waiting" | "satisfied" | "rejected"; // Stato della richiesta
+  tokens: number;                          // Token raccolti dalla community per supportare la richiesta
+  createdAt?: Date;                        // Timestamp di creazione (gestito da Sequelize)
+  updatedAt?: Date;                        // Timestamp di aggiornamento (gestito da Sequelize)
 }
 
+/**
+ * Attributi opzionali al momento della creazione.
+ * - `id`, `status`, `tokens`, `createdAt`, `updatedAt` vengono gestiti da Sequelize.
+ */
 interface RequestCreationAttributes
   extends Optional<RequestAttributes, "id" | "status" | "tokens" | "createdAt" | "updatedAt"> {}
 
 /**
  * Modello Sequelize `Request`.
- * Rappresenta una richiesta di aggiunta brano inviata da un utente.
+ *
+ * - Mappa la tabella `requests` del database.
+ * - Rappresenta una richiesta di aggiunta brano inviata da un utente.
  */
 class Request extends Model<RequestAttributes, RequestCreationAttributes> implements RequestAttributes {
   public id!: number;
@@ -37,6 +43,12 @@ class Request extends Model<RequestAttributes, RequestCreationAttributes> implem
   public readonly updatedAt!: Date;
 }
 
+/**
+ * Inizializzazione del modello `Request`.
+ *
+ * - Definisce i campi, i vincoli e i tipi ENUM.
+ * - Gestisce i timestamp `created_at` e `updated_at`.
+ */
 Request.init(
   {
     id: {

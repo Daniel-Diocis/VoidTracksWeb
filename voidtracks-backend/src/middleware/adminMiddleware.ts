@@ -11,9 +11,9 @@ const factory = new MessageFactory();
  * - Verifica che `tokens` sia un numero maggiore o uguale a zero.
  * - In caso di input non valido, restituisce un errore 400 con messaggio standardizzato.
  *
- * @param req - Oggetto della richiesta HTTP.
- * @param res - Oggetto della risposta HTTP.
- * @param next - Funzione per passare al middleware successivo.
+ * @param req - Oggetto della richiesta HTTP contenente `username` e `tokens` nel body
+ * @param res - Oggetto della risposta HTTP
+ * @param next - Funzione per passare al middleware successivo
  */
 export function validateRechargeInput(req: Request, res: Response, next: NextFunction) {
   const { username, tokens } = req.body;
@@ -30,6 +30,16 @@ export function validateRechargeInput(req: Request, res: Response, next: NextFun
   next();
 }
 
+/**
+ * Middleware di validazione per il numero di token da accreditare a una richiesta approvata.
+ *
+ * - Verifica che `tokensToAdd` sia un numero valido ≥ 0.
+ * - Utilizzato prima dell’approvazione di una richiesta da parte dell’admin.
+ *
+ * @param req - Oggetto della richiesta HTTP contenente `tokensToAdd` nel body
+ * @param res - Oggetto della risposta HTTP
+ * @param next - Funzione per passare al middleware successivo
+ */
 export function validateTokenAmount(req: Request, res: Response, next: NextFunction) {
   const { tokensToAdd } = req.body;
 

@@ -10,6 +10,7 @@ import bcrypt from "bcryptjs";
 
 const timeZone = "Europe/Rome";
 const factory = new MessageFactory();
+
 /**
  * Middleware di validazione per i campi `username` e `password`.
  *
@@ -118,6 +119,17 @@ export async function dailyTokenBonus(req: Request, res: Response, next: NextFun
   next();
 }
 
+/**
+ * Middleware per il recupero delle notifiche non lette di un utente autenticato.
+ *
+ * - Se l’utente è autenticato, recupera tutte le notifiche non lette ordinate per data decrescente.
+ * - Le notifiche vengono assegnate a `req.unreadNotifications` per uso successivo.
+ * - Non blocca la chain in caso di errore: passa comunque al middleware successivo.
+ *
+ * @param req - Oggetto della richiesta contenente `user` da `authenticateToken`.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ */
 export async function checkNotifications(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user?.id;
@@ -134,6 +146,6 @@ export async function checkNotifications(req: Request, res: Response, next: Next
     next();
   } catch (err) {
     console.error("Errore nel recupero notifiche:", err);
-    next(); // non bloccare la chain
+    next(); // non blocca la chain
   }
 }

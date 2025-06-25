@@ -6,22 +6,32 @@ import Request from "./Request";
 const sequelize = getSequelizeInstance();
 
 /**
- * Attributi del modello `RequestVote`, che rappresenta un voto di un utente su una richiesta.
+ * Attributi del modello `RequestVote`.
+ * Rappresenta un voto espresso da un utente su una richiesta di brano.
  */
 interface RequestVoteAttributes {
-  user_id: number;
-  request_id: number;
+  user_id: number;      // ID dell'utente votante
+  request_id: number;   // ID della richiesta votata
 }
 
 /**
  * Modello Sequelize `RequestVote`.
- * Tiene traccia dei voti espressi dagli utenti sulle richieste di brani.
+ *
+ * - Mappa la tabella `request_votes` del database.
+ * - Tiene traccia dei voti degli utenti su richieste specifiche.
+ * - Utilizza una chiave primaria composta da `user_id` e `request_id`.
  */
 class RequestVote extends Model<RequestVoteAttributes> implements RequestVoteAttributes {
   public user_id!: number;
   public request_id!: number;
 }
 
+/**
+ * Inizializzazione del modello `RequestVote`.
+ *
+ * - Definisce i due campi della chiave primaria composta.
+ * - Nessun timestamp viene registrato.
+ */
 RequestVote.init(
   {
     user_id: {

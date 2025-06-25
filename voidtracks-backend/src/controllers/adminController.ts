@@ -10,14 +10,13 @@ import { Op } from "sequelize";
 const factory = new MessageFactory();
 
 /**
- * Controller per ricaricare i token di un utente.
+ * Ricarica il numero di token di un utente specificato tramite username.
  *
- * - Presuppone che `username` e `tokens` siano già stati validati da un middleware precedente.
- * - Cerca l'utente tramite username e aggiorna il numero di token.
+ * - Il middleware precedente valida `username` e `tokens`.
+ * - Se l’utente esiste, aggiorna il saldo token.
  *
- * @param req - Oggetto della richiesta HTTP contenente `username` e `tokens` nel body.
- * @param res - Oggetto della risposta HTTP.
- * @returns Risposta JSON con messaggio di conferma e nuovo saldo token, oppure errore.
+ * @param req - Richiesta HTTP con `username` e `tokens` nel body.
+ * @param res - Risposta JSON con conferma e nuovo saldo token, oppure errore.
  */
 export async function rechargeTokens(req: Request, res: Response) {
   const { username, tokens } = req.body;
@@ -43,12 +42,13 @@ export async function rechargeTokens(req: Request, res: Response) {
 }
 
 /**
- * Restituisce tutte le richieste con status "waiting" per l'admin.
+ * Restituisce tutte le richieste in attesa di approvazione.
  *
- * - Include l'username dell'utente che ha fatto la richiesta.
+ * - Include l’username dell’utente che ha effettuato la richiesta.
  * - Conta i voti ricevuti da ciascuna richiesta.
  *
- * @route GET /admin/requests
+ * @param req - Richiesta HTTP dell’admin.
+ * @param res - Risposta JSON con lista delle richieste in stato "waiting".
  */
 export async function getPendingRequests(req: Request, res: Response) {
   try {
@@ -62,7 +62,7 @@ export async function getPendingRequests(req: Request, res: Response) {
         {
           model: RequestVote,
           attributes: ["user_id"],
-          as: "votes"  // <-- usa lo stesso alias definito in `Request.hasMany(...)`
+          as: "votes"
         }
       ],
       order: [["created_at", "DESC"]]
@@ -91,7 +91,14 @@ export async function getPendingRequests(req: Request, res: Response) {
 }
 
 /**
- * Approva una richiesta impostandone lo stato su "satisfied".
+ * Approva una richiesta e accredita token all’utente che l’ha creata.
+ *
+ * - Cambia lo stato della richiesta in "satisfied".
+ * - Aggiunge token all’utente creatore.
+ * - Invia notifiche all’utente creatore e a tutti i votanti (eccetto il creatore stesso).
+ *
+ * @param req - Richiesta HTTP con `tokensToAdd` nel body.
+ * @param res - Risposta JSON con messaggio di successo o errore.
  */
 export async function approveRequest(req: Request, res: Response) {
   const request = res.locals.request as RequestModel;
@@ -122,13 +129,6 @@ export async function approveRequest(req: Request, res: Response) {
     }));
 
     await Notification.bulkCreate(notifications);
-    
-    console.log("Creator ID:", creator?.id);
-    console.log("Notifica creator:", {
-      user_id: creator?.id,
-      message: `La tua richiesta per "${request.brano}" di ${request.artista} è stata approvata. +${tokensToAdd} token accreditati!`,
-    });
-    console.log("Notifiche votanti:", notifications);
 
     return res.json({ message: "Richiesta approvata, token accreditati, notifiche inviate" });
   } catch (err) {
@@ -143,6 +143,9 @@ export async function approveRequest(req: Request, res: Response) {
 
 /**
  * Rifiuta una richiesta impostandone lo stato su "rejected".
+ *
+ * @param _req - Richiesta HTTP (non usata).
+ * @param res - Risposta JSON con messaggio di conferma o errore.
  */
 export const rejectRequest = async (_req: Request, res: Response) => {
   const request = res.locals.request as RequestModel;

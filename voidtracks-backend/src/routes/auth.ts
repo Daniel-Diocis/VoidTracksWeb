@@ -1,13 +1,18 @@
 import { Router } from "express";
-import { 
-  validateAuthInput, 
-  checkUserExists, 
-  checkUserCredentials, 
+import {
+  validateAuthInput,
+  checkUserExists,
+  checkUserCredentials,
   dailyTokenBonus,
-  checkNotifications
+  checkNotifications,
 } from "../middleware/authMiddleware";
 import { authenticateToken } from "../middleware/authenticateToken";
-import { register, login, getPrivateUser, markNotificationsAsSeen } from "../controllers/authController";
+import {
+  register,
+  login,
+  getPrivateUser,
+  markNotificationsAsSeen,
+} from "../controllers/authController";
 
 const router = Router();
 
@@ -48,15 +53,27 @@ router.post("/login", validateAuthInput, checkUserCredentials, login);
  * @description
  * - Richiede un token JWT valido nell'header `Authorization`.
  * - Verifica il token e identifica l'utente.
- * - Assegna un token bonus giornaliero se applicabile.
- * - Restituisce le informazioni aggiornate dell’utente.
+ * - Applica il bonus token giornaliero se disponibile.
+ * - Restituisce le informazioni aggiornate dell’utente, inclusi i token e le notifiche.
  *
  * @middleware authenticateToken - Verifica la validità del token JWT.
  * @middleware dailyTokenBonus - Applica un eventuale bonus giornaliero.
+ * @middleware checkNotifications - Recupera le notifiche non lette.
  * @controller getPrivateUser - Restituisce i dati aggiornati dell'utente.
  */
 router.get("/private", authenticateToken, dailyTokenBonus, checkNotifications, getPrivateUser);
 
+/**
+ * @route PATCH /notifications/mark-as-seen
+ * @summary Segna tutte le notifiche dell’utente come lette.
+ *
+ * @description
+ * - Richiede autenticazione tramite token JWT.
+ * - Imposta a `true` il campo `seen` per tutte le notifiche non lette dell’utente autenticato.
+ *
+ * @middleware authenticateToken - Verifica il token JWT dell’utente.
+ * @controller markNotificationsAsSeen - Segna le notifiche come lette nel database.
+ */
 router.patch("/notifications/mark-as-seen", authenticateToken, markNotificationsAsSeen);
 
 export default router;

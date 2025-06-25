@@ -117,10 +117,11 @@ export async function login(req: Request, res: Response) {
  *
  * - Presuppone che i middleware `verifyToken` e (opzionalmente) `dailyTokenBonus`
  *   abbiano allegato l’oggetto utente aggiornato a `req.userRecord`.
+ * - Include anche eventuali notifiche non lette assegnate a `req.unreadNotifications`.
  *
  * @param req - Oggetto della richiesta HTTP contenente `userRecord`.
  * @param res - Oggetto della risposta HTTP.
- * @returns Risposta HTTP con i dati aggiornati dell’utente.
+ * @returns Risposta HTTP con i dati aggiornati dell’utente e le notifiche non lette.
  */
 export async function getPrivateUser(req: Request, res: Response) {
   try {
@@ -146,6 +147,16 @@ export async function getPrivateUser(req: Request, res: Response) {
   }
 }
 
+/**
+ * Marca tutte le notifiche non lette dell’utente autenticato come "lette".
+ *
+ * - Presuppone che il middleware `authenticateToken` abbia popolato `req.user`.
+ * - Esegue l’aggiornamento dei record `Notification` corrispondenti.
+ *
+ * @param req - Oggetto della richiesta HTTP contenente `user`.
+ * @param res - Oggetto della risposta HTTP.
+ * @returns Risposta HTTP 204 (No Content) in caso di successo.
+ */
 export async function markNotificationsAsSeen(req: Request, res: Response) {
   try {
     const userId = (req as any).user?.id;
