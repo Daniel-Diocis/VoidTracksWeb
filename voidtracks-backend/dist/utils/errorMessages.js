@@ -1,16 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ErrorMessages = exports.CustomStatusCodes = void 0;
+exports.ErrorMessages = void 0;
 const http_status_codes_1 = require("http-status-codes");
-const abc = http_status_codes_1.StatusCodes.BAD_REQUEST;
-var CustomStatusCodes;
-(function (CustomStatusCodes) {
-    CustomStatusCodes[CustomStatusCodes["bad"] = 400] = "bad";
-    CustomStatusCodes[CustomStatusCodes["UNAUTHORIZED"] = 401] = "UNAUTHORIZED";
-    CustomStatusCodes[CustomStatusCodes["not"] = 404] = "not";
-    CustomStatusCodes[CustomStatusCodes["INTERNAL_SERVER_ERROR"] = 500] = "INTERNAL_SERVER_ERROR";
-    CustomStatusCodes[CustomStatusCodes["OK"] = 200] = "OK";
-})(CustomStatusCodes || (exports.CustomStatusCodes = CustomStatusCodes = {}));
 exports.ErrorMessages = {
     NOT_USER: { status: http_status_codes_1.StatusCodes.UNAUTHORIZED, message: "Accesso negato. Login richiesto." },
     NOT_ADMIN: { status: http_status_codes_1.StatusCodes.FORBIDDEN, message: "Privilegi insufficienti." },
@@ -35,5 +26,9 @@ exports.ErrorMessages = {
     EXPIRED_LINK: { status: http_status_codes_1.StatusCodes.FORBIDDEN, message: "Link scaduto" },
     INVALID_PURCHASE_TOKEN: { status: http_status_codes_1.StatusCodes.NOT_FOUND, message: "Token non valido" },
     Q_NOT_STRING: { status: http_status_codes_1.StatusCodes.BAD_REQUEST, message: "Il parametro 'q' deve essere una stringa" },
+    INVALID_TRACK_NAME: { status: http_status_codes_1.StatusCodes.BAD_REQUEST, message: "Nome brano non valido." },
+    DUPLICATE_REQUEST: { status: http_status_codes_1.StatusCodes.CONFLICT, message: "Richiesta già presente e in attesa." },
+    ALREADY_VOTED: { status: http_status_codes_1.StatusCodes.CONFLICT, message: "Hai già votato questa richiesta." },
+    NOT_VOTED: { status: http_status_codes_1.StatusCodes.NOT_FOUND, message: "Non hai votato questa richiesta." },
     INTERNAL_ERROR: { status: http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, message: "Errore del server" },
 };

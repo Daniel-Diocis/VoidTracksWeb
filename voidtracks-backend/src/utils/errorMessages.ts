@@ -31,6 +31,11 @@ export const ErrorMessages = {
     INVALID_PURCHASE_TOKEN: { status: StatusCodes.NOT_FOUND, message: "Token non valido" },
 
     Q_NOT_STRING: { status: StatusCodes.BAD_REQUEST, message: "Il parametro 'q' deve essere una stringa" },
+
+    INVALID_TRACK_NAME: { status: StatusCodes.BAD_REQUEST, message: "Nome brano non valido." },
+    DUPLICATE_REQUEST: { status: StatusCodes.CONFLICT, message: "Richiesta già presente e in attesa." },
+    ALREADY_VOTED: { status: StatusCodes.CONFLICT, message: "Hai già votato questa richiesta." },
+    NOT_VOTED: { status: StatusCodes.NOT_FOUND, message: "Non hai votato questa richiesta." },
     
     INTERNAL_ERROR: { status: StatusCodes.INTERNAL_SERVER_ERROR, message: "Errore del server" },
 } as const;

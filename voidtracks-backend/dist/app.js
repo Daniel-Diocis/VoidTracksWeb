@@ -13,6 +13,7 @@ const purchase_1 = __importDefault(require("./routes/purchase"));
 const playlist_1 = __importDefault(require("./routes/playlist"));
 const admin_1 = __importDefault(require("./routes/admin"));
 const artists_1 = __importDefault(require("./routes/artists"));
+const requests_1 = __importDefault(require("./routes/requests"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const app = (0, express_1.default)();
 // Abilita CORS per accettare richieste da origini diverse
@@ -32,6 +33,7 @@ app.use("/purchase", purchase_1.default);
 app.use("/playlists", playlist_1.default);
 app.use("/admin", admin_1.default);
 app.use("/artists", artists_1.default);
+app.use("/requests", requests_1.default);
 // Middleware per la gestione centralizzata degli errori
 app.use(errorHandler_1.errorHandler);
 exports.default = app;

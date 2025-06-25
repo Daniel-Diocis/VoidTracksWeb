@@ -71,3 +71,24 @@ CREATE TABLE track_artists (
   artist_id UUID REFERENCES artists(id) ON DELETE CASCADE,
   PRIMARY KEY (track_id, artist_id)
 );
+
+-- Tabella richieste di nuovi brani
+CREATE TABLE requests (
+  id SERIAL PRIMARY KEY,
+  brano VARCHAR(100) NOT NULL,
+  artista VARCHAR(100) NOT NULL,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  status VARCHAR(10) NOT NULL DEFAULT 'waiting', -- waiting, satisfied, rejected
+  tokens INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tabella voti degli utenti sulle richieste
+CREATE TABLE request_votes (
+  id SERIAL PRIMARY KEY,
+  request_id INT REFERENCES requests(id) ON DELETE CASCADE,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (request_id, user_id) -- Ogni utente può votare una richiesta una sola volta
+);

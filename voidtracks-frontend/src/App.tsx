@@ -15,6 +15,8 @@ import PlaylistsPage from './pages/PlaylistsPage';
 import AdminPanel from './pages/AdminPanel';
 import NotAuthorized from './pages/NotAuthorized';
 import ArtistDetail from './pages/ArtistDetail';
+import UserRequests from "./pages/UserRequests";
+import AdminRequests from './pages/AdminRequests';
 
 function App() {
   const auth = useContext(AuthContext);
@@ -43,11 +45,13 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/my-purchases" element={<MyPurchases />} />
             <Route path="/playlists" element={<PlaylistsPage />} />
+            <Route path="/requests" element={<UserRequests />} />
           </Route>
 
           {/* Rotte admin */}
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/admin/richieste" element={<AdminRequests />} />
           </Route>
 
           {/* Catch all */}

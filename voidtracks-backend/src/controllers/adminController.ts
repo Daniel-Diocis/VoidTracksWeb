@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
 import User from "../models/User";
+import RequestModel from "../models/Request";
+import RequestVote from "../models/RequestVote";
 
 const factory = new MessageFactory();
 
@@ -37,3 +39,81 @@ export async function rechargeTokens(req: Request, res: Response) {
     return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
   }
 }
+
+/**
+ * Restituisce tutte le richieste con status "waiting" per l'admin.
+ *
+ * - Include l'username dell'utente che ha fatto la richiesta.
+ * - Conta i voti ricevuti da ciascuna richiesta.
+ *
+ * @route GET /admin/requests
+ */
+export async function getPendingRequests(req: Request, res: Response) {
+  try {
+    const requests = await RequestModel.findAll({
+      where: { status: "waiting" },
+      include: [
+        {
+          model: User,
+          attributes: ["username"]
+        },
+        {
+          model: RequestVote,
+          attributes: ["user_id"],
+          as: "votes"  // <-- usa lo stesso alias definito in `Request.hasMany(...)`
+        }
+      ],
+      order: [["created_at", "DESC"]]
+    });
+
+    const formatted = requests.map(r => ({
+      id: r.id,
+      brano: r.brano,
+      artista: r.artista,
+      tokens: r.tokens,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      user: (r as any).User?.username || "utente sconosciuto",
+      voti: (r as any).votes?.length || 0
+    }));
+
+    return res.json(formatted);
+  } catch (err) {
+    console.error("Errore fetch richieste pendenti:", err);
+    return factory.getStatusMessage(
+      res,
+      ErrorMessages.INTERNAL_ERROR.status,
+      ErrorMessages.INTERNAL_ERROR.message
+    );
+  }
+}
+
+/**
+ * Approva una richiesta impostandone lo stato su "satisfied".
+ */
+export const approveRequest = async (_req: Request, res: Response) => {
+  const request = res.locals.request as RequestModel;
+
+  try {
+    await request.update({ status: "satisfied" });
+    return res.json({ message: "Richiesta approvata con successo" });
+  } catch (err) {
+    console.error("Errore approvazione richiesta:", err);
+    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+  }
+};
+
+/**
+ * Rifiuta una richiesta impostandone lo stato su "rejected".
+ */
+export const rejectRequest = async (_req: Request, res: Response) => {
+  const request = res.locals.request as RequestModel;
+
+  try {
+    await request.update({ status: "rejected" });
+    return res.json({ message: "Richiesta rifiutata con successo" });
+  } catch (err) {
+    console.error("Errore rifiuto richiesta:", err);
+    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+  }
+};

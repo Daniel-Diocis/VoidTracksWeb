@@ -4,6 +4,7 @@ const express_1 = require("express");
 const authenticateToken_1 = require("../middleware/authenticateToken");
 const authRoles_1 = require("../middleware/authRoles");
 const adminMiddleware_1 = require("../middleware/adminMiddleware");
+const requestsMiddleware_1 = require("../middleware/requestsMiddleware");
 const adminController_1 = require("../controllers/adminController");
 const router = (0, express_1.Router)();
 /**
@@ -24,4 +25,7 @@ const router = (0, express_1.Router)();
  * @controller rechargeTokens - Esegue l'effettiva ricarica dei token.
  */
 router.patch("/recharge", authenticateToken_1.authenticateToken, authRoles_1.authenticateAdmin, adminMiddleware_1.validateRechargeInput, adminController_1.rechargeTokens);
+router.get("/requests", authenticateToken_1.authenticateToken, authRoles_1.authenticateAdmin, adminController_1.getPendingRequests);
+router.patch("/requests/:id/approve", authenticateToken_1.authenticateToken, authRoles_1.authenticateAdmin, requestsMiddleware_1.checkRequestWaiting, adminController_1.approveRequest);
+router.patch("/requests/:id/reject", authenticateToken_1.authenticateToken, authRoles_1.authenticateAdmin, requestsMiddleware_1.checkRequestWaiting, adminController_1.rejectRequest);
 exports.default = router;

@@ -2,7 +2,8 @@ import { Router } from "express";
 import { authenticateToken } from "../middleware/authenticateToken";
 import { authenticateAdmin } from "../middleware/authRoles";
 import { validateRechargeInput } from "../middleware/adminMiddleware";
-import { rechargeTokens } from "../controllers/adminController";
+import { checkRequestWaiting } from "../middleware/requestsMiddleware";
+import { rechargeTokens, getPendingRequests, approveRequest, rejectRequest } from "../controllers/adminController";
 
 const router = Router();
 
@@ -29,6 +30,29 @@ router.patch(
   authenticateAdmin,
   validateRechargeInput,
   rechargeTokens
+);
+
+router.get(
+  "/requests",
+  authenticateToken,
+  authenticateAdmin,
+  getPendingRequests
+);
+
+router.patch(
+  "/requests/:id/approve",
+  authenticateToken,
+  authenticateAdmin,
+  checkRequestWaiting,
+  approveRequest
+);
+
+router.patch(
+  "/requests/:id/reject",
+  authenticateToken,
+  authenticateAdmin,
+  checkRequestWaiting,
+  rejectRequest
 );
 
 export default router;

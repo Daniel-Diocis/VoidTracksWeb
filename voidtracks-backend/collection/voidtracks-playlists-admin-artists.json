@@ -1,0 +1,341 @@
+{
+    "clientName": "Thunder Client",
+    "collectionName": "VoidTracks – Playlists & Admin & Artists",
+    "collectionId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+    "dateExported": "2025-06-24T23:31:29.502Z",
+    "version": "1.2",
+    "folders": [
+        {
+            "_id": "6fcd7bbf-14a0-454b-a576-379ad1c33e70",
+            "name": "/playlists",
+            "containerId": "",
+            "created": "2025-06-24T23:04:31.094Z",
+            "sortNum": 10000
+        },
+        {
+            "_id": "9d3a6809-c11b-4def-b48b-411a13b12056",
+            "name": "/admin",
+            "containerId": "",
+            "created": "2025-06-24T23:17:01.662Z",
+            "sortNum": 20000
+        },
+        {
+            "_id": "e0feafbc-ee0c-4332-a9f6-0235e1bd28cc",
+            "name": "/artists",
+            "containerId": "",
+            "created": "2025-06-24T23:17:10.112Z",
+            "sortNum": 30000
+        }
+    ],
+    "requests": [
+        {
+            "_id": "e36d677f-52b4-4268-9abe-f40023c2543d",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "9d3a6809-c11b-4def-b48b-411a13b12056",
+            "name": "/recharge",
+            "url": "http://localhost:3000/admin/recharge",
+            "method": "PATCH",
+            "sortNum": 10000,
+            "created": "2025-06-24T23:16:49.896Z",
+            "modified": "2025-06-24T23:16:49.896Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiYWRtaW4iLCJ0b2tlbnMiOjEwMiwiaWF0IjoxNzUwODA2ODIzLCJleHAiOjE3NTA4MTA0MjN9.z6ch-BJx1dppWTVh7Mw7a6BvENwxXnnSwAc5xw-jG_mFWo5AtR_mXZe6h-IDxxDDMJ3RiTlSS_hthMNAwu0W9ZfI5oygS6myJzn0IDI3Qj4Qrsov4YsQVJnU9fFuvV8VyIDy-eOYHJBdvyyDZkH_MKhY1Fo5HHNa6JfUHMNVA3Mf6N6tL55ePm4-pwFgaif2siO36QZ1gMdZxzk095b_OXqSduFb9vLtiqMQVH63LYQUgwzz1FfJrG8Rm0Bw1mvlG6poeRe1vnIvHuuWViV_HUvO2H02fvvBG3NX2aC25JvPlHZckNlseJ3igGZw4RQrh_Jw7NY9VoaaHWvQeEPRiw"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"username\": \"utenteDiProva\",\n  \"tokens\": 10\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "efb24ff4-9a8a-4832-9549-f908d38873a1",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "6fcd7bbf-14a0-454b-a576-379ad1c33e70",
+            "name": "/",
+            "url": "http://localhost:3000/playlists",
+            "method": "GET",
+            "sortNum": 100000,
+            "created": "2025-06-24T23:04:31.099Z",
+            "modified": "2025-06-24T23:04:31.099Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzgsInVzZXJuYW1lIjoidXRlbnRlRGlQcm92YSIsInJvbGUiOiJ1c2VyIiwidG9rZW5zIjoxMCwiaWF0IjoxNzUwODAzOTQxLCJleHAiOjE3NTA4MDc1NDF9.vR8ou3i8jx1c4voYoDfg3W8H5nk_JHi31p2p2E-YsJYl2S1uNx2DrRHWBo50GScnQDU6J_bfkZQuBuMT2PVILHuehbc6LOe25LGqKdB_mvp8-B19fictUOOACsgXdWoZGjFW4ZfgsIK68VIIdqLGzO9VuBzLchEMp-SiTFmdg3e3wVmQGAgpQ2Dpe5FEmMN-bpIXDrvSm7OKI49SdkzCM3dvy5uw_VyMyb5qrC9i8_vqKNgac8omGll1_KVR_zAhr0ZZjVMyt9fwCapasqPofD05TpjXoI-ppEkvbdC1vLjoEt4Y4kG1ImlMzYyOHj2q1aaOvPzcAnOGENW8eP_ltw"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ]
+        },
+        {
+            "_id": "4d584b0b-0a91-4768-aa05-a2dd33cbe0df",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "6fcd7bbf-14a0-454b-a576-379ad1c33e70",
+            "name": "/",
+            "url": "http://localhost:3000/playlists",
+            "method": "POST",
+            "sortNum": 110000,
+            "created": "2025-06-24T23:04:31.099Z",
+            "modified": "2025-06-24T23:04:31.099Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzgsInVzZXJuYW1lIjoidXRlbnRlRGlQcm92YSIsInJvbGUiOiJ1c2VyIiwidG9rZW5zIjoxMCwiaWF0IjoxNzUwODAzOTQxLCJleHAiOjE3NTA4MDc1NDF9.vR8ou3i8jx1c4voYoDfg3W8H5nk_JHi31p2p2E-YsJYl2S1uNx2DrRHWBo50GScnQDU6J_bfkZQuBuMT2PVILHuehbc6LOe25LGqKdB_mvp8-B19fictUOOACsgXdWoZGjFW4ZfgsIK68VIIdqLGzO9VuBzLchEMp-SiTFmdg3e3wVmQGAgpQ2Dpe5FEmMN-bpIXDrvSm7OKI49SdkzCM3dvy5uw_VyMyb5qrC9i8_vqKNgac8omGll1_KVR_zAhr0ZZjVMyt9fwCapasqPofD05TpjXoI-ppEkvbdC1vLjoEt4Y4kG1ImlMzYyOHj2q1aaOvPzcAnOGENW8eP_ltw"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"nome\": \"Playlist Lofi\"\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "f783b267-4c9c-4921-a801-8ac1823007f9",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "6fcd7bbf-14a0-454b-a576-379ad1c33e70",
+            "name": "/:id",
+            "url": "http://localhost:3000/playlists/49",
+            "method": "GET",
+            "sortNum": 120000,
+            "created": "2025-06-24T23:04:31.099Z",
+            "modified": "2025-06-24T23:04:31.099Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzgsInVzZXJuYW1lIjoidXRlbnRlRGlQcm92YSIsInJvbGUiOiJ1c2VyIiwidG9rZW5zIjoxMCwiaWF0IjoxNzUwODAzOTQxLCJleHAiOjE3NTA4MDc1NDF9.vR8ou3i8jx1c4voYoDfg3W8H5nk_JHi31p2p2E-YsJYl2S1uNx2DrRHWBo50GScnQDU6J_bfkZQuBuMT2PVILHuehbc6LOe25LGqKdB_mvp8-B19fictUOOACsgXdWoZGjFW4ZfgsIK68VIIdqLGzO9VuBzLchEMp-SiTFmdg3e3wVmQGAgpQ2Dpe5FEmMN-bpIXDrvSm7OKI49SdkzCM3dvy5uw_VyMyb5qrC9i8_vqKNgac8omGll1_KVR_zAhr0ZZjVMyt9fwCapasqPofD05TpjXoI-ppEkvbdC1vLjoEt4Y4kG1ImlMzYyOHj2q1aaOvPzcAnOGENW8eP_ltw"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ]
+        },
+        {
+            "_id": "23867ce9-c0dd-4e35-8da7-4849bc6e08dc",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "6fcd7bbf-14a0-454b-a576-379ad1c33e70",
+            "name": "/:id",
+            "url": "http://localhost:3000/playlists/49",
+            "method": "PATCH",
+            "sortNum": 130000,
+            "created": "2025-06-24T23:04:31.099Z",
+            "modified": "2025-06-24T23:04:31.099Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzgsInVzZXJuYW1lIjoidXRlbnRlRGlQcm92YSIsInJvbGUiOiJ1c2VyIiwidG9rZW5zIjoxMCwiaWF0IjoxNzUwODAzOTQxLCJleHAiOjE3NTA4MDc1NDF9.vR8ou3i8jx1c4voYoDfg3W8H5nk_JHi31p2p2E-YsJYl2S1uNx2DrRHWBo50GScnQDU6J_bfkZQuBuMT2PVILHuehbc6LOe25LGqKdB_mvp8-B19fictUOOACsgXdWoZGjFW4ZfgsIK68VIIdqLGzO9VuBzLchEMp-SiTFmdg3e3wVmQGAgpQ2Dpe5FEmMN-bpIXDrvSm7OKI49SdkzCM3dvy5uw_VyMyb5qrC9i8_vqKNgac8omGll1_KVR_zAhr0ZZjVMyt9fwCapasqPofD05TpjXoI-ppEkvbdC1vLjoEt4Y4kG1ImlMzYyOHj2q1aaOvPzcAnOGENW8eP_ltw"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"nome\": \"Void Playlist\"\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "2b2275c4-4c50-490f-97c9-0c152d84bb37",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "6fcd7bbf-14a0-454b-a576-379ad1c33e70",
+            "name": "/:id/tracks",
+            "url": "http://localhost:3000/playlists/49/tracks",
+            "method": "POST",
+            "sortNum": 140000,
+            "created": "2025-06-24T23:04:31.099Z",
+            "modified": "2025-06-24T23:04:31.099Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzgsInVzZXJuYW1lIjoidXRlbnRlRGlQcm92YSIsInJvbGUiOiJ1c2VyIiwidG9rZW5zIjoxMCwiaWF0IjoxNzUwODAzOTQxLCJleHAiOjE3NTA4MDc1NDF9.vR8ou3i8jx1c4voYoDfg3W8H5nk_JHi31p2p2E-YsJYl2S1uNx2DrRHWBo50GScnQDU6J_bfkZQuBuMT2PVILHuehbc6LOe25LGqKdB_mvp8-B19fictUOOACsgXdWoZGjFW4ZfgsIK68VIIdqLGzO9VuBzLchEMp-SiTFmdg3e3wVmQGAgpQ2Dpe5FEmMN-bpIXDrvSm7OKI49SdkzCM3dvy5uw_VyMyb5qrC9i8_vqKNgac8omGll1_KVR_zAhr0ZZjVMyt9fwCapasqPofD05TpjXoI-ppEkvbdC1vLjoEt4Y4kG1ImlMzYyOHj2q1aaOvPzcAnOGENW8eP_ltw Content-Type: application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"track_id\": \"ef90cefb-ea88-4c87-b61c-cab9c92653cd\"\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "8b1aa0df-07f1-4bcb-b72c-73ac26673fc8",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "6fcd7bbf-14a0-454b-a576-379ad1c33e70",
+            "name": "/:id/favorite",
+            "url": "http://localhost:3000/playlists/49/favorite",
+            "method": "PATCH",
+            "sortNum": 150000,
+            "created": "2025-06-24T23:04:31.099Z",
+            "modified": "2025-06-24T23:04:31.099Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzgsInVzZXJuYW1lIjoidXRlbnRlRGlQcm92YSIsInJvbGUiOiJ1c2VyIiwidG9rZW5zIjoxMCwiaWF0IjoxNzUwODAzOTQxLCJleHAiOjE3NTA4MDc1NDF9.vR8ou3i8jx1c4voYoDfg3W8H5nk_JHi31p2p2E-YsJYl2S1uNx2DrRHWBo50GScnQDU6J_bfkZQuBuMT2PVILHuehbc6LOe25LGqKdB_mvp8-B19fictUOOACsgXdWoZGjFW4ZfgsIK68VIIdqLGzO9VuBzLchEMp-SiTFmdg3e3wVmQGAgpQ2Dpe5FEmMN-bpIXDrvSm7OKI49SdkzCM3dvy5uw_VyMyb5qrC9i8_vqKNgac8omGll1_KVR_zAhr0ZZjVMyt9fwCapasqPofD05TpjXoI-ppEkvbdC1vLjoEt4Y4kG1ImlMzYyOHj2q1aaOvPzcAnOGENW8eP_ltw"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"trackId\": \"ef90cefb-ea88-4c87-b61c-cab9c92653cd\"\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "573c60af-ae76-4ccc-9966-4585a75105c6",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "6fcd7bbf-14a0-454b-a576-379ad1c33e70",
+            "name": "/:id/tracks/:trackId",
+            "url": "http://localhost:3000/playlists/49/tracks/ef90cefb-ea88-4c87-b61c-cab9c92653cd",
+            "method": "DELETE",
+            "sortNum": 160000,
+            "created": "2025-06-24T23:07:01.548Z",
+            "modified": "2025-06-24T23:07:01.549Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzgsInVzZXJuYW1lIjoidXRlbnRlRGlQcm92YSIsInJvbGUiOiJ1c2VyIiwidG9rZW5zIjoxMCwiaWF0IjoxNzUwODAzOTQxLCJleHAiOjE3NTA4MDc1NDF9.vR8ou3i8jx1c4voYoDfg3W8H5nk_JHi31p2p2E-YsJYl2S1uNx2DrRHWBo50GScnQDU6J_bfkZQuBuMT2PVILHuehbc6LOe25LGqKdB_mvp8-B19fictUOOACsgXdWoZGjFW4ZfgsIK68VIIdqLGzO9VuBzLchEMp-SiTFmdg3e3wVmQGAgpQ2Dpe5FEmMN-bpIXDrvSm7OKI49SdkzCM3dvy5uw_VyMyb5qrC9i8_vqKNgac8omGll1_KVR_zAhr0ZZjVMyt9fwCapasqPofD05TpjXoI-ppEkvbdC1vLjoEt4Y4kG1ImlMzYyOHj2q1aaOvPzcAnOGENW8eP_ltw Content-Type: application/json"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ]
+        },
+        {
+            "_id": "81af2206-3424-447f-95df-a0d1d47f7207",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "6fcd7bbf-14a0-454b-a576-379ad1c33e70",
+            "name": "/:id",
+            "url": "http://localhost:3000/playlists/49",
+            "method": "DELETE",
+            "sortNum": 170000,
+            "created": "2025-06-24T23:08:15.547Z",
+            "modified": "2025-06-24T23:08:15.547Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzgsInVzZXJuYW1lIjoidXRlbnRlRGlQcm92YSIsInJvbGUiOiJ1c2VyIiwidG9rZW5zIjoxMCwiaWF0IjoxNzUwODAzOTQxLCJleHAiOjE3NTA4MDc1NDF9.vR8ou3i8jx1c4voYoDfg3W8H5nk_JHi31p2p2E-YsJYl2S1uNx2DrRHWBo50GScnQDU6J_bfkZQuBuMT2PVILHuehbc6LOe25LGqKdB_mvp8-B19fictUOOACsgXdWoZGjFW4ZfgsIK68VIIdqLGzO9VuBzLchEMp-SiTFmdg3e3wVmQGAgpQ2Dpe5FEmMN-bpIXDrvSm7OKI49SdkzCM3dvy5uw_VyMyb5qrC9i8_vqKNgac8omGll1_KVR_zAhr0ZZjVMyt9fwCapasqPofD05TpjXoI-ppEkvbdC1vLjoEt4Y4kG1ImlMzYyOHj2q1aaOvPzcAnOGENW8eP_ltw"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ]
+        },
+        {
+            "_id": "08e326b5-9818-47c9-aa02-6ba4ef7ebbb2",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "e0feafbc-ee0c-4332-a9f6-0235e1bd28cc",
+            "name": "/",
+            "url": "http://localhost:3000/artists",
+            "method": "GET",
+            "sortNum": 180000,
+            "created": "2025-06-24T23:17:51.246Z",
+            "modified": "2025-06-24T23:17:51.246Z",
+            "headers": []
+        },
+        {
+            "_id": "4b7aa67c-16df-466e-bb6b-d3364234a438",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "e0feafbc-ee0c-4332-a9f6-0235e1bd28cc",
+            "name": "/byName/:nome",
+            "url": "http://localhost:3000/artists/byName/Mac%20Miller",
+            "method": "GET",
+            "sortNum": 190000,
+            "created": "2025-06-24T23:19:04.889Z",
+            "modified": "2025-06-24T23:19:04.889Z",
+            "headers": []
+        }
+    ],
+    "ref": "ey-qbNlQs1zIJ4LXHB5k_GnGkIiVGrQ_SH2taaJcE6SqdRjgehRMoeaGVjE-Im8kC-7i9s6bn5wRrs4HyZO1JA"
+}
