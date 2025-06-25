@@ -173,7 +173,7 @@ export async function markNotificationsAsSeen(req: Request, res: Response) {
       { where: { user_id: userId, seen: false } }
     );
 
-    return res.sendStatus(StatusCodes.NO_CONTENT); // 204
+    return res.sendStatus(StatusCodes.NO_CONTENT);
   } catch (err) {
     console.error("Errore nel marcare notifiche come lette:", err);
     return factory.getStatusMessage(

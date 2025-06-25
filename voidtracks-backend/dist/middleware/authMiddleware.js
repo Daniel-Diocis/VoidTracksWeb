@@ -115,6 +115,17 @@ async function dailyTokenBonus(req, res, next) {
     req.userRecord = user;
     next();
 }
+/**
+ * Middleware per il recupero delle notifiche non lette di un utente autenticato.
+ *
+ * - Se l’utente è autenticato, recupera tutte le notifiche non lette ordinate per data decrescente.
+ * - Le notifiche vengono assegnate a `req.unreadNotifications` per uso successivo.
+ * - Non blocca la chain in caso di errore: passa comunque al middleware successivo.
+ *
+ * @param req - Oggetto della richiesta contenente `user` da `authenticateToken`.
+ * @param res - Oggetto della risposta HTTP.
+ * @param next - Funzione per passare al middleware successivo.
+ */
 async function checkNotifications(req, res, next) {
     var _a;
     try {
@@ -132,6 +143,6 @@ async function checkNotifications(req, res, next) {
     }
     catch (err) {
         console.error("Errore nel recupero notifiche:", err);
-        next(); // non bloccare la chain
+        next(); // non blocca la chain
     }
 }

@@ -5,10 +5,18 @@ const sequelize_2 = require("../db/sequelize");
 const sequelize = (0, sequelize_2.getSequelizeInstance)();
 /**
  * Modello Sequelize `Notification`.
- * Tiene traccia delle notifiche temporanee per ciascun utente.
+ *
+ * - Mappa la tabella `notifications`.
+ * - Tiene traccia delle notifiche associate agli utenti.
  */
 class Notification extends sequelize_1.Model {
 }
+/**
+ * Inizializzazione del modello `Notification`.
+ *
+ * - Definisce i campi della tabella e i vincoli.
+ * - Gestisce i timestamp `created_at` e `updated_at`.
+ */
 Notification.init({
     id: {
         type: sequelize_1.DataTypes.INTEGER,
@@ -31,7 +39,7 @@ Notification.init({
 }, {
     sequelize,
     tableName: "notifications",
-    timestamps: true, // attiva createdAt e updatedAt
+    timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
 });

@@ -106,10 +106,11 @@ async function login(req, res) {
  *
  * - Presuppone che i middleware `verifyToken` e (opzionalmente) `dailyTokenBonus`
  *   abbiano allegato l’oggetto utente aggiornato a `req.userRecord`.
+ * - Include anche eventuali notifiche non lette assegnate a `req.unreadNotifications`.
  *
  * @param req - Oggetto della richiesta HTTP contenente `userRecord`.
  * @param res - Oggetto della risposta HTTP.
- * @returns Risposta HTTP con i dati aggiornati dell’utente.
+ * @returns Risposta HTTP con i dati aggiornati dell’utente e le notifiche non lette.
  */
 async function getPrivateUser(req, res) {
     try {
@@ -130,6 +131,16 @@ async function getPrivateUser(req, res) {
         return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
     }
 }
+/**
+ * Marca tutte le notifiche non lette dell’utente autenticato come "lette".
+ *
+ * - Presuppone che il middleware `authenticateToken` abbia popolato `req.user`.
+ * - Esegue l’aggiornamento dei record `Notification` corrispondenti.
+ *
+ * @param req - Oggetto della richiesta HTTP contenente `user`.
+ * @param res - Oggetto della risposta HTTP.
+ * @returns Risposta HTTP 204 (No Content) in caso di successo.
+ */
 async function markNotificationsAsSeen(req, res) {
     var _a;
     try {
@@ -138,7 +149,7 @@ async function markNotificationsAsSeen(req, res) {
             return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.NOT_AUTHENTICATED_USER.status, errorMessages_1.ErrorMessages.NOT_AUTHENTICATED_USER.message);
         }
         await Notification_1.default.update({ seen: true }, { where: { user_id: userId, seen: false } });
-        return res.sendStatus(http_status_codes_1.StatusCodes.NO_CONTENT); // 204
+        return res.sendStatus(http_status_codes_1.StatusCodes.NO_CONTENT);
     }
     catch (err) {
         console.error("Errore nel marcare notifiche come lette:", err);

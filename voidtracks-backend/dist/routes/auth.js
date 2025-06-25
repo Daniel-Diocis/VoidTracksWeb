@@ -40,13 +40,25 @@ router.post("/login", authMiddleware_1.validateAuthInput, authMiddleware_1.check
  * @description
  * - Richiede un token JWT valido nell'header `Authorization`.
  * - Verifica il token e identifica l'utente.
- * - Assegna un token bonus giornaliero se applicabile.
- * - Restituisce le informazioni aggiornate dell’utente.
+ * - Applica il bonus token giornaliero se disponibile.
+ * - Restituisce le informazioni aggiornate dell’utente, inclusi i token e le notifiche.
  *
  * @middleware authenticateToken - Verifica la validità del token JWT.
  * @middleware dailyTokenBonus - Applica un eventuale bonus giornaliero.
+ * @middleware checkNotifications - Recupera le notifiche non lette.
  * @controller getPrivateUser - Restituisce i dati aggiornati dell'utente.
  */
 router.get("/private", authenticateToken_1.authenticateToken, authMiddleware_1.dailyTokenBonus, authMiddleware_1.checkNotifications, authController_1.getPrivateUser);
+/**
+ * @route PATCH /notifications/mark-as-seen
+ * @summary Segna tutte le notifiche dell’utente come lette.
+ *
+ * @description
+ * - Richiede autenticazione tramite token JWT.
+ * - Imposta a `true` il campo `seen` per tutte le notifiche non lette dell’utente autenticato.
+ *
+ * @middleware authenticateToken - Verifica il token JWT dell’utente.
+ * @controller markNotificationsAsSeen - Segna le notifiche come lette nel database.
+ */
 router.patch("/notifications/mark-as-seen", authenticateToken_1.authenticateToken, authController_1.markNotificationsAsSeen);
 exports.default = router;

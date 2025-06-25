@@ -13,18 +13,22 @@ const messageFactory_1 = require("../utils/messageFactory");
 const User_1 = __importDefault(require("../models/User"));
 const factory = new messageFactory_1.MessageFactory();
 /**
- * Restituisce tutte le richieste con i voti associati, ordinate per numero di voti.
+ * Restituisce tutte le richieste in stato "waiting", con numero voti e flag `hasVoted`.
+ *
+ * - Ordina i risultati per numero di voti decrescente.
+ * - Include un flag `hasVoted` se l’utente loggato ha già votato quella richiesta.
+ *
+ * @param req - Oggetto della richiesta HTTP con `user.id`.
+ * @param res - Risposta JSON con lista delle richieste e relativi voti.
  */
 async function getAllRequests(req, res) {
     var _a;
     try {
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        // Ottieni tutte le richieste in stato 'waiting' con i voti
         const requests = await db_1.Request.findAll({
             where: { status: "waiting" },
             include: [{ model: db_1.RequestVote, as: "votes" }],
         });
-        // Recupera gli ID delle richieste votate dall’utente loggato
         const userVotes = await db_1.RequestVote.findAll({
             where: { user_id: userId },
             attributes: ["request_id"],
@@ -42,7 +46,7 @@ async function getAllRequests(req, res) {
                 createdAt: r.createdAt,
                 updatedAt: r.updatedAt,
                 voti: ((_a = r.votes) === null || _a === void 0 ? void 0 : _a.length) || 0,
-                hasVoted: votedRequestIds.has(r.id), // 👈 Aggiunto campo
+                hasVoted: votedRequestIds.has(r.id),
             });
         })
             .sort((a, b) => b.voti - a.voti);
@@ -54,7 +58,13 @@ async function getAllRequests(req, res) {
     }
 }
 /**
- * Crea una nuova richiesta e scala i token all'utente.
+ * Crea una nuova richiesta per un brano da parte dell’utente loggato.
+ *
+ * - Richiede `brano` e `artista` nel body.
+ * - Scala 3 token all’utente richiedente.
+ *
+ * @param req - Oggetto della richiesta HTTP con `user.id`, `brano` e `artista`.
+ * @param res - Risposta JSON con la richiesta creata.
  */
 async function createRequest(req, res) {
     try {
@@ -79,7 +89,10 @@ async function createRequest(req, res) {
     }
 }
 /**
- * Aggiunge un voto a una richiesta da parte di un utente.
+ * Aggiunge un voto a una richiesta specifica da parte dell’utente autenticato.
+ *
+ * @param req - Oggetto della richiesta HTTP con `user.id` e `req.params.id`.
+ * @param res - Risposta JSON con messaggio di conferma.
  */
 async function voteRequest(req, res) {
     var _a;
@@ -95,7 +108,10 @@ async function voteRequest(req, res) {
     }
 }
 /**
- * Rimuove un voto da una richiesta da parte di un utente.
+ * Rimuove il voto dell’utente autenticato da una richiesta specifica.
+ *
+ * @param req - Oggetto della richiesta HTTP con `user.id` e `req.params.id`.
+ * @param res - Risposta JSON con messaggio di conferma.
  */
 async function unvoteRequest(req, res) {
     var _a;

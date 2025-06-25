@@ -2,7 +2,7 @@
     "clientName": "Thunder Client",
     "collectionName": "VoidTracks – Playlists & Admin & Artists",
     "collectionId": "535be3a1-89c0-4c41-b725-72157d9d0181",
-    "dateExported": "2025-06-24T23:31:29.502Z",
+    "dateExported": "2025-06-25T22:52:19.323Z",
     "version": "1.2",
     "folders": [
         {
@@ -335,7 +335,97 @@
             "created": "2025-06-24T23:19:04.889Z",
             "modified": "2025-06-24T23:19:04.889Z",
             "headers": []
+        },
+        {
+            "_id": "938a3e19-2aa3-4c67-92b9-8c7a9c4bc3d6",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "9d3a6809-c11b-4def-b48b-411a13b12056",
+            "name": "/requests",
+            "url": "http://localhost:3000/admin/requests",
+            "method": "GET",
+            "sortNum": 200000,
+            "created": "2025-06-25T22:40:35.185Z",
+            "modified": "2025-06-25T22:40:35.185Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsInRva2VucyI6MTAxLCJpYXQiOjE3NTA4OTExNjUsImV4cCI6MTc1MDg5NDc2NX0.3_wCdgS2RyjwJw_1_eMqexyNzVPPrWA5PriXmm5brSZs4cBpxhXxcRTRhKlBCQWwIvYzm78Xl1JgTY5KVckSlx_-N6opIOLYwG4DEwtzG5ZrDuBH6BCwf9Zdu8s91ZtI6HoKQko5pg2wtAUl3E-7PbQ6Kp7k-r95llI-ILO1yWMi7DF79QgOBCztMM-9ktTFikIrTdM1VzDgPGko3y47GC4ZEQ15QmysKKzTOFKC72RsfHF3vOCV3_jTQNP4WjLAdfZmUTITR6SanFOJBIO8M0Kbnh_zoP_77xSHH8Yfkz9G5WNKlfCUc0u93phuubPXRXxSSPZepYHjZMz41wAQJw"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ]
+        },
+        {
+            "_id": "90671a36-03b1-4bfd-bb06-d4743f61c255",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "9d3a6809-c11b-4def-b48b-411a13b12056",
+            "name": "/requests/:id/approve",
+            "url": "http://localhost:3000/admin/requests/108/approve",
+            "method": "PATCH",
+            "sortNum": 210000,
+            "created": "2025-06-25T22:43:55.850Z",
+            "modified": "2025-06-25T22:43:55.850Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsInRva2VucyI6MTAxLCJpYXQiOjE3NTA4OTExNjUsImV4cCI6MTc1MDg5NDc2NX0.3_wCdgS2RyjwJw_1_eMqexyNzVPPrWA5PriXmm5brSZs4cBpxhXxcRTRhKlBCQWwIvYzm78Xl1JgTY5KVckSlx_-N6opIOLYwG4DEwtzG5ZrDuBH6BCwf9Zdu8s91ZtI6HoKQko5pg2wtAUl3E-7PbQ6Kp7k-r95llI-ILO1yWMi7DF79QgOBCztMM-9ktTFikIrTdM1VzDgPGko3y47GC4ZEQ15QmysKKzTOFKC72RsfHF3vOCV3_jTQNP4WjLAdfZmUTITR6SanFOJBIO8M0Kbnh_zoP_77xSHH8Yfkz9G5WNKlfCUc0u93phuubPXRXxSSPZepYHjZMz41wAQJw"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"tokensToAdd\": 10\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "93a650a2-bf66-46df-ad37-8345de2bbac5",
+            "colId": "535be3a1-89c0-4c41-b725-72157d9d0181",
+            "containerId": "9d3a6809-c11b-4def-b48b-411a13b12056",
+            "name": "/requests/:id/reject",
+            "url": "http://localhost:3000/admin/requests/76/reject",
+            "method": "PATCH",
+            "sortNum": 220000,
+            "created": "2025-06-25T22:44:52.727Z",
+            "modified": "2025-06-25T22:44:52.727Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsInRva2VucyI6MTAxLCJpYXQiOjE3NTA4OTExNjUsImV4cCI6MTc1MDg5NDc2NX0.3_wCdgS2RyjwJw_1_eMqexyNzVPPrWA5PriXmm5brSZs4cBpxhXxcRTRhKlBCQWwIvYzm78Xl1JgTY5KVckSlx_-N6opIOLYwG4DEwtzG5ZrDuBH6BCwf9Zdu8s91ZtI6HoKQko5pg2wtAUl3E-7PbQ6Kp7k-r95llI-ILO1yWMi7DF79QgOBCztMM-9ktTFikIrTdM1VzDgPGko3y47GC4ZEQ15QmysKKzTOFKC72RsfHF3vOCV3_jTQNP4WjLAdfZmUTITR6SanFOJBIO8M0Kbnh_zoP_77xSHH8Yfkz9G5WNKlfCUc0u93phuubPXRXxSSPZepYHjZMz41wAQJw"
+                },
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                }
+            ]
         }
     ],
-    "ref": "ey-qbNlQs1zIJ4LXHB5k_GnGkIiVGrQ_SH2taaJcE6SqdRjgehRMoeaGVjE-Im8kC-7i9s6bn5wRrs4HyZO1JA"
+    "ref": "ey-qbNlQs1zIJ4LXHB5k_AY5qmBc2K2JFixr0gYMNJ7Qc3nuYGbACRbU9JZO19Xl1DESgfwBWElsYd22Cyq6cw"
 }

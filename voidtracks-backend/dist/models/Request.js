@@ -5,10 +5,18 @@ const sequelize_2 = require("../db/sequelize");
 const sequelize = (0, sequelize_2.getSequelizeInstance)();
 /**
  * Modello Sequelize `Request`.
- * Rappresenta una richiesta di aggiunta brano inviata da un utente.
+ *
+ * - Mappa la tabella `requests` del database.
+ * - Rappresenta una richiesta di aggiunta brano inviata da un utente.
  */
 class Request extends sequelize_1.Model {
 }
+/**
+ * Inizializzazione del modello `Request`.
+ *
+ * - Definisce i campi, i vincoli e i tipi ENUM.
+ * - Gestisce i timestamp `created_at` e `updated_at`.
+ */
 Request.init({
     id: {
         type: sequelize_1.DataTypes.INTEGER,
