@@ -448,7 +448,8 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 Il meccanismo è il seguente:
 - Il middleware authenticateToken verifica il token JWT e recupera l’ID utente.
 - Se il token è valido, recupera dal database i dati dell’utente associato.
-- Se l’utente non ha ancora ricevuto il bonus giornaliero, assegna un token aggiuntivo e aggiorna la data.
+- Il middleware daillyTokenBonus verifica e se l’utente non ha ancora ricevuto il bonus giornaliero, assegna un token aggiuntivo e aggiorna la data.
+- Il middleware checkNotifications recupera le notifiche non lette.
 - Restituisce i dati aggiornati dell’utente come risposta.
 
 **Diagramma di sequenza**
@@ -477,6 +478,11 @@ sequenceDiagram
   DB-->>Middleware: user
   Middleware->>DB: User.update() se bonus giornaliero
   DB-->>Middleware: user aggiornato
+  Middleware-->>App: next()
+
+  App->>Middleware: checkNotifications
+  Middleware->>DB: cerca notifiche non lette associate a user.id
+  DB-->>Middleware: restituisce le notifiche (se ci sono)
   Middleware-->>App: next()
 
   App->>Controller: getPrivateUser(req)
