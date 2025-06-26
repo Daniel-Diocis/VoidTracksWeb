@@ -3,6 +3,7 @@ import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { notify } from '../utils/toastManager';
+import { SkipBack, SkipForward } from 'lucide-react';
 
 type Track = {
   id: string;
@@ -89,7 +90,7 @@ const TracksMarket = () => {
     }
   }, [auth]);
 
-  // Controllo play/pause audio HTML nativo
+  // Controlla play/pause sull'audio HTML nativo
   useEffect(() => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -100,12 +101,33 @@ const TracksMarket = () => {
     }
   }, [isPlaying, currentTrack]);
 
-  // Funzione play/pause bottone
   const togglePlayPause = (track: Track) => {
     if (currentTrack?.id === track.id) {
+      // Se è già il brano corrente, alterna play/pause
       setIsPlaying(!isPlaying);
     } else {
+      // Se cambio brano, setta e metti play
       setCurrentTrack(track);
+      setIsPlaying(true);
+    }
+  };
+
+  const playPrevious = () => {
+    if (!currentTrack) return;
+    const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
+    if (currentIndex > 0) {
+      const previousTrack = tracks[currentIndex - 1];
+      setCurrentTrack(previousTrack);
+      setIsPlaying(true);
+    }
+  };
+
+  const playNext = () => {
+    if (!currentTrack) return;
+    const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
+    if (currentIndex < tracks.length - 1) {
+      const nextTrack = tracks[currentIndex + 1];
+      setCurrentTrack(nextTrack);
       setIsPlaying(true);
     }
   };
@@ -179,32 +201,45 @@ const TracksMarket = () => {
         <div className="fixed bottom-0 left-0 right-0 bg-zinc-800 p-4 flex items-center gap-4">
           <img
             src={`${PUBLIC_URL}/cover/${currentTrack.cover_path}`}
-            alt={`Cover ${currentTrack.titolo}`}
+            alt={`Cover dell'album ${currentTrack.album}`}
             className="w-16 h-16 object-cover rounded"
           />
           <div className="flex flex-col">
             <span className="font-bold">{currentTrack.titolo}</span>
             <span className="text-sm text-gray-400">{currentTrack.artista}</span>
           </div>
-          <audio
-            ref={audioRef}
-            controls
-            controlsList="nodownload"
-            src={`${PUBLIC_URL}/music/${currentTrack.music_path}`}
-            className="flex-grow"
-            onEnded={() => {
-              setIsPlaying(false);
-              setCurrentTrack(null);
-            }}
-            onPause={() => setIsPlaying(false)}
-            onPlay={() => setIsPlaying(true)}
-          />
+
+          {/* Controlli */}
+          <div className="flex items-center gap-3 ml-4 flex-grow">
+            <button onClick={playPrevious} className="text-white" aria-label="Brano precedente">
+              <SkipBack size={24} />
+            </button>
+            {/* Audio */}
+            <audio
+              ref={audioRef}
+              controls
+              controlsList="nodownload"
+              preload="auto"
+              src={`${PUBLIC_URL}/music/${currentTrack.music_path}`}
+              className="flex-grow"
+              onEnded={() => {
+                playNext(); // Passa al brano successivo alla fine
+              }}
+            />
+
+            <button onClick={playNext} className="text-white" aria-label="Brano successivo">
+              <SkipForward size={24} />
+            </button>
+          </div>
+
+          {/* Chiudi player */}
           <button
             onClick={() => {
               setIsPlaying(false);
               setCurrentTrack(null);
             }}
             className="ml-4 text-white"
+            aria-label="Chiudi player"
           >
             Close
           </button>

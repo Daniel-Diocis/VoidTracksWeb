@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
 import { notify } from '../utils/toastManager';
+import { SkipBack, SkipForward } from 'lucide-react';
 
 type TrackBase = {
   id: string;
@@ -90,6 +91,26 @@ function TrackList() {
     }
   };
 
+  const playPrevious = () => {
+    if (!currentTrack) return;
+    const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
+    if (currentIndex > 0) {
+      const previousTrack = tracks[currentIndex - 1];
+      setCurrentTrack(previousTrack);
+      setIsPlaying(true);
+    }
+  };
+
+  const playNext = () => {
+    if (!currentTrack) return;
+    const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
+    if (currentIndex < tracks.length - 1) {
+      const nextTrack = tracks[currentIndex + 1];
+      setCurrentTrack(nextTrack);
+      setIsPlaying(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-900 text-white px-4 py-6 max-w-7xl mx-auto">
       {/* Input di ricerca */}
@@ -113,17 +134,31 @@ function TrackList() {
             <span className="font-bold">{currentTrack.titolo}</span>
             <span className="text-sm text-gray-400">{currentTrack.artista}</span>
           </div>
-          <audio
-            ref={audioRef}
-            controls
-            controlsList="nodownload"
-            src={`${PUBLIC_URL}/music/${currentTrack.music_path}`}
-            className="flex-grow"
-            onEnded={() => {
-              setIsPlaying(false);
-              setCurrentTrack(null);
-            }}
-          />
+
+          {/* Controlli */}
+          <div className="flex items-center gap-3 ml-4 flex-grow">
+            <button onClick={playPrevious} className="text-white" aria-label="Brano precedente">
+              <SkipBack size={24} />
+            </button>
+            {/* Audio */}
+            <audio
+              ref={audioRef}
+              controls
+              controlsList="nodownload"
+              preload="auto"
+              src={`${PUBLIC_URL}/music/${currentTrack.music_path}`}
+              className="flex-grow"
+              onEnded={() => {
+                playNext(); // Passa al brano successivo alla fine
+              }}
+            />
+
+            <button onClick={playNext} className="text-white" aria-label="Brano successivo">
+              <SkipForward size={24} />
+            </button>
+          </div>
+
+          {/* Chiudi player */}
           <button
             onClick={() => {
               setIsPlaying(false);
