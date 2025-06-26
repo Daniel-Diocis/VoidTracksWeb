@@ -17,6 +17,8 @@ import NotAuthorized from './pages/NotAuthorized';
 import ArtistDetail from './pages/ArtistDetail';
 import UserRequests from "./pages/UserRequests";
 import AdminRequests from './pages/AdminRequests';
+import GlobalPlayer from './components/GlobalPlayer';
+
 
 function App() {
   const auth = useContext(AuthContext);
@@ -57,6 +59,7 @@ function App() {
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <GlobalPlayer />
       </main>
     </>
   );

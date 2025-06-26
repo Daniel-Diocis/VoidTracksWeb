@@ -1,20 +1,45 @@
-import { useEffect, useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import type { PlaylistWithTracks, PurchaseWithTrack } from '../types';
-import { notify } from '../utils/toastManager';
+import { useEffect, useState } from "react";
+import { useAuth } from "../hooks/useAuth";
+import type { PlaylistWithTracks, PurchaseWithTrack } from "../types";
+import { notify } from "../utils/toastManager";
+import { usePlayer } from "../context/PlayerContext";
+import type { Track } from "../types";
 
 export default function PlaylistDetail({
   playlistId,
-  onRename
+  onRename,
 }: {
   playlistId: number;
   onRename: (id: number, nuovoNome: string) => void;
 }) {
   const { token } = useAuth();
   const [playlist, setPlaylist] = useState<PlaylistWithTracks | null>(null);
-  const [purchasedTracks, setPurchasedTracks] = useState<PurchaseWithTrack[]>([]);
+  const [purchasedTracks, setPurchasedTracks] = useState<PurchaseWithTrack[]>(
+    []
+  );
   const [editing, setEditing] = useState(false);
-  const [newName, setNewName] = useState('');
+  const [newName, setNewName] = useState("");
+
+  const {
+    currentTrack,
+    isPlaying,
+    playTrack,
+    togglePlayPause,
+    //playNext,
+    //playPrevious,
+    //tracks,
+    setTracks,
+    setIsPlaying
+  } = usePlayer();
+
+  const handlePlayPause = (track: Track) => {
+    if (currentTrack?.id === track.id) {
+      togglePlayPause();
+    } else {
+      setTracks(playlist!.tracks);
+      playTrack(track);
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -23,22 +48,26 @@ export default function PlaylistDetail({
       try {
         const [playlistRes, purchasesRes] = await Promise.all([
           fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           }),
           fetch(`${import.meta.env.VITE_API_URL}/purchase`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
 
         const playlistData = await playlistRes.json();
         const purchasesData = await purchasesRes.json();
 
         if (!playlistRes.ok) {
-          notify.error(playlistData.error || 'Errore nel caricamento della playlist');
+          notify.error(
+            playlistData.error || "Errore nel caricamento della playlist"
+          );
           return;
         }
         if (!purchasesRes.ok) {
-          notify.error(purchasesData.error || 'Errore nel caricamento degli acquisti');
+          notify.error(
+            purchasesData.error || "Errore nel caricamento degli acquisti"
+          );
           return;
         }
 
@@ -47,8 +76,8 @@ export default function PlaylistDetail({
         setNewName(playlistData.playlist.nome);
         setPurchasedTracks(purchasesData.data || []);
       } catch (err) {
-        console.error('Errore fetch playlist:', err);
-        notify.error('Errore di rete durante il caricamento');
+        console.error("Errore fetch playlist:", err);
+        notify.error("Errore di rete durante il caricamento");
       }
     };
 
@@ -63,92 +92,106 @@ export default function PlaylistDetail({
 
   const refreshPlaylist = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/playlists/${playlistId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       const data = await res.json();
 
       if (!res.ok) {
-        notify.error(data.error || 'Errore aggiornamento playlist');
+        notify.error(data.error || "Errore aggiornamento playlist");
         return;
       }
 
       data.tracks ??= [];
       setPlaylist(data);
     } catch (err) {
-      console.error('Errore refresh playlist:', err);
-      notify.error('Errore di rete durante il refresh');
+      console.error("Errore refresh playlist:", err);
+      notify.error("Errore di rete durante il refresh");
     }
   };
 
   const handleAddTrack = async (trackId: string) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}/tracks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ track_id: trackId }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/playlists/${playlistId}/tracks`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ track_id: trackId }),
+        }
+      );
 
       if (!res.ok) {
         const data = await res.json();
-        notify.error(data.error || 'Errore aggiunta brano');
+        notify.error(data.error || "Errore aggiunta brano");
         return;
       }
-      notify.success('Brano aggiunto con successo!');
+      notify.success("Brano aggiunto con successo!");
       refreshPlaylist();
     } catch (err) {
       console.error("Errore aggiunta brano:", err);
-      notify.error('Errore aggiunta brano');
+      notify.error("Errore aggiunta brano");
     }
   };
 
   const handleRemoveTrack = async (trackId: string) => {
-    if (!window.confirm('Rimuovere questo brano?')) return;
+    if (!window.confirm("Rimuovere questo brano?")) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}/tracks/${trackId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `${
+          import.meta.env.VITE_API_URL
+        }/playlists/${playlistId}/tracks/${trackId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) {
         const data = await res.json();
-        notify.error(data.error || 'Errore rimozione brano');
+        notify.error(data.error || "Errore rimozione brano");
         return;
       }
-      notify.success('Brano rimosso con successo!');
+      notify.success("Brano rimosso con successo!");
       refreshPlaylist();
     } catch (err) {
       console.error("Errore rimozione brano:", err);
-      notify.error('Errore rimozione brano');
+      notify.error("Errore rimozione brano");
     }
   };
 
   const handleSetFavorite = async (trackId: string) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/playlists/${playlistId}/favorite`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ trackId }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/playlists/${playlistId}/favorite`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ trackId }),
+        }
+      );
 
       if (!res.ok) {
         const data = await res.json();
-        notify.error(data.error || 'Errore impostazione preferito');
+        notify.error(data.error || "Errore impostazione preferito");
         return;
       }
-      notify.success('Brano impostato come preferito!');
+      notify.success("Brano impostato come preferito!");
       refreshPlaylist();
     } catch (err) {
       console.error("Errore impostazione preferito:", err);
-      notify.error('Errore impostazione preferito');
+      notify.error("Errore impostazione preferito");
     }
   };
 
@@ -162,62 +205,113 @@ export default function PlaylistDetail({
             <input
               value={newName}
               onChange={e => setNewName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleRename();
+              }}
               className="flex-1"
             />
-            <button onClick={handleRename} className="text-green-400">✔</button>
-            <button onClick={() => setEditing(false)} className="text-gray-400">✖</button>
+            <button onClick={handleRename} className="text-green-400">
+              ✔
+            </button>
+            <button onClick={() => setEditing(false)} className="text-gray-400">
+              ✖
+            </button>
           </div>
         ) : (
           <>
             <h2 className="text-xl font-bold">{playlist.playlist.nome}</h2>
-            <button onClick={() => setEditing(true)} className="text-blue-400 text-sm">
+            <button
+              onClick={() => setEditing(true)}
+              className="text-blue-400 text-sm"
+            >
               ✏️ Rinomina
             </button>
           </>
         )}
       </div>
 
-      <h3 className="font-semibold mt-4 mb-2">Brani acquistati non nella playlist:</h3>
+      <h3 className="font-semibold mt-4 mb-2">
+        Brani acquistati non nella playlist:
+      </h3>
       <ul className="bg-zinc-800 p-2 rounded border border-zinc-700 mb-4">
         {purchasedTracks
-          .filter(p => p.Track && !playlist.tracks.some(t => t.id === p.Track.id))
-          .map(p => (
+          .filter(
+            (p) => p.Track && !playlist.tracks.some((t) => t.id === p.Track.id)
+          )
+          .map((p) => (
             <li
               key={p.Track!.id}
               className="flex justify-between items-center py-2 border-b border-zinc-700 last:border-b-0"
             >
               <div>
                 <div className="font-medium">{p.Track!.titolo}</div>
-                <div className="text-sm text-gray-400">{p.Track!.artista} – {p.Track!.album}</div>
+                <div className="text-sm text-gray-400">
+                  {p.Track!.artista} – {p.Track!.album}
+                </div>
               </div>
-              <button onClick={() => handleAddTrack(p.Track!.id)} className="market-buy">
+              <button
+                onClick={() => handleAddTrack(p.Track!.id)}
+                className="market-buy"
+              >
                 ➕ Aggiungi
               </button>
             </li>
           ))}
-        {purchasedTracks.filter(p => p.Track && !playlist.tracks.some(t => t.id === p.Track.id)).length === 0 && (
-          <li className="text-gray-500 italic p-2">Nessun brano disponibile da aggiungere.</li>
+        {purchasedTracks.filter(
+          (p) => p.Track && !playlist.tracks.some((t) => t.id === p.Track.id)
+        ).length === 0 && (
+          <li className="text-gray-500 italic p-2">
+            Nessun brano disponibile da aggiungere.
+          </li>
         )}
       </ul>
 
       <h3 className="font-semibold mb-2">Brani nella playlist:</h3>
       <ul>
         {playlist.tracks.length > 0 ? (
-          playlist.tracks.map(track => (
-            <li key={track.id} className="flex justify-between items-center p-2 border-b border-zinc-700">
+          playlist.tracks.map((track) => (
+            <li
+              key={track.id}
+              className="flex justify-between items-center p-2 border-b border-zinc-700"
+            >
               <div>
                 <div className="font-medium">{track.titolo}</div>
-                <div className="text-sm text-gray-400">{track.artista} – {track.album}</div>
+                <div className="text-sm text-gray-400">
+                  {track.artista} – {track.album}
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                {track.is_favorite && <span className="text-yellow-400 font-bold">★</span>}
-                <button
-                  onClick={() => handleSetFavorite(track.id)}
-                  title="Imposta come preferito"
-                  className="text-yellow-400 hover:text-yellow-500"
-                >
-                  ⭐
-                </button>
+                {track.is_favorite && (
+                  <span className="text-yellow-400 font-bold">★</span>
+                )}
+                {currentTrack?.id === track.id && isPlaying ? (
+                  <button
+                    onClick={() => setIsPlaying(false)}
+                    title="Pausa"
+                    className="text-green-400 hover:text-green-500"
+                  >
+                    Pause
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handlePlayPause(track)}
+                    title="Riproduci"
+                    className="text-green-400 hover:text-green-500"
+                  >
+                    Play
+                  </button>
+                )}
+                {track.is_favorite ? (
+                  <span className="text-yellow-400 font-bold">★</span>
+                ) : (
+                  <button
+                    onClick={() => handleSetFavorite(track.id)}
+                    title="Imposta come preferito"
+                    className="text-yellow-400 hover:text-yellow-500"
+                  >
+                    ⭐
+                  </button>
+                )}
                 <button
                   onClick={() => handleRemoveTrack(track.id)}
                   title="Rimuovi"
@@ -229,7 +323,9 @@ export default function PlaylistDetail({
             </li>
           ))
         ) : (
-          <li className="text-gray-500 italic p-2">Nessun brano nella playlist.</li>
+          <li className="text-gray-500 italic p-2">
+            Nessun brano nella playlist.
+          </li>
         )}
       </ul>
     </div>

@@ -1,26 +1,15 @@
-import { useEffect, useState, useContext, useRef } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { notify } from '../utils/toastManager';
-import { SkipBack, SkipForward } from 'lucide-react';
-
-type Track = {
-  id: string;
-  titolo: string;
-  artista: string;
-  album: string;
-  costo: number;
-  cover_path: string;
-  music_path: string;
-  updated_at: string;
-  isUpdated?: boolean;
-};
+import { usePlayer } from '../context/PlayerContext';
+import type { Track } from '../types';
 
 const PUBLIC_URL = 'https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public';
 
 const TracksMarket = () => {
-  const [tracks, setTracks] = useState<Track[]>([]);
+  const [tracksFromDB, setTracksFromDB] = useState<Track[]>([]);
   const [query, setQuery] = useState('');
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [downloadMap, setDownloadMap] = useState<Record<string, string>>({});
@@ -28,11 +17,17 @@ const TracksMarket = () => {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
   const navigate = useNavigate();
 
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const {
+    currentTrack,
+    isPlaying,
+    playTrack,
+    togglePlayPause,
+    //playNext,
+    //playPrevious,
+    //tracks,
+    setTracks
+  } = usePlayer();
 
-  // Fetch tracks e gestione timestamps
   useEffect(() => {
     const url = query ? `${API_URL}/tracks?q=${encodeURIComponent(query)}` : `${API_URL}/tracks`;
     fetch(url)
@@ -52,9 +47,12 @@ const TracksMarket = () => {
         const aggiornati = ordinati.map(track => {
           const id = track.music_path;
           const updatedAt = track.updated_at;
-          const localUpdated = localTimestamps[id];
 
+          if (!id || !updatedAt) return track; // salta se mancano i dati essenziali
+
+          const localUpdated = localTimestamps[id];
           const shouldUpdate = !localUpdated || localUpdated !== updatedAt;
+
           if (shouldUpdate) {
             newTimestamps[id] = updatedAt;
           }
@@ -64,11 +62,11 @@ const TracksMarket = () => {
 
         saveLocalTimestamps({ ...localTimestamps, ...newTimestamps });
         setTracks(aggiornati);
+        setTracksFromDB(aggiornati);
       })
       .catch(err => console.error('Errore nel fetch:', err));
   }, [query]);
 
-  // Fetch acquisti
   useEffect(() => {
     if (auth?.token) {
       fetch(`${API_URL}/purchase`, {
@@ -90,49 +88,14 @@ const TracksMarket = () => {
     }
   }, [auth]);
 
-  // Controlla play/pause sull'audio HTML nativo
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play();
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [isPlaying, currentTrack]);
-
-  const togglePlayPause = (track: Track) => {
+  const handlePlayPause = (track: Track) => {
     if (currentTrack?.id === track.id) {
-      // Se è già il brano corrente, alterna play/pause
-      setIsPlaying(!isPlaying);
+      togglePlayPause();
     } else {
-      // Se cambio brano, setta e metti play
-      setCurrentTrack(track);
-      setIsPlaying(true);
+      playTrack(track);
     }
   };
 
-  const playPrevious = () => {
-    if (!currentTrack) return;
-    const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
-    if (currentIndex > 0) {
-      const previousTrack = tracks[currentIndex - 1];
-      setCurrentTrack(previousTrack);
-      setIsPlaying(true);
-    }
-  };
-
-  const playNext = () => {
-    if (!currentTrack) return;
-    const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
-    if (currentIndex < tracks.length - 1) {
-      const nextTrack = tracks[currentIndex + 1];
-      setCurrentTrack(nextTrack);
-      setIsPlaying(true);
-    }
-  };
-
-  // Funzione acquisto
   const handleAcquista = async (track: Track) => {
     if (!auth || !auth.token) {
       notify.error('Devi essere loggato per acquistare.');
@@ -185,7 +148,7 @@ const TracksMarket = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-zinc-900 text-white rounded">
+    <div className="max-w-4xl p-4 bg-zinc-900 text-white rounded mx-auto pb-40">
       <h1 className="text-2xl font-bold mb-6">Market - Acquista brani</h1>
 
       <input
@@ -196,59 +159,8 @@ const TracksMarket = () => {
         className="w-full mb-6 p-2 rounded bg-zinc-700 text-white placeholder-zinc-400"
       />
 
-      {/* Player fisso in basso */}
-      {currentTrack && (
-        <div className="fixed bottom-0 left-0 right-0 bg-zinc-800 p-4 flex items-center gap-4">
-          <img
-            src={`${PUBLIC_URL}/cover/${currentTrack.cover_path}`}
-            alt={`Cover dell'album ${currentTrack.album}`}
-            className="w-16 h-16 object-cover rounded"
-          />
-          <div className="flex flex-col">
-            <span className="font-bold">{currentTrack.titolo}</span>
-            <span className="text-sm text-gray-400">{currentTrack.artista}</span>
-          </div>
-
-          {/* Controlli */}
-          <div className="flex items-center gap-3 ml-4 flex-grow">
-            <button onClick={playPrevious} className="text-white" aria-label="Brano precedente">
-              <SkipBack size={24} />
-            </button>
-            {/* Audio */}
-            <audio
-              ref={audioRef}
-              controls
-              controlsList="nodownload"
-              preload="auto"
-              src={`${PUBLIC_URL}/music/${currentTrack.music_path}`}
-              className="flex-grow"
-              onEnded={() => {
-                playNext(); // Passa al brano successivo alla fine
-              }}
-            />
-
-            <button onClick={playNext} className="text-white" aria-label="Brano successivo">
-              <SkipForward size={24} />
-            </button>
-          </div>
-
-          {/* Chiudi player */}
-          <button
-            onClick={() => {
-              setIsPlaying(false);
-              setCurrentTrack(null);
-            }}
-            className="ml-4 text-white"
-            aria-label="Chiudi player"
-          >
-            Close
-          </button>
-        </div>
-      )}
-
-      {/* Lista tracce */}
       <ul>
-        {tracks.map(track => {
+        {tracksFromDB.map(track => {
           const isOwned = purchasedIds.has(track.id);
           const canDownload = downloadMap[track.id];
 
@@ -260,7 +172,7 @@ const TracksMarket = () => {
                 className="market-cover"
               />
               <div className="market-info">
-                <p className="market-title">
+                <p className="market-title line-clamp-2 break-words text-ellipsis overflow-hidden">
                   {track.titolo}{' '}
                   {track.isUpdated && (
                     <span className="text-yellow-400 text-xs ml-2">(Nuovo!)</span>
@@ -304,7 +216,7 @@ const TracksMarket = () => {
                   </button>
                 )}
                 <button
-                  onClick={() => togglePlayPause(track)}
+                  onClick={() => handlePlayPause(track)}
                   className="btn-play ml-4"
                 >
                   {currentTrack?.id === track.id && isPlaying ? 'Pause' : 'Play'}

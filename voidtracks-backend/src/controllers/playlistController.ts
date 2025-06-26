@@ -59,7 +59,7 @@ export async function getPlaylistWithTracks(req: Request, res: Response) {
 
     const playlistTracks = await PlaylistTrack.findAll({
       where: { playlist_id: playlist.id },
-      include: [{ model: Track, attributes: ["id", "titolo", "artista", "album", "cover_path"] }],
+      include: [{ model: Track, attributes: ["id", "titolo", "artista", "album", "music_path", "cover_path"] }],
     });
 
     const tracks = playlistTracks
@@ -71,6 +71,7 @@ export async function getPlaylistWithTracks(req: Request, res: Response) {
           titolo: track.titolo,
           artista: track.artista,
           album: track.album,
+          music_path: track.music_path,
           cover_path: track.cover_path,
           is_favorite: pt.is_favorite,
         };

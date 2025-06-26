@@ -134,7 +134,7 @@ export default function PlaylistsPage() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row p-4 gap-4">
+    <div className="flex flex-col md:flex-row p-4 gap-4 mx-auto pb-32">
       <div className="w-full md:w-1/3">
         <div className="mb-4">
           <h3 className="font-semibold mb-1">Crea nuova Playlist</h3>

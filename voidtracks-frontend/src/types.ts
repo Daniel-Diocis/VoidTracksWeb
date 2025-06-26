@@ -4,7 +4,11 @@ export interface Track {
   artista: string;
   album: string;
   cover_path: string;
-  is_favorite: boolean;
+  music_path: string;
+  updated_at: string;
+  costo: number;
+  is_favorite?: boolean;   // opzionale, solo nelle playlist
+  isUpdated?: boolean;     // campo interno calcolato localmente
 }
 
 export interface Playlist {

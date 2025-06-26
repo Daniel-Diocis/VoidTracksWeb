@@ -67,7 +67,7 @@ async function getPlaylistWithTracks(req, res) {
         const playlist = req.playlist;
         const playlistTracks = await PlaylistTrack_1.default.findAll({
             where: { playlist_id: playlist.id },
-            include: [{ model: Track_1.default, attributes: ["id", "titolo", "artista", "album", "cover_path"] }],
+            include: [{ model: Track_1.default, attributes: ["id", "titolo", "artista", "album", "music_path", "cover_path"] }],
         });
         const tracks = playlistTracks
             .map((pt) => {
@@ -79,6 +79,7 @@ async function getPlaylistWithTracks(req, res) {
                 titolo: track.titolo,
                 artista: track.artista,
                 album: track.album,
+                music_path: track.music_path,
                 cover_path: track.cover_path,
                 is_favorite: pt.is_favorite,
             };
