@@ -1,8 +1,12 @@
 # VoidTracksWeb
 
 VoidTracksWeb è un'applicazione web per l'acquisto, la gestione e la riproduzione di brani musicali. 
-Gli utenti possono registrarsi, acquistare token, scaricare brani tramite link temporanei e creare playlist personalizzate. 
-Gli amministratori possono gestire gli utenti e ricaricare token.
+Gli utenti possono registrarsi, scaricare brani (spendendo token) tramite link temporanei, creare playlist personalizzate con i propri brani scaricati e fare richieste (spendendo token) agli amministratori di caricare nuovi brani. 
+Gli amministratori possono gestire gli utenti, ricaricare token e soddisfare/rifiutare le richieste degli utenti.
+
+## Diagramma dei casi d'uso
+
+![Diagramma dei casi d'uso](diagramma-casi-d-uso.jpg)
 
 ## Rotte
 
