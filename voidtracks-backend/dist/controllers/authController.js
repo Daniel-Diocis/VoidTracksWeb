@@ -28,7 +28,7 @@ const factory = new messageFactory_1.MessageFactory();
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta HTTP con il token JWT e i dati dell’utente appena creato.
  */
-async function register(req, res) {
+async function register(req, res, next) {
     try {
         const { username, password } = req.body;
         const saltRounds = 10;
@@ -59,8 +59,7 @@ async function register(req, res) {
         });
     }
     catch (error) {
-        console.error("Errore registrazione:", error);
-        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -74,7 +73,7 @@ async function register(req, res) {
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta HTTP con il token JWT e i dati dell’utente autenticato.
  */
-async function login(req, res) {
+async function login(req, res, next) {
     try {
         const user = req.userRecord;
         const token = jsonwebtoken_1.default.sign({
@@ -97,8 +96,7 @@ async function login(req, res) {
         });
     }
     catch (error) {
-        console.error("Errore login:", error);
-        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -112,7 +110,7 @@ async function login(req, res) {
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta HTTP con i dati aggiornati dell’utente e le notifiche non lette.
  */
-async function getPrivateUser(req, res) {
+async function getPrivateUser(req, res, next) {
     try {
         const user = req.userRecord;
         const unreadNotifications = req.unreadNotifications || [];
@@ -127,8 +125,7 @@ async function getPrivateUser(req, res) {
         });
     }
     catch (error) {
-        console.error("Errore nel recupero dell’utente:", error);
-        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -141,7 +138,7 @@ async function getPrivateUser(req, res) {
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta HTTP 204 (No Content) in caso di successo.
  */
-async function markNotificationsAsSeen(req, res) {
+async function markNotificationsAsSeen(req, res, next) {
     var _a;
     try {
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
@@ -151,8 +148,7 @@ async function markNotificationsAsSeen(req, res) {
         await Notification_1.default.update({ seen: true }, { where: { user_id: userId, seen: false } });
         return res.sendStatus(http_status_codes_1.StatusCodes.NO_CONTENT);
     }
-    catch (err) {
-        console.error("Errore nel marcare notifiche come lette:", err);
-        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+    catch (error) {
+        next(error);
     }
 }

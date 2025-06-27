@@ -1,6 +1,4 @@
 /**
- * PopularTracks.tsx
- *
  * Pagina che mostra i brani più acquistati dagli utenti.
  *
  * Funzionalità:

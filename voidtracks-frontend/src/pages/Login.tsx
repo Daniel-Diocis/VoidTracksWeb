@@ -1,6 +1,4 @@
 /**
- * Login.tsx
- *
  * Pagina di autenticazione dell’utente tramite username e password.
  *
  * Funzionalità:

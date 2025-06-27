@@ -1,6 +1,4 @@
 /**
- * Navbar.tsx
- *
  * Componente di navigazione principale dell'applicazione.
  *
  * Mostra:
@@ -19,6 +17,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import icon from '../assets/icon.png';
 
 /**
  * Componente Navbar visibile in tutte le pagine.
@@ -39,8 +38,9 @@ function Navbar() {
 
   return (
     <nav className="flex justify-between items-center p-4 bg-zinc-900 text-white max-w-7xl mx-auto">
-      <div className="flex items-center gap-2 font-bold text-2xl">
-        <Link to="/" className="hover:underline">
+      <div className="flex items-center gap-2 font-bold text-2xl flex-shrink-0 min-w-0">
+        <Link to="/" className="flex items-center gap-2 hover:underline">
+          <img src={icon} alt="Icon" className="w-8 h-8 object-contain" />
           VoidTracks
         </Link>
         {isLoggedIn && tokens !== undefined && (
@@ -49,7 +49,7 @@ function Navbar() {
           </span>
         )}
       </div>
-      <div className="flex gap-4 items-center">
+      <div className="flex flex-wrap gap-4 items-center justify-end">
         {/* Link visibili a tutti */}
         <Link to="/market" className="px-4 py-2 hover:underline">Market</Link>
         <Link to="/popular" className="px-4 py-2 hover:underline">Brani più acquistati</Link>

@@ -1,6 +1,4 @@
 /**
- * TracksMarket.tsx
- *
  * Componente che rappresenta il market dei brani acquistabili.
  *
  * Funzionalità principali:

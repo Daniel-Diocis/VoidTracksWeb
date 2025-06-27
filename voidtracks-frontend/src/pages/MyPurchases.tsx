@@ -1,6 +1,4 @@
 /**
- * MyPurchases.tsx
- *
  * Pagina per la visualizzazione degli acquisti effettuati dall’utente autenticato.
  *
  * Funzionalità:

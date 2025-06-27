@@ -1,6 +1,4 @@
 /**
- * AuthContext.tsx
- *
  * Contesto di autenticazione globale per l'intera applicazione.
  * Fornisce:
  * - Utente loggato e ruolo (user/admin)

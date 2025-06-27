@@ -41,6 +41,7 @@ Purchase.init({
         type: sequelize_1.DataTypes.DATE,
         allowNull: false,
         defaultValue: sequelize_1.DataTypes.NOW,
+        field: 'purchased_at',
     },
     valid_until: {
         type: sequelize_1.DataTypes.DATE,

@@ -90,6 +90,7 @@ Purchase.init(
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
+      field: 'purchased_at',
     },
     valid_until: {
       type: DataTypes.DATE,

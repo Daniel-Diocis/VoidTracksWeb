@@ -1,6 +1,4 @@
 /**
- * toastManager.ts
- *
  * Wrapper centralizzato per la gestione delle notifiche toast,
  * basato su react-toastify. Fornisce metodi rapidi con e senza opzioni personalizzate.
  */

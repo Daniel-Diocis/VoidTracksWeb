@@ -1,6 +1,4 @@
 /**
- * Register.tsx
- *
  * Pagina di registrazione per nuovi utenti.
  *
  * Funzionalità:

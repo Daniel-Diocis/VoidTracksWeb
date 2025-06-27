@@ -18,10 +18,7 @@ const factory = new messageFactory_1.MessageFactory();
  */
 function validateRechargeInput(req, res, next) {
     const { username, tokens } = req.body;
-    if (!username ||
-        typeof username !== "string" ||
-        typeof tokens !== "number" ||
-        tokens < 0) {
+    if (!username || typeof username !== "string" || typeof tokens !== "number" || tokens < 0) {
         return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INVALID_RECHARGE_INPUT.status, errorMessages_1.ErrorMessages.INVALID_RECHARGE_INPUT.message);
     }
     next();

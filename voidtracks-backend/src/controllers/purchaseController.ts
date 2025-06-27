@@ -94,6 +94,7 @@ export async function downloadTrack(req: Request, res: Response, next: NextFunct
  * @param req - Richiesta HTTP contenente `user.id` e filtri opzionali tramite query string.
  * @param res - Risposta HTTP con l’elenco degli acquisti effettuati.
  */
+
 export async function getUserPurchases(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user.id;
@@ -102,16 +103,31 @@ export async function getUserPurchases(req: Request, res: Response, next: NextFu
     const whereClause: any = { user_id: userId };
     const purchasedAtConditions: any = {};
 
-    if (fromDate) purchasedAtConditions[Op.gte] = new Date(fromDate as string);
-    if (toDate) purchasedAtConditions[Op.lte] = new Date(toDate as string);
-    if (Object.keys(purchasedAtConditions).length > 0) {
+    const fromDateRaw = req.query.fromDate as string;
+    const toDateRaw = req.query.toDate as string;
+
+    const fromDateObj = fromDateRaw ? new Date(fromDateRaw) : null;
+    const toDateObj = toDateRaw ? new Date(toDateRaw) : null;
+
+    if (fromDateObj && !isNaN(fromDateObj.getTime())) {
+      purchasedAtConditions[Op.gte] = fromDateObj;
+    }
+    if (toDateObj && !isNaN(toDateObj.getTime())) {
+      purchasedAtConditions[Op.lte] = toDateObj;
+    }
+
+    if (purchasedAtConditions[Op.gte] || purchasedAtConditions[Op.lte]) {
       whereClause.purchased_at = purchasedAtConditions;
     }
+
+    console.log('fromDate:', fromDateRaw, '→', fromDateObj);
+    console.log('toDate:', toDateRaw, '→', toDateObj);
+    console.log('Final whereClause:', whereClause);
 
     const purchases = await Purchase.findAll({
       where: whereClause,
       include: [Track],
-      order: [["purchased_at", "DESC"]],
+      order: [['purchased_at', 'DESC']],
     });
 
     res.json({

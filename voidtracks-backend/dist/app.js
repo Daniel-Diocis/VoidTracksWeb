@@ -22,7 +22,7 @@ app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 // Logger delle richieste in modalità di sviluppo
 app.use((0, morgan_1.default)("dev"));
-// Rotta di base per testare che l'API sia attiva
+// Rotta di default per verificare che l'API sia in esecuzione
 app.get("/", (_req, res) => {
     res.send("API is running");
 });

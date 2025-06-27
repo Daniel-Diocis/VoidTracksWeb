@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllTracks = getAllTracks;
 exports.getPopularTracks = getPopularTracks;
 const sequelize_1 = require("sequelize");
-const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const Track_1 = __importDefault(require("../models/Track"));
 const Purchase_1 = __importDefault(require("../models/Purchase"));
@@ -21,7 +20,7 @@ const factory = new messageFactory_1.MessageFactory();
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta JSON con un array di brani.
  */
-async function getAllTracks(req, res) {
+async function getAllTracks(req, res, next) {
     try {
         const query = req.query.q;
         let whereClause = {};
@@ -38,8 +37,7 @@ async function getAllTracks(req, res) {
         res.json(tracks);
     }
     catch (error) {
-        console.error("Errore recupero brani:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -53,7 +51,7 @@ async function getAllTracks(req, res) {
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta JSON con un array di oggetti: `track_id`, `num_acquisti`, e dettagli del brano.
  */
-async function getPopularTracks(req, res) {
+async function getPopularTracks(req, res, next) {
     try {
         const topTracks = await Purchase_1.default.findAll({
             attributes: ["track_id", [(0, sequelize_1.fn)("COUNT", (0, sequelize_1.col)("track_id")), "num_acquisti"]],
@@ -70,7 +68,6 @@ async function getPopularTracks(req, res) {
         res.json(topTracks);
     }
     catch (error) {
-        console.error("Errore nel recupero dei brani popolari:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }

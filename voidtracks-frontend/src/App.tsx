@@ -1,6 +1,4 @@
 /**
- * App.tsx
- *
  * Entry point principale dell'applicazione VoidTracks.
  * Gestisce il routing, la visualizzazione della barra di navigazione,
  * il caricamento condizionale in base allo stato di autenticazione

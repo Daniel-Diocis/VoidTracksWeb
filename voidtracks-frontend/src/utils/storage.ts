@@ -1,6 +1,4 @@
 /**
- * storage.ts
- *
  * Utility per salvare e caricare i timestamp `updated_at` dei brani nel localStorage,
  * utilizzati per rilevare eventuali aggiornamenti rispetto alla versione remota.
  */

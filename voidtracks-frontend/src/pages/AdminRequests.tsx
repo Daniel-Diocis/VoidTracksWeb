@@ -1,6 +1,4 @@
 /**
- * AdminRequests.tsx
- *
  * Pagina amministrativa per la gestione delle richieste di nuovi brani.
  * Gli amministratori possono visualizzare tutte le richieste in attesa, approvarle o rifiutarle.
  * In caso di approvazione, possono assegnare un numero di token all'utente richiedente.

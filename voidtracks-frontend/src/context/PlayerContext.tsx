@@ -1,6 +1,4 @@
 /**
- * PlayerContext.tsx
- *
  * Contesto globale per la gestione del player musicale.
  * Fornisce:
  * - Stato del brano attuale, lista dei brani disponibili e controllo della riproduzione

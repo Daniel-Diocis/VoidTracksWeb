@@ -23,7 +23,7 @@ const factory = new messageFactory_1.MessageFactory();
  * @param req - Richiesta HTTP con `username` e `tokens` nel body.
  * @param res - Risposta JSON con conferma e nuovo saldo token, oppure errore.
  */
-async function rechargeTokens(req, res) {
+async function rechargeTokens(req, res, next) {
     const { username, tokens } = req.body;
     try {
         const user = await User_1.default.findOne({ where: { username } });
@@ -37,9 +37,8 @@ async function rechargeTokens(req, res) {
             tokens: user.tokens,
         });
     }
-    catch (err) {
-        console.error("Errore ricarica token:", err);
-        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+    catch (error) {
+        next(error);
     }
 }
 /**
@@ -51,7 +50,7 @@ async function rechargeTokens(req, res) {
  * @param req - Richiesta HTTP dell’admin.
  * @param res - Risposta JSON con lista delle richieste in stato "waiting".
  */
-async function getPendingRequests(req, res) {
+async function getPendingRequests(req, res, next) {
     try {
         const requests = await Request_1.default.findAll({
             where: { status: "waiting" },
@@ -83,9 +82,8 @@ async function getPendingRequests(req, res) {
         });
         return res.json(formatted);
     }
-    catch (err) {
-        console.error("Errore fetch richieste pendenti:", err);
-        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+    catch (error) {
+        next(error);
     }
 }
 /**
@@ -98,7 +96,7 @@ async function getPendingRequests(req, res) {
  * @param req - Richiesta HTTP con `tokensToAdd` nel body.
  * @param res - Risposta JSON con messaggio di successo o errore.
  */
-async function approveRequest(req, res) {
+async function approveRequest(req, res, next) {
     const request = res.locals.request;
     const { tokensToAdd } = req.body;
     try {
@@ -123,9 +121,8 @@ async function approveRequest(req, res) {
         await Notification_1.default.bulkCreate(notifications);
         return res.json({ message: "Richiesta approvata, token accreditati, notifiche inviate" });
     }
-    catch (err) {
-        console.error("Errore approvazione richiesta:", err);
-        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+    catch (error) {
+        next(error);
     }
 }
 /**
@@ -134,15 +131,14 @@ async function approveRequest(req, res) {
  * @param _req - Richiesta HTTP (non usata).
  * @param res - Risposta JSON con messaggio di conferma o errore.
  */
-const rejectRequest = async (_req, res) => {
+const rejectRequest = async (_req, res, next) => {
     const request = res.locals.request;
     try {
         await request.update({ status: "rejected" });
         return res.json({ message: "Richiesta rifiutata con successo" });
     }
-    catch (err) {
-        console.error("Errore rifiuto richiesta:", err);
-        return factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+    catch (error) {
+        next(error);
     }
 };
 exports.rejectRequest = rejectRequest;

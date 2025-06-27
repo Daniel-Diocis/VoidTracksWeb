@@ -12,7 +12,6 @@ const axios_1 = __importDefault(require("axios"));
 const uuid_1 = require("uuid");
 const sequelize_1 = require("sequelize");
 const http_status_codes_1 = require("http-status-codes");
-const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const Track_1 = __importDefault(require("../models/Track"));
 const Purchase_1 = __importDefault(require("../models/Purchase"));
@@ -30,7 +29,7 @@ const factory = new messageFactory_1.MessageFactory();
  * @param res - Risposta HTTP contenente ID acquisto e token di download.
  * @returns Risposta JSON con conferma acquisto e token.
  */
-async function createPurchase(req, res) {
+async function createPurchase(req, res, next) {
     try {
         const user = req.userInstance;
         const track = req.trackInstance;
@@ -52,8 +51,7 @@ async function createPurchase(req, res) {
         });
     }
     catch (error) {
-        console.error("Errore nell'acquisto:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -65,7 +63,7 @@ async function createPurchase(req, res) {
  * @param req - Richiesta HTTP con `purchaseInstance` popolato dal middleware.
  * @param res - Risposta HTTP con il file MP3 in streaming.
  */
-async function downloadTrack(req, res) {
+async function downloadTrack(req, res, next) {
     try {
         const purchase = req.purchaseInstance;
         purchase.used_flag = true;
@@ -77,8 +75,7 @@ async function downloadTrack(req, res) {
         response.data.pipe(res);
     }
     catch (error) {
-        console.error("Errore durante il download:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -89,23 +86,32 @@ async function downloadTrack(req, res) {
  * @param req - Richiesta HTTP contenente `user.id` e filtri opzionali tramite query string.
  * @param res - Risposta HTTP con l’elenco degli acquisti effettuati.
  */
-async function getUserPurchases(req, res) {
+async function getUserPurchases(req, res, next) {
     try {
         const userId = req.user.id;
         const { fromDate, toDate } = req.query;
         const whereClause = { user_id: userId };
         const purchasedAtConditions = {};
-        if (fromDate)
-            purchasedAtConditions[sequelize_1.Op.gte] = new Date(fromDate);
-        if (toDate)
-            purchasedAtConditions[sequelize_1.Op.lte] = new Date(toDate);
-        if (Object.keys(purchasedAtConditions).length > 0) {
+        const fromDateRaw = req.query.fromDate;
+        const toDateRaw = req.query.toDate;
+        const fromDateObj = fromDateRaw ? new Date(fromDateRaw) : null;
+        const toDateObj = toDateRaw ? new Date(toDateRaw) : null;
+        if (fromDateObj && !isNaN(fromDateObj.getTime())) {
+            purchasedAtConditions[sequelize_1.Op.gte] = fromDateObj;
+        }
+        if (toDateObj && !isNaN(toDateObj.getTime())) {
+            purchasedAtConditions[sequelize_1.Op.lte] = toDateObj;
+        }
+        if (purchasedAtConditions[sequelize_1.Op.gte] || purchasedAtConditions[sequelize_1.Op.lte]) {
             whereClause.purchased_at = purchasedAtConditions;
         }
+        console.log('fromDate:', fromDateRaw, '→', fromDateObj);
+        console.log('toDate:', toDateRaw, '→', toDateObj);
+        console.log('Final whereClause:', whereClause);
         const purchases = await Purchase_1.default.findAll({
             where: whereClause,
             include: [Track_1.default],
-            order: [["purchased_at", "DESC"]],
+            order: [['purchased_at', 'DESC']],
         });
         res.json({
             message: `Trovati ${purchases.length} acquisti`,
@@ -113,8 +119,7 @@ async function getUserPurchases(req, res) {
         });
     }
     catch (error) {
-        console.error("Errore nel recupero acquisti:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -125,7 +130,7 @@ async function getUserPurchases(req, res) {
  * @param req - Richiesta HTTP contenente `purchaseInstance` fornito dal middleware.
  * @param res - Risposta HTTP con i dettagli del brano e il flag `canDownload`.
  */
-async function getPurchaseDetails(req, res) {
+async function getPurchaseDetails(req, res, next) {
     try {
         const purchase = req.purchaseInstance;
         const now = new Date();
@@ -139,7 +144,6 @@ async function getPurchaseDetails(req, res) {
         });
     }
     catch (error) {
-        console.error("Errore GET /purchase/:token", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }

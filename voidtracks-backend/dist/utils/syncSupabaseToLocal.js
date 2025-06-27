@@ -184,7 +184,9 @@ async function syncTrackArtistsFromSupabase(tracksData) {
                     }))
                 }
             });
+            // Rimuove le associazioni artisti precedenti
             await track.setArtists([]);
+            // Associa gli artisti trovati al brano
             await track.addArtists(artists);
             console.log(`Sincronizzate associazioni artisti per il brano: ${track.titolo} (${track.id})`);
         }

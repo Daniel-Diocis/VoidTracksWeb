@@ -21,7 +21,7 @@ const factory = new messageFactory_1.MessageFactory();
  * @param req - Oggetto della richiesta HTTP con `user.id`.
  * @param res - Risposta JSON con lista delle richieste e relativi voti.
  */
-async function getAllRequests(req, res) {
+async function getAllRequests(req, res, next) {
     var _a;
     try {
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
@@ -53,8 +53,7 @@ async function getAllRequests(req, res) {
         res.json(data);
     }
     catch (error) {
-        console.error("Errore nel recupero richieste:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -66,7 +65,7 @@ async function getAllRequests(req, res) {
  * @param req - Oggetto della richiesta HTTP con `user.id`, `brano` e `artista`.
  * @param res - Risposta JSON con la richiesta creata.
  */
-async function createRequest(req, res) {
+async function createRequest(req, res, next) {
     try {
         const { brano, artista } = req.body;
         const userToken = req.user;
@@ -84,8 +83,7 @@ async function createRequest(req, res) {
         res.status(201).json(newRequest);
     }
     catch (error) {
-        console.error("Errore nella creazione richiesta:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -94,7 +92,7 @@ async function createRequest(req, res) {
  * @param req - Oggetto della richiesta HTTP con `user.id` e `req.params.id`.
  * @param res - Risposta JSON con messaggio di conferma.
  */
-async function voteRequest(req, res) {
+async function voteRequest(req, res, next) {
     var _a;
     try {
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
@@ -103,8 +101,7 @@ async function voteRequest(req, res) {
         res.status(201).json({ message: "Voto aggiunto" });
     }
     catch (error) {
-        console.error("Errore durante l'aggiunta del voto:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -113,7 +110,7 @@ async function voteRequest(req, res) {
  * @param req - Oggetto della richiesta HTTP con `user.id` e `req.params.id`.
  * @param res - Risposta JSON con messaggio di conferma.
  */
-async function unvoteRequest(req, res) {
+async function unvoteRequest(req, res, next) {
     var _a;
     try {
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
@@ -124,7 +121,6 @@ async function unvoteRequest(req, res) {
         res.json({ message: "Voto rimosso" });
     }
     catch (error) {
-        console.error("Errore durante la rimozione del voto:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }

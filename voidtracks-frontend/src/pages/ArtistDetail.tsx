@@ -1,6 +1,4 @@
 /**
- * ArtistDetail.tsx
- *
  * Pagina di dettaglio per un artista musicale.
  * Mostra informazioni biografiche e i brani associati, con possibilità di ascolto diretto.
  *

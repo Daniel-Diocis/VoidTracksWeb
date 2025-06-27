@@ -1,6 +1,4 @@
 /**
- * PlaylistList.tsx
- *
  * Componente che mostra l'elenco delle playlist dell'utente.
  * Permette:
  * - Selezione di una playlist

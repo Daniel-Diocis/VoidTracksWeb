@@ -1,6 +1,4 @@
 /**
- * NotAuthorized.tsx
- *
  * Pagina visualizzata quando un utente tenta di accedere a una risorsa per cui non ha i permessi.
  *
  * Funzionalità:

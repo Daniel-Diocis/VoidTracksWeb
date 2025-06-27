@@ -1,6 +1,4 @@
 /**
- * TrackList.tsx
- *
  * Componente che mostra la lista completa dei brani musicali disponibili.
  *
  * Funzionalità:

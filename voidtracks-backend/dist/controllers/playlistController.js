@@ -12,7 +12,6 @@ exports.addTrackToPlaylist = addTrackToPlaylist;
 exports.removeTrackFromPlaylist = removeTrackFromPlaylist;
 exports.setFavoriteTrack = setFavoriteTrack;
 const http_status_codes_1 = require("http-status-codes");
-const errorMessages_1 = require("../utils/errorMessages");
 const messageFactory_1 = require("../utils/messageFactory");
 const Playlist_1 = __importDefault(require("../models/Playlist"));
 const PlaylistTrack_1 = __importDefault(require("../models/PlaylistTrack"));
@@ -24,7 +23,7 @@ const factory = new messageFactory_1.MessageFactory();
  * @param req - Oggetto della richiesta HTTP contenente l'ID utente.
  * @param res - Oggetto della risposta HTTP.
  */
-async function listUserPlaylists(req, res) {
+async function listUserPlaylists(req, res, next) {
     try {
         const userId = req.user.id;
         const playlists = await Playlist_1.default.findAll({
@@ -34,8 +33,7 @@ async function listUserPlaylists(req, res) {
         res.json(playlists);
     }
     catch (error) {
-        console.error("Errore nel recupero delle playlist:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -44,7 +42,7 @@ async function listUserPlaylists(req, res) {
  * @param req - Oggetto della richiesta HTTP con `nome` nel body.
  * @param res - Oggetto della risposta HTTP.
  */
-async function createPlaylist(req, res) {
+async function createPlaylist(req, res, next) {
     try {
         const userId = req.user.id;
         const { nome } = req.body;
@@ -52,8 +50,7 @@ async function createPlaylist(req, res) {
         res.status(http_status_codes_1.StatusCodes.CREATED).json(nuovaPlaylist);
     }
     catch (error) {
-        console.error("Errore creazione playlist:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -62,7 +59,7 @@ async function createPlaylist(req, res) {
  * @param req - Oggetto della richiesta HTTP con `req.playlist` impostato dal middleware.
  * @param res - Oggetto della risposta HTTP.
  */
-async function getPlaylistWithTracks(req, res) {
+async function getPlaylistWithTracks(req, res, next) {
     try {
         const playlist = req.playlist;
         const playlistTracks = await PlaylistTrack_1.default.findAll({
@@ -96,8 +93,7 @@ async function getPlaylistWithTracks(req, res) {
         });
     }
     catch (error) {
-        console.error("Errore nel recupero della playlist:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -106,15 +102,14 @@ async function getPlaylistWithTracks(req, res) {
  * @param req - Oggetto della richiesta HTTP con `req.playlist` impostato dal middleware.
  * @param res - Oggetto della risposta HTTP.
  */
-async function deletePlaylist(req, res) {
+async function deletePlaylist(req, res, next) {
     try {
         const playlist = req.playlist;
         await playlist.destroy();
         res.json({ message: "Playlist eliminata con successo" });
     }
     catch (error) {
-        console.error("Errore eliminazione playlist:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -123,7 +118,7 @@ async function deletePlaylist(req, res) {
  * @param req - Oggetto della richiesta HTTP con `req.playlist` e `nome` nel body.
  * @param res - Oggetto della risposta HTTP.
  */
-async function renamePlaylist(req, res) {
+async function renamePlaylist(req, res, next) {
     try {
         const playlist = req.playlist;
         const { nome } = req.body;
@@ -132,8 +127,7 @@ async function renamePlaylist(req, res) {
         res.json({ message: "Nome della playlist aggiornato con successo", playlist });
     }
     catch (error) {
-        console.error("Errore durante la modifica della playlist:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -142,7 +136,7 @@ async function renamePlaylist(req, res) {
  * @param req - Oggetto della richiesta HTTP con `track_id` nel body e `req.playlist` impostato dal middleware.
  * @param res - Oggetto della risposta HTTP.
  */
-async function addTrackToPlaylist(req, res) {
+async function addTrackToPlaylist(req, res, next) {
     try {
         const playlist = req.playlist;
         const { track_id } = req.body;
@@ -154,8 +148,7 @@ async function addTrackToPlaylist(req, res) {
         res.status(http_status_codes_1.StatusCodes.CREATED).json({ message: "Brano aggiunto alla playlist", track: nuovo });
     }
     catch (error) {
-        console.error("Errore aggiunta brano alla playlist:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -164,7 +157,7 @@ async function addTrackToPlaylist(req, res) {
  * @param req - Oggetto della richiesta HTTP con `trackId` nei parametri e `req.playlist` impostato dal middleware.
  * @param res - Oggetto della risposta HTTP.
  */
-async function removeTrackFromPlaylist(req, res) {
+async function removeTrackFromPlaylist(req, res, next) {
     try {
         const playlist = req.playlist;
         const trackId = req.params.trackId;
@@ -172,8 +165,7 @@ async function removeTrackFromPlaylist(req, res) {
         res.json({ message: "Brano rimosso dalla playlist" });
     }
     catch (error) {
-        console.error("Errore rimozione brano dalla playlist:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }
 /**
@@ -182,7 +174,7 @@ async function removeTrackFromPlaylist(req, res) {
  * @param req - Oggetto della richiesta HTTP con `trackId` nel body e `req.playlist` impostato dal middleware.
  * @param res - Oggetto della risposta HTTP.
  */
-async function setFavoriteTrack(req, res) {
+async function setFavoriteTrack(req, res, next) {
     try {
         const playlist = req.playlist;
         const { trackId } = req.body;
@@ -191,7 +183,6 @@ async function setFavoriteTrack(req, res) {
         res.json({ message: "Brano preferito aggiornato con successo" });
     }
     catch (error) {
-        console.error("Errore aggiornamento brano preferito:", error);
-        factory.getStatusMessage(res, errorMessages_1.ErrorMessages.INTERNAL_ERROR.status, errorMessages_1.ErrorMessages.INTERNAL_ERROR.message);
+        next(error);
     }
 }

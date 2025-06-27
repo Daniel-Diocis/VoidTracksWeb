@@ -1,6 +1,4 @@
 /**
- * GlobalPlayer.tsx
- *
  * Componente globale del player audio.
  * 
  * Visualizza un player fisso in basso con:

@@ -1,6 +1,4 @@
 /**
- * ProtectedRoute.tsx
- *
  * Componenti wrapper per proteggere le rotte nell'app.
  * - `ProtectedRoute`: accessibile solo agli utenti autenticati
  * - `AdminRoute`: accessibile solo agli utenti autenticati con ruolo admin

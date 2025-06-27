@@ -1,6 +1,4 @@
 /**
- * PlaylistPage.tsx
- *
  * Pagina principale per la gestione delle playlist utente.
  *
  * Funzionalità:

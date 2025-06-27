@@ -21,7 +21,7 @@ const factory = new messageFactory_1.MessageFactory();
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta JSON contenente la lista di tutti gli artisti oppure errore.
  */
-async function getAllArtists(req, res) {
+async function getAllArtists(req, res, next) {
     try {
         const artists = await Artist_1.default.findAll();
         res.json(artists);
@@ -41,7 +41,7 @@ async function getAllArtists(req, res) {
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta JSON con i dati dell’artista e dei suoi brani, oppure errore.
  */
-async function getArtistByName(req, res) {
+async function getArtistByName(req, res, next) {
     const { nome } = req.params;
     try {
         const artist = await Artist_1.default.findOne({

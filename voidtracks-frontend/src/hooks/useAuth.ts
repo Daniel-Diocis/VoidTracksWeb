@@ -1,6 +1,4 @@
 /**
- * useAuth.ts
- *
  * Hook personalizzato per accedere al contesto di autenticazione (`AuthContext`).
  * 
  * Fornisce accesso diretto allo stato e alle funzioni di autenticazione:

@@ -1,6 +1,4 @@
 /**
- * types.ts
- *
  * Definisce le interfacce TypeScript per le entità principali dell'app:
  * - Tracce musicali
  * - Playlist

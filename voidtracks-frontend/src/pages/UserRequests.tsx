@@ -1,6 +1,4 @@
 /**
- * UserRequests.tsx
- *
  * Componente per la gestione delle richieste utente di nuovi brani.
  *
  * Funzionalità principali:

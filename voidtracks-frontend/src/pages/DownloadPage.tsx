@@ -1,6 +1,4 @@
 /**
- * DownloadPage.tsx
- *
  * Pagina dedicata al download sicuro di un brano acquistato dall'utente.
  * Accessibile tramite un token temporaneo presente nell'URL.
  *

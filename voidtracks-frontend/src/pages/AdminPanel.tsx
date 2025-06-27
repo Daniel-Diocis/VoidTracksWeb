@@ -1,6 +1,4 @@
 /**
- * AdminPanel.tsx
- *
  * Pagina accessibile solo dagli amministratori.
  * Permette di ricaricare i token di un utente specifico.
  * Utilizza il contesto AuthContext per ottenere il token JWT necessario all'autenticazione.

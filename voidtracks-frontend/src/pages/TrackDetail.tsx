@@ -1,6 +1,4 @@
 /**
- * TrackDetail.tsx
- *
  * Pagina di dettaglio per una singola traccia musicale.
  *
  * Funzionalità:

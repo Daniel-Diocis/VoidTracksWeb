@@ -1,6 +1,4 @@
 /**
- * PlaylistDetail.tsx
- *
  * Componente che visualizza i dettagli di una singola playlist.
  * Permette di:
  * - Rinominare la playlist

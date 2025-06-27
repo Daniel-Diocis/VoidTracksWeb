@@ -1,6 +1,4 @@
 /**
- * main.tsx
- *
  * Entry point dell'applicazione VoidTracks.
  * Monta l'app React all'interno del DOM, avvolgendola nei provider
  * necessari per routing, autenticazione, gestione del player globale
