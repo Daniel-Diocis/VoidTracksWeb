@@ -1,3 +1,27 @@
+/**
+ * UserRequests.tsx
+ *
+ * Componente per la gestione delle richieste utente di nuovi brani.
+ *
+ * Funzionalità principali:
+ * - Visualizza la lista delle richieste inviate dagli utenti con stato, voti e dati associati
+ * - Permette la creazione di una nuova richiesta inserendo titolo del brano e artista
+ * - Permette all’utente loggato di votare o rimuovere il voto su una richiesta
+ * - Aggiorna i token dell’utente dopo la creazione di una richiesta (tramite /auth/private)
+ *
+ * Meccanismo:
+ * - `fetchRequests`: recupera tutte le richieste dell’utente autenticato
+ * - `handleCreate`: invia una nuova richiesta (POST /requests), aggiorna token e lista
+ * - `handleVote` / `handleUnvote`: aggiunge o rimuove un voto per una richiesta esistente
+ * - Usa `useAuth` per autenticazione, token e logout automatico in caso di errore 401
+ * - Mostra feedback tramite `toastManager`
+ *
+ * UI:
+ * - Form con input per brano e artista + bottone Invia
+ * - Lista richieste con titolo, artista, numero voti e stato
+ * - Pulsanti dinamici per votare o rimuovere il voto
+ */
+
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { notify } from "../utils/toastManager";

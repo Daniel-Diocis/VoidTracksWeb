@@ -28,15 +28,22 @@ async function syncTracksFromSupabase() {
                 Authorization: `Bearer ${process.env.SUPABASE_KEY}`,
             },
         });
+        // data è l'array di brani ricevuto da Supabase
         const data = response.data;
+        // Recupera i brani locali dal database
         const localTracks = await Track_1.default.findAll();
+        // Crea un Set (struttura dati che contiene valori unici) per gli ID dei brani di Supabase per una ricerca veloce
         const supaTrackIds = new Set(data.map((t) => t.id));
+        // Array per tenere traccia dei brani aggiornati o nuovi
         const updatedOrNewTracks = [];
         for (const supaTrack of data) {
+            // Cerca il brano locale corrispondente all'ID del brano di Supabase
             const track = localTracks.find((t) => t.id === supaTrack.id);
             if (track) {
+                // Confronta i timestamp di aggiornamento tra il brano locale e quello di Supabase
                 const localUpdated = track.updatedAt ? track.updatedAt.getTime() : 0;
                 const supaUpdated = new Date(supaTrack.updated_at).getTime();
+                // Se i timestamp sono diversi, aggiorna il brano locale e lo aggiungo all'array dei brani aggiornati o nuovi
                 if (localUpdated !== supaUpdated) {
                     await track.update({
                         titolo: supaTrack.titolo,
@@ -47,8 +54,8 @@ async function syncTracksFromSupabase() {
                         costo: supaTrack.costo,
                         updatedAt: new Date(supaTrack.updated_at),
                     }, { silent: true });
-                    await track.reload();
-                    updatedOrNewTracks.push(supaTrack);
+                    await track.reload(); // Ricarica il brano aggiornato per avere i dati più recenti
+                    updatedOrNewTracks.push(supaTrack); // Aggiungo il brano aggiornato all'array
                     console.log(`Aggiornato il brano ${supaTrack.titolo} (${supaTrack.id})`);
                     console.log(`Nuovo updatedAt dopo update: ${track.updatedAt}`);
                 }
@@ -70,8 +77,8 @@ async function syncTracksFromSupabase() {
             }
         }
         for (const localTrack of localTracks) {
-            if (!supaTrackIds.has(localTrack.id)) {
-                await localTrack.destroy();
+            if (!supaTrackIds.has(localTrack.id)) { // Se l'ID del brano locale non è presente tra quelli di Supabase, rimuovilo
+                await localTrack.destroy(); // Rimuove il brano locale se non esiste più su Supabase
                 console.log(`Rimosso il brano ${localTrack.titolo} (${localTrack.id}) non più presente su Supabase`);
             }
         }
@@ -100,6 +107,7 @@ async function syncArtistsFromSupabase() {
                 Authorization: `Bearer ${process.env.SUPABASE_KEY}`,
             },
         });
+        //data è l'array di artisti ricevuto da Supabase
         const data = response.data;
         const localArtists = await Artist_1.default.findAll();
         const supaArtistIds = new Set(data.map((a) => a.id));
@@ -156,23 +164,34 @@ async function syncArtistsFromSupabase() {
  * - Pulisce le associazioni precedenti e aggiorna quelle corrette.
  *
  * @param tracksData Array di brani sincronizzati da Supabase.
+ * @throws In caso di errore nella sincronizzazione delle associazioni.
  */
 async function syncTrackArtistsFromSupabase(tracksData) {
-    for (const supaTrack of tracksData) {
-        const track = await Track_1.default.findByPk(supaTrack.id);
-        if (!track)
-            continue;
-        const artistNames = supaTrack.artista.split(",").map((a) => a.trim().toLowerCase());
-        const artists = await Artist_1.default.findAll({
-            where: {
-                [sequelize_1.Op.or]: artistNames.map((name) => ({
-                    nome: { [sequelize_1.Op.iLike]: name }
-                }))
-            }
-        });
-        await track.setArtists([]);
-        await track.addArtists(artists);
-        console.log(`Sincronizzate associazioni artisti per il brano: ${track.titolo} (${track.id})`);
+    try {
+        const localTracks = await Track_1.default.findAll();
+        for (const supaTrack of tracksData) {
+            const track = localTracks.find(t => t.id === supaTrack.id);
+            // Se il brano non esiste, salta l'iterazione
+            if (!track)
+                continue;
+            // Pulisce il titolo e l'artista per evitare errori di formattazione
+            const artistNames = supaTrack.artista.split(",").map((a) => a.trim().toLowerCase());
+            // Trova gli artisti locali che corrispondono ai nomi degli artisti del brano
+            const artists = await Artist_1.default.findAll({
+                where: {
+                    [sequelize_1.Op.or]: artistNames.map((name) => ({
+                        nome: { [sequelize_1.Op.iLike]: name }
+                    }))
+                }
+            });
+            await track.setArtists([]);
+            await track.addArtists(artists);
+            console.log(`Sincronizzate associazioni artisti per il brano: ${track.titolo} (${track.id})`);
+        }
+        console.log(`Sincronizzazione track-artists completata per ${tracksData.length} brani.`);
     }
-    console.log(`Sincronizzazione track-artists completata per ${tracksData.length} brani.`);
+    catch (error) {
+        console.error("Errore nella sincronizzazione delle associazioni track-artist:", error);
+        throw error;
+    }
 }

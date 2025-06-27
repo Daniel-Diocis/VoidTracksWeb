@@ -42,23 +42,27 @@ export function validatePurchaseBody(req: Request, res: Response, next: NextFunc
  * @returns Risposta 404 se utente o brano non esistono.
  */
 export async function checkUserAndTrackExist(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user.id;
-  const { track_id } = req.body;
+  try {
+    const userId = (req as any).user.id;
+    const { track_id } = req.body;
 
-  const user = await User.findByPk(userId);
-  const track = await Track.findByPk(track_id);
+    const user = await User.findByPk(userId);
+    const track = await Track.findByPk(track_id);
 
-  if (!user) {
-    return factory.getStatusMessage(res, ErrorMessages.USER_NOT_FOUND.status, ErrorMessages.USER_NOT_FOUND.message);
+    if (!user) {
+      return factory.getStatusMessage(res, ErrorMessages.USER_NOT_FOUND.status, ErrorMessages.USER_NOT_FOUND.message);
+    }
+
+    if (!track) {
+      return factory.getStatusMessage(res, ErrorMessages.TRACK_NOT_FOUND.status, ErrorMessages.TRACK_NOT_FOUND.message);
+    }
+
+    (req as any).userInstance = user;
+    (req as any).trackInstance = track;
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  if (!track) {
-    return factory.getStatusMessage(res, ErrorMessages.TRACK_NOT_FOUND.status, ErrorMessages.TRACK_NOT_FOUND.message);
-  }
-
-  (req as any).userInstance = user;
-  (req as any).trackInstance = track;
-  next();
 }
 
 /**
@@ -72,27 +76,31 @@ export async function checkUserAndTrackExist(req: Request, res: Response, next: 
  * @returns Risposta 200 con il token già valido se presente.
  */
 export async function checkDuplicatePurchase(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user.id;
-  const { track_id } = req.body;
+  try {
+    const userId = (req as any).user.id;
+    const { track_id } = req.body;
 
-  const existingPurchase = await Purchase.findOne({
-    where: {
-      user_id: userId,
-      track_id,
-      used_flag: false,
-      valid_until: { [Op.gt]: new Date() },
-    },
-  });
-
-  if (existingPurchase) {
-    return res.status(StatusCodes.OK).json({
-      message: "Acquisto già presente e valido",
-      purchase_id: existingPurchase.id,
-      download_token: existingPurchase.download_token,
+    const existingPurchase = await Purchase.findOne({
+      where: {
+        user_id: userId,
+        track_id,
+        used_flag: false,
+        valid_until: { [Op.gt]: new Date() },
+      },
     });
-  }
 
-  next();
+    if (existingPurchase) {
+      return res.status(StatusCodes.OK).json({
+        message: "Acquisto già presente e valido",
+        purchase_id: existingPurchase.id,
+        download_token: existingPurchase.download_token,
+      });
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
 }
 
 /**
@@ -132,27 +140,31 @@ export function checkUserTokens(req: Request, res: Response, next: NextFunction)
  * @returns Risposta 404, 403 o successo.
  */
 export async function validateDownloadToken(req: Request, res: Response, next: NextFunction) {
-  const { download_token } = req.params;
+  try {
+    const { download_token } = req.params;
 
-  const purchase = await Purchase.findOne({
-    where: { download_token },
-    include: [Track],
-  });
+    const purchase = await Purchase.findOne({
+      where: { download_token },
+      include: [Track],
+    });
 
-  if (!purchase) {
-    return factory.getStatusMessage(res, ErrorMessages.INVALID_LINK.status, ErrorMessages.INVALID_LINK.message);
+    if (!purchase) {
+      return factory.getStatusMessage(res, ErrorMessages.INVALID_LINK.status, ErrorMessages.INVALID_LINK.message);
+    }
+
+    if (purchase.used_flag) {
+      return factory.getStatusMessage(res, ErrorMessages.ALREADY_USED_LINK.status, ErrorMessages.ALREADY_USED_LINK.message);
+    }
+
+    if (new Date() > purchase.valid_until) {
+      return factory.getStatusMessage(res, ErrorMessages.EXPIRED_LINK.status, ErrorMessages.EXPIRED_LINK.message);
+    }
+
+    (req as any).purchaseInstance = purchase;
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  if (purchase.used_flag) {
-    return factory.getStatusMessage(res, ErrorMessages.ALREADY_USED_LINK.status, ErrorMessages.ALREADY_USED_LINK.message);
-  }
-
-  if (new Date() > purchase.valid_until) {
-    return factory.getStatusMessage(res, ErrorMessages.EXPIRED_LINK.status, ErrorMessages.EXPIRED_LINK.message);
-  }
-
-  (req as any).purchaseInstance = purchase;
-  next();
 }
 
 /**
@@ -166,17 +178,21 @@ export async function validateDownloadToken(req: Request, res: Response, next: N
  * @returns Risposta 404 se il token è invalido o non associato a un brano.
  */
 export async function loadPurchaseByToken(req: Request, res: Response, next: NextFunction) {
-  const { download_token } = req.params;
+  try {
+    const { download_token } = req.params;
 
-  const purchase = await Purchase.findOne({
-    where: { download_token },
-    include: [Track],
-  });
+    const purchase = await Purchase.findOne({
+      where: { download_token },
+      include: [Track],
+    });
 
-  if (!purchase || !purchase.Track) {
-    return factory.getStatusMessage(res, ErrorMessages.INVALID_PURCHASE_TOKEN.status, ErrorMessages.INVALID_PURCHASE_TOKEN.message);
+    if (!purchase || !purchase.Track) {
+      return factory.getStatusMessage(res, ErrorMessages.INVALID_PURCHASE_TOKEN.status, ErrorMessages.INVALID_PURCHASE_TOKEN.message);
+    }
+
+    (req as any).purchaseInstance = purchase;
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  (req as any).purchaseInstance = purchase;
-  next();
 }

@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
@@ -25,7 +25,7 @@ const factory = new MessageFactory();
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta HTTP con il token JWT e i dati dell’utente appena creato.
  */
-export async function register(req: Request, res: Response) {
+export async function register(req: Request, res: Response, next: NextFunction) {
   try {
     const { username, password } = req.body;
 
@@ -63,8 +63,7 @@ export async function register(req: Request, res: Response) {
       },
     });
   } catch (error) {
-    console.error("Errore registrazione:", error);
-    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    next(error);
   }
 }
 
@@ -79,7 +78,7 @@ export async function register(req: Request, res: Response) {
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta HTTP con il token JWT e i dati dell’utente autenticato.
  */
-export async function login(req: Request, res: Response) {
+export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const user = (req as any).userRecord;
 
@@ -107,8 +106,7 @@ export async function login(req: Request, res: Response) {
       },
     });
   } catch (error) {
-    console.error("Errore login:", error);
-    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    next(error);
   }
 }
 
@@ -123,7 +121,7 @@ export async function login(req: Request, res: Response) {
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta HTTP con i dati aggiornati dell’utente e le notifiche non lette.
  */
-export async function getPrivateUser(req: Request, res: Response) {
+export async function getPrivateUser(req: Request, res: Response, next: NextFunction) {
   try {
     const user = (req as any).userRecord;
     const unreadNotifications = (req as any).unreadNotifications || [];
@@ -138,12 +136,7 @@ export async function getPrivateUser(req: Request, res: Response) {
       notifications: unreadNotifications,
     });
   } catch (error) {
-    console.error("Errore nel recupero dell’utente:", error);
-    return factory.getStatusMessage(
-      res,
-      ErrorMessages.INTERNAL_ERROR.status,
-      ErrorMessages.INTERNAL_ERROR.message
-    );
+    next(error);
   }
 }
 
@@ -157,7 +150,7 @@ export async function getPrivateUser(req: Request, res: Response) {
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta HTTP 204 (No Content) in caso di successo.
  */
-export async function markNotificationsAsSeen(req: Request, res: Response) {
+export async function markNotificationsAsSeen(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
@@ -174,12 +167,7 @@ export async function markNotificationsAsSeen(req: Request, res: Response) {
     );
 
     return res.sendStatus(StatusCodes.NO_CONTENT);
-  } catch (err) {
-    console.error("Errore nel marcare notifiche come lette:", err);
-    return factory.getStatusMessage(
-      res,
-      ErrorMessages.INTERNAL_ERROR.status,
-      ErrorMessages.INTERNAL_ERROR.message
-    );
+  } catch (error) {
+    next(error);
   }
 }

@@ -1,7 +1,23 @@
+/**
+ * ProtectedRoute.tsx
+ *
+ * Componenti wrapper per proteggere le rotte nell'app.
+ * - `ProtectedRoute`: accessibile solo agli utenti autenticati
+ * - `AdminRoute`: accessibile solo agli utenti autenticati con ruolo admin
+ *
+ * Utilizza React Router `Outlet` per mostrare i figli e `Navigate` per i redirect.
+ */
+
 import { useContext } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
+/**
+ * ProtectedRoute
+ *
+ * Restringe l'accesso alle rotte solo agli utenti autenticati.
+ * Se l'utente non è loggato, viene reindirizzato alla pagina di login.
+ */
 export function ProtectedRoute() {
   const auth = useContext(AuthContext);
 
@@ -14,6 +30,12 @@ export function ProtectedRoute() {
   return <Outlet />;
 }
 
+/**
+ * AdminRoute
+ *
+ * Restringe l'accesso alle rotte solo agli utenti con ruolo admin.
+ * Se non autorizzato, reindirizza alla pagina "non autorizzato".
+ */
 export function AdminRoute() {
   const auth = useContext(AuthContext);
 

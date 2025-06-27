@@ -1,7 +1,29 @@
+/**
+ * Navbar.tsx
+ *
+ * Componente di navigazione principale dell'applicazione.
+ *
+ * Mostra:
+ * - Link pubblici (Market, Brani più acquistati)
+ * - Link condizionali per utenti loggati (Acquisti, Playlist, Richieste)
+ * - Link specifici per admin (Ricarica, Richieste)
+ * - Benvenuto con username e token
+ * - Pulsanti Login/Logout
+ *
+ * Logica:
+ * - Recupera stato di autenticazione da AuthContext
+ * - Al logout reindirizza alla home
+ */
+
+
 import { Link, useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
+/**
+ * Componente Navbar visibile in tutte le pagine.
+ * Mostra link dinamici in base al ruolo dell'utente e allo stato di login.
+ */
 function Navbar() {
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
@@ -39,10 +61,19 @@ function Navbar() {
             <Link to="/playlists" className="px-4 py-2 hover:underline">Le mie playlist</Link>
           </>
         )}
-
+        {/* Link solo utenti loggati */}
+        {isLoggedIn && user?.role === 'user' && (
+          <>
+            <Link to="/requests" className="px-4 py-2 hover:underline">Richieste</Link>
+          </>
+        )}
+    
         {/* Link solo admin */}
         {isLoggedIn && user?.role === 'admin' && (
-          <Link to="/admin" className="px-4 py-2 hover:underline">Pannello Admin</Link>
+          <>
+            <Link to="/admin" className="px-4 py-2 hover:underline">Ricarica</Link>
+            <Link to="/admin/requests" className="px-4 py-2 hover:underline">Richieste</Link>
+          </>
         )}
 
         {/* Login / Logout */}

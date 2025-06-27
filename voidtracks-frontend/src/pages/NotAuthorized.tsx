@@ -1,3 +1,19 @@
+/**
+ * NotAuthorized.tsx
+ *
+ * Pagina visualizzata quando un utente tenta di accedere a una risorsa per cui non ha i permessi.
+ *
+ * Funzionalità:
+ * - Mostra un messaggio di errore chiaro e centrato nella pagina
+ * - Fornisce un link per tornare alla homepage
+ *
+ * Utilizzo:
+ * - Generalmente collegata a percorsi protetti da middleware di controllo ruolo o autenticazione
+ *
+ * UI:
+ * - Layout centrato con messaggi esplicativi e uno stile coerente con il resto dell’app
+ */
+
 import { Link } from 'react-router-dom';
 
 function NotAuthorized() {

@@ -1,3 +1,23 @@
+/**
+ * TrackDetail.tsx
+ *
+ * Pagina di dettaglio per una singola traccia musicale.
+ *
+ * Funzionalità:
+ * - Estrae il parametro `music_path` dall'URL tramite React Router
+ * - Recupera la lista completa delle tracce dal backend e identifica quella corrispondente
+ * - Mostra dettagli come titolo, artista, album, copertina e audio player
+ *
+ * Meccanismo:
+ * - Chiamata `GET` a `/tracks` per ottenere l'elenco completo
+ * - Ricerca locale della traccia corrispondente a `music_path`
+ * - Gestione errori con `notify.error` in caso di fetch fallita o traccia non trovata
+ *
+ * UI:
+ * - Visualizzazione del titolo, artista, album e copertina
+ * - Player audio con `controls` e `nodownload` per limitarne l’utilizzo
+ */
+
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { notify } from '../utils/toastManager';

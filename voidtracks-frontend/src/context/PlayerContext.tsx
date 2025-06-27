@@ -1,3 +1,15 @@
+/**
+ * PlayerContext.tsx
+ *
+ * Contesto globale per la gestione del player musicale.
+ * Fornisce:
+ * - Stato del brano attuale, lista dei brani disponibili e controllo della riproduzione
+ * - Riferimento all'elemento <audio> per controlli diretti
+ * - Funzioni per play, pausa, stop, traccia successiva/precedente
+ *
+ * Questo contesto consente la riproduzione centralizzata e condivisa in tutta l'app.
+ */
+
 import {
   createContext,
   useContext,
@@ -10,6 +22,8 @@ import {
 } from "react";
 import type { Track } from '../types';
 
+
+/** Tipo del contesto del player musicale */
 type PlayerContextType = {
   currentTrack: Track | null;
   setCurrentTrack: Dispatch<SetStateAction<Track | null>>;
@@ -25,28 +39,56 @@ type PlayerContextType = {
   playPrevious: () => void;
 };
 
+/** Creazione del contesto */
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
+/**
+ * PlayerProvider
+ *
+ * Provider React che gestisce il player musicale globale.
+ * Mantiene lo stato del brano corrente, la lista dei brani, e i controlli di riproduzione.
+ */
 export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null!);
 
+  /**
+   * playTrack
+   *
+   * Imposta un nuovo brano da riprodurre e avvia la riproduzione.
+   */
   const playTrack = (track: Track) => {
     setCurrentTrack(track);
     setIsPlaying(true);
   };
 
+  /**
+   * togglePlayPause
+   *
+   * Alterna tra stato di riproduzione e pausa.
+   */
   const togglePlayPause = () => {
     setIsPlaying((prev) => !prev);
   };
 
+  /**
+   * stopPlayback
+   *
+   * Ferma la riproduzione e resetta il brano corrente.
+   */
   const stopPlayback = () => {
     setIsPlaying(false);
     setCurrentTrack(null);
   };
 
+
+  /**
+   * playNext
+   *
+   * Passa al brano successivo nella lista, o torna al primo se alla fine.
+   */
   const playNext = () => {
     if (!currentTrack || tracks.length === 0) return;
     const currentIndex = tracks.findIndex((t) => t.id === currentTrack.id);
@@ -57,6 +99,13 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
     setIsPlaying(true);
   };
 
+
+  /**
+   * playPrevious
+   *
+   * Se il brano è iniziato da più di 3 secondi, lo riavvia.
+   * Altrimenti torna al brano precedente, o all'ultimo se siamo al primo.
+   */
   const playPrevious = () => {
     if (!currentTrack || tracks.length === 0 || !audioRef.current) return;
 
@@ -98,6 +147,12 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+/**
+ * usePlayer
+ *
+ * Hook personalizzato per accedere al contesto Player.
+ * Solleva un errore se usato fuori dal PlayerProvider.
+ */
 export const usePlayer = () => {
   const context = useContext(PlayerContext);
   if (!context) {

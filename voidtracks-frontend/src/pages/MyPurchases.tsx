@@ -1,3 +1,29 @@
+/**
+ * MyPurchases.tsx
+ *
+ * Pagina per la visualizzazione degli acquisti effettuati dall’utente autenticato.
+ *
+ * Funzionalità:
+ * - Recupera gli acquisti dal backend tramite la rotta protetta `/purchase`
+ * - Permette di filtrare gli acquisti per intervallo di date (`fromDate` / `toDate`)
+ * - Mostra i dettagli del brano acquistato: copertina, titolo, artista, album e data di acquisto
+ * - Gestisce lo stato di caricamento e le eventuali notifiche d’errore
+ *
+ * Stato interno:
+ * - `fromDate`, `toDate`: intervallo di date per il filtro
+ * - `purchases`: lista degli acquisti ricevuti dal backend
+ * - `loading`: stato booleano per mostrare il caricamento
+ *
+ * Dipendenze:
+ * - `toastManager` per le notifiche
+ * - `localStorage` per recuperare il token JWT salvato
+ *
+ * UI:
+ * - Form di filtro con date selezionabili
+ * - Lista responsive con immagine e dettagli dei brani acquistati
+ * - Messaggi informativi se non ci sono risultati o se si verifica un errore
+ */
+
 import { useEffect, useState } from 'react';
 import { notify } from '../utils/toastManager';
 

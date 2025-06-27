@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
 import User from "../models/User";
@@ -18,7 +18,7 @@ const factory = new MessageFactory();
  * @param req - Richiesta HTTP con `username` e `tokens` nel body.
  * @param res - Risposta JSON con conferma e nuovo saldo token, oppure errore.
  */
-export async function rechargeTokens(req: Request, res: Response) {
+export async function rechargeTokens(req: Request, res: Response, next: NextFunction) {
   const { username, tokens } = req.body;
 
   try {
@@ -35,9 +35,8 @@ export async function rechargeTokens(req: Request, res: Response) {
       message: `Ricarica completata per ${user.username}`,
       tokens: user.tokens,
     });
-  } catch (err) {
-    console.error("Errore ricarica token:", err);
-    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -50,7 +49,7 @@ export async function rechargeTokens(req: Request, res: Response) {
  * @param req - Richiesta HTTP dell’admin.
  * @param res - Risposta JSON con lista delle richieste in stato "waiting".
  */
-export async function getPendingRequests(req: Request, res: Response) {
+export async function getPendingRequests(req: Request, res: Response, next: NextFunction) {
   try {
     const requests = await RequestModel.findAll({
       where: { status: "waiting" },
@@ -80,13 +79,8 @@ export async function getPendingRequests(req: Request, res: Response) {
     }));
 
     return res.json(formatted);
-  } catch (err) {
-    console.error("Errore fetch richieste pendenti:", err);
-    return factory.getStatusMessage(
-      res,
-      ErrorMessages.INTERNAL_ERROR.status,
-      ErrorMessages.INTERNAL_ERROR.message
-    );
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -100,7 +94,7 @@ export async function getPendingRequests(req: Request, res: Response) {
  * @param req - Richiesta HTTP con `tokensToAdd` nel body.
  * @param res - Risposta JSON con messaggio di successo o errore.
  */
-export async function approveRequest(req: Request, res: Response) {
+export async function approveRequest(req: Request, res: Response, next: NextFunction) {
   const request = res.locals.request as RequestModel;
   const { tokensToAdd } = req.body;
 
@@ -131,13 +125,8 @@ export async function approveRequest(req: Request, res: Response) {
     await Notification.bulkCreate(notifications);
 
     return res.json({ message: "Richiesta approvata, token accreditati, notifiche inviate" });
-  } catch (err) {
-    console.error("Errore approvazione richiesta:", err);
-    return factory.getStatusMessage(
-      res,
-      ErrorMessages.INTERNAL_ERROR.status,
-      ErrorMessages.INTERNAL_ERROR.message
-    );
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -147,14 +136,13 @@ export async function approveRequest(req: Request, res: Response) {
  * @param _req - Richiesta HTTP (non usata).
  * @param res - Risposta JSON con messaggio di conferma o errore.
  */
-export const rejectRequest = async (_req: Request, res: Response) => {
+export const rejectRequest = async (_req: Request, res: Response, next: NextFunction) => {
   const request = res.locals.request as RequestModel;
 
   try {
     await request.update({ status: "rejected" });
     return res.json({ message: "Richiesta rifiutata con successo" });
-  } catch (err) {
-    console.error("Errore rifiuto richiesta:", err);
-    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+  } catch (error) {
+    next(error);
   }
 };

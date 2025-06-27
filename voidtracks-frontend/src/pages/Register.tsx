@@ -1,3 +1,24 @@
+/**
+ * Register.tsx
+ *
+ * Pagina di registrazione per nuovi utenti.
+ *
+ * Funzionalità:
+ * - Consente agli utenti di creare un nuovo account inserendo username e password
+ * - Dopo la registrazione, effettua una chiamata per recuperare i dati dell’utente
+ * - Salva i dati nel contesto di autenticazione (AuthContext) e reindirizza alla homepage
+ *
+ * Meccanismo:
+ * - Chiamata `POST` a `/auth/register` con credenziali inserite
+ * - In caso di successo, ulteriore chiamata `GET` a `/auth/private` per ottenere i dettagli utente
+ * - Utilizzo del contesto `AuthContext` per gestire il login automatico dopo la registrazione
+ *
+ * UI:
+ * - Form semplice centrato nella pagina
+ * - Input per username e password, con validazione base lato client
+ * - Notifiche toast per errori e conferme
+ */
+
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';

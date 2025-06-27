@@ -41,37 +41,41 @@ export function validateRequestCreation(req: Request, res: Response, next: NextF
  * @param next - Funzione per passare al middleware successivo
  */
 export async function checkDuplicateRequest(req: Request, res: Response, next: NextFunction) {
-  const { brano, artista } = req.body;
+  try {
+    const { brano, artista } = req.body;
 
-  const normalizedBrano = brano.trim().toLowerCase();
-  const normalizedArtista = artista.trim().toLowerCase();
+    const normalizedBrano = brano.trim().toLowerCase();
+    const normalizedArtista = artista.trim().toLowerCase();
 
-  const existing = await RequestModel.findOne({
-    where: {
-      [Op.or]: [
-        {
-          brano: { [Op.iLike]: normalizedBrano },
-          artista: { [Op.iLike]: normalizedArtista },
-          status: "waiting"
-        },
-        {
-          brano: { [Op.iLike]: normalizedBrano },
-          artista: { [Op.iLike]: normalizedArtista },
-          status: "satisfied"
-        }
-      ]
+    const existing = await RequestModel.findOne({
+      where: {
+        [Op.or]: [
+          {
+            brano: { [Op.iLike]: normalizedBrano },
+            artista: { [Op.iLike]: normalizedArtista },
+            status: "waiting"
+          },
+          {
+            brano: { [Op.iLike]: normalizedBrano },
+            artista: { [Op.iLike]: normalizedArtista },
+            status: "satisfied"
+          }
+        ]
+      }
+    });
+
+    if (existing) {
+      if (existing.status === "waiting") {
+        return factory.getStatusMessage(res, ErrorMessages.DUPLICATE_REQUEST.status, ErrorMessages.DUPLICATE_REQUEST.message);
+      } else if (existing.status === "satisfied") {
+        return factory.getStatusMessage(res, ErrorMessages.ALREADY_ADDED.status, ErrorMessages.ALREADY_ADDED.message);
+      }
     }
-  });
 
-  if (existing) {
-    if (existing.status === "waiting") {
-      return factory.getStatusMessage(res, ErrorMessages.DUPLICATE_REQUEST.status, ErrorMessages.DUPLICATE_REQUEST.message);
-    } else if (existing.status === "satisfied") {
-      return factory.getStatusMessage(res, ErrorMessages.ALREADY_ADDED.status, ErrorMessages.ALREADY_ADDED.message);
-    }
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  next();
 }
 
 /**
@@ -85,15 +89,19 @@ export async function checkDuplicateRequest(req: Request, res: Response, next: N
  * @param next - Funzione per passare al middleware successivo
  */
 export async function checkUserHasTokens(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id;
-  const user = await User.findByPk(userId);
+  try {
+    const userId = (req as any).user?.id;
+    const user = await User.findByPk(userId);
 
-  if (!user || user.tokens < 3) {
-    return factory.getStatusMessage(res, ErrorMessages.UNSUFFICIENT_TOKENS.status, ErrorMessages.UNSUFFICIENT_TOKENS.message);
+    if (!user || user.tokens < 3) {
+      return factory.getStatusMessage(res, ErrorMessages.UNSUFFICIENT_TOKENS.status, ErrorMessages.UNSUFFICIENT_TOKENS.message);
+    }
+
+    res.locals.user = user;
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  res.locals.user = user;
-  next();
 }
 
 /**
@@ -106,14 +114,18 @@ export async function checkUserHasTokens(req: Request, res: Response, next: Next
  * @param next - Funzione per passare al middleware successivo
  */
 export async function checkRequestExists(req: Request, res: Response, next: NextFunction) {
-  const requestId = Number(req.params.id);
-  const request = await RequestModel.findByPk(requestId);
+  try {
+    const requestId = Number(req.params.id);
+    const request = await RequestModel.findByPk(requestId);
 
-  if (!request) {
-    return factory.getStatusMessage(res, 404, "Richiesta non trovata");
+    if (!request) {
+      return factory.getStatusMessage(res, 404, "Richiesta non trovata");
+    }
+
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  next();
 }
 
 /**
@@ -126,15 +138,19 @@ export async function checkRequestExists(req: Request, res: Response, next: Next
  * @param next - Funzione per passare al middleware successivo
  */
 export async function checkAlreadyVoted(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id;
-  const requestId = Number(req.params.id);
+  try {
+    const userId = (req as any).user?.id;
+    const requestId = Number(req.params.id);
 
-  const exists = await RequestVote.findOne({ where: { user_id: userId, request_id: requestId } });
-  if (exists) {
-    return factory.getStatusMessage(res, ErrorMessages.ALREADY_VOTED.status, ErrorMessages.ALREADY_VOTED.message);
+    const exists = await RequestVote.findOne({ where: { user_id: userId, request_id: requestId } });
+    if (exists) {
+      return factory.getStatusMessage(res, ErrorMessages.ALREADY_VOTED.status, ErrorMessages.ALREADY_VOTED.message);
+    }
+
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  next();
 }
 
 /**
@@ -147,15 +163,19 @@ export async function checkAlreadyVoted(req: Request, res: Response, next: NextF
  * @param next - Funzione per passare al middleware successivo
  */
 export async function checkHasVoted(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id;
-  const requestId = Number(req.params.id);
+    try {
+    const userId = (req as any).user?.id;
+    const requestId = Number(req.params.id);
 
-  const exists = await RequestVote.findOne({ where: { user_id: userId, request_id: requestId } });
-  if (!exists) {
-    return factory.getStatusMessage(res, ErrorMessages.NOT_VOTED.status, ErrorMessages.NOT_VOTED.message);
+    const exists = await RequestVote.findOne({ where: { user_id: userId, request_id: requestId } });
+    if (!exists) {
+      return factory.getStatusMessage(res, ErrorMessages.NOT_VOTED.status, ErrorMessages.NOT_VOTED.message);
+    }
+
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  next();
 }
 
 /**
@@ -168,17 +188,21 @@ export async function checkHasVoted(req: Request, res: Response, next: NextFunct
  * @param next - Funzione per passare al middleware successivo
  */
 export async function checkRequestWaiting(req: Request, res: Response, next: NextFunction) {
-  const requestId = Number(req.params.id);
-  const request = await RequestModel.findByPk(requestId);
+  try {
+    const requestId = Number(req.params.id);
+    const request = await RequestModel.findByPk(requestId);
 
-  if (!request) {
-    return factory.getStatusMessage(res, ErrorMessages.REQUEST_NOT_FOUND.status, ErrorMessages.REQUEST_NOT_FOUND.message);
+    if (!request) {
+      return factory.getStatusMessage(res, ErrorMessages.REQUEST_NOT_FOUND.status, ErrorMessages.REQUEST_NOT_FOUND.message);
+    }
+
+    if (request.status !== "waiting") {
+      return factory.getStatusMessage(res, ErrorMessages.REQUEST_NOT_EDITABLE.status, ErrorMessages.REQUEST_NOT_EDITABLE.message);
+    }
+
+    res.locals.request = request;
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  if (request.status !== "waiting") {
-    return factory.getStatusMessage(res, ErrorMessages.REQUEST_NOT_EDITABLE.status, ErrorMessages.REQUEST_NOT_EDITABLE.message);
-  }
-
-  res.locals.request = request;
-  next();
 }

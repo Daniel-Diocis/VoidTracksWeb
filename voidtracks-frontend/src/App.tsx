@@ -1,3 +1,12 @@
+/**
+ * App.tsx
+ *
+ * Entry point principale dell'applicazione VoidTracks.
+ * Gestisce il routing, la visualizzazione della barra di navigazione,
+ * il caricamento condizionale in base allo stato di autenticazione
+ * e il player globale visibile in ogni pagina.
+ */
+
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute'; // supponendo che AdminRoute sia nello stesso file
 import { useContext } from 'react';
@@ -19,11 +28,16 @@ import UserRequests from "./pages/UserRequests";
 import AdminRequests from './pages/AdminRequests';
 import GlobalPlayer from './components/GlobalPlayer';
 
-
+/**
+ * Componente principale dell'app.
+ * Carica il contesto di autenticazione e gestisce le rotte.
+ */
 function App() {
   const auth = useContext(AuthContext);
 
+  // In caso di errore nel caricamento del contesto
   if (!auth) return <div>Errore: contesto Auth non disponibile</div>;
+  // Mostra un messaggio durante l'inizializzazione
   if (auth.isInitializing) return <div>Caricamento...</div>;
 
   return (

@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { Op } from "sequelize";
 import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
@@ -17,7 +17,7 @@ const factory = new MessageFactory();
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta JSON contenente la lista di tutti gli artisti oppure errore.
  */
-export async function getAllArtists(req: Request, res: Response) {
+export async function getAllArtists(req: Request, res: Response, next: NextFunction) {
   try {
     const artists = await Artist.findAll();
     res.json(artists);
@@ -37,7 +37,7 @@ export async function getAllArtists(req: Request, res: Response) {
  * @param res - Oggetto della risposta HTTP.
  * @returns Risposta JSON con i dati dell’artista e dei suoi brani, oppure errore.
  */
-export async function getArtistByName(req: Request, res: Response) {
+export async function getArtistByName(req: Request, res: Response, next: NextFunction) {
   const { nome } = req.params;
 
   try {

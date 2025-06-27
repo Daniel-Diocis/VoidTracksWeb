@@ -1,3 +1,27 @@
+/**
+ * AdminPanel.tsx
+ *
+ * Pagina accessibile solo dagli amministratori.
+ * Permette di ricaricare i token di un utente specifico.
+ * Utilizza il contesto AuthContext per ottenere il token JWT necessario all'autenticazione.
+ * Mostra notifiche di successo o errore tramite `toastManager`.
+ *
+ * Funzionalità:
+ * - Inserimento username utente da ricaricare
+ * - Inserimento quantità di token
+ * - Invio PATCH all'endpoint `/admin/recharge`
+ *
+ * Contesto utilizzato:
+ * - `AuthContext` per recuperare il token di autenticazione
+ *
+ * Variabili d'ambiente:
+ * - `VITE_API_URL` per la URL base dell'API
+ *
+ * UI:
+ * - Form centrato con due campi di input e un bottone di invio
+ * - Stile scuro coerente con il tema generale dell'app
+ */
+
 import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { notify } from '../utils/toastManager';
@@ -43,7 +67,7 @@ function AdminPanel() {
         onSubmit={handleRecharge}
         className="bg-zinc-800 p-6 rounded-md shadow-md w-full max-w-md"
       >
-        <h2 className="text-2xl mb-4 text-center font-bold">Pannello Admin</h2>
+        <h2 className="text-2xl mb-4 text-center font-bold">Ricarica utente</h2>
 
         <input
           type="text"

@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { Request as RequestModel, RequestVote } from "../db";
 import { ErrorMessages } from "../utils/errorMessages";
 import { MessageFactory } from "../utils/messageFactory";
@@ -15,7 +15,7 @@ const factory = new MessageFactory();
  * @param req - Oggetto della richiesta HTTP con `user.id`.
  * @param res - Risposta JSON con lista delle richieste e relativi voti.
  */
-export async function getAllRequests(req: Request, res: Response) {
+export async function getAllRequests(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user?.id;
 
@@ -47,8 +47,7 @@ export async function getAllRequests(req: Request, res: Response) {
 
     res.json(data);
   } catch (error) {
-    console.error("Errore nel recupero richieste:", error);
-    factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    next(error);
   }
 }
 
@@ -61,7 +60,7 @@ export async function getAllRequests(req: Request, res: Response) {
  * @param req - Oggetto della richiesta HTTP con `user.id`, `brano` e `artista`.
  * @param res - Risposta JSON con la richiesta creata.
  */
-export async function createRequest(req: Request, res: Response) {
+export async function createRequest(req: Request, res: Response, next: NextFunction) {
   try {
     const { brano, artista } = req.body;
     const userToken = (req as any).user;
@@ -86,8 +85,7 @@ export async function createRequest(req: Request, res: Response) {
 
     res.status(201).json(newRequest);
   } catch (error) {
-    console.error("Errore nella creazione richiesta:", error);
-    factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    next(error);
   }
 }
 
@@ -97,7 +95,7 @@ export async function createRequest(req: Request, res: Response) {
  * @param req - Oggetto della richiesta HTTP con `user.id` e `req.params.id`.
  * @param res - Risposta JSON con messaggio di conferma.
  */
-export async function voteRequest(req: Request, res: Response) {
+export async function voteRequest(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user?.id;
     const requestId = Number(req.params.id);
@@ -106,8 +104,7 @@ export async function voteRequest(req: Request, res: Response) {
 
     res.status(201).json({ message: "Voto aggiunto" });
   } catch (error) {
-    console.error("Errore durante l'aggiunta del voto:", error);
-    factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    next(error);
   }
 }
 
@@ -117,7 +114,7 @@ export async function voteRequest(req: Request, res: Response) {
  * @param req - Oggetto della richiesta HTTP con `user.id` e `req.params.id`.
  * @param res - Risposta JSON con messaggio di conferma.
  */
-export async function unvoteRequest(req: Request, res: Response) {
+export async function unvoteRequest(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user?.id;
     const requestId = Number(req.params.id);
@@ -128,7 +125,6 @@ export async function unvoteRequest(req: Request, res: Response) {
 
     res.json({ message: "Voto rimosso" });
   } catch (error) {
-    console.error("Errore durante la rimozione del voto:", error);
-    factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    next(error);
   }
 }

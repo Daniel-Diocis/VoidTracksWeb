@@ -18,16 +18,20 @@ const factory = new MessageFactory();
  * @returns Risposta 404 se la playlist non esiste o non appartiene all'utente.
  */
 export async function checkPlaylistOwnership(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user.id;
-  const playlistId = parseInt(req.params.id, 10);
+  try {
+    const userId = (req as any).user.id;
+    const playlistId = parseInt(req.params.id, 10);
 
-  const playlist = await Playlist.findOne({ where: { id: playlistId, user_id: userId } });
-  if (!playlist) {
-    return factory.getStatusMessage(res, ErrorMessages.PLAYLIST_NOT_FOUND.status, ErrorMessages.PLAYLIST_NOT_FOUND.message);
+    const playlist = await Playlist.findOne({ where: { id: playlistId, user_id: userId } });
+    if (!playlist) {
+      return factory.getStatusMessage(res, ErrorMessages.PLAYLIST_NOT_FOUND.status, ErrorMessages.PLAYLIST_NOT_FOUND.message);
+    }
+
+    (req as any).playlist = playlist;
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  (req as any).playlist = playlist;
-  next();
 }
 
 /**
@@ -56,14 +60,19 @@ export function checkTrackIdInBody(req: Request, res: Response, next: NextFuncti
  * @returns Risposta 403 se il brano non è stato acquistato.
  */
 export async function checkTrackOwnership(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user.id;
-  const { track_id } = req.body;
+  try {
+    const userId = (req as any).user.id;
+    const { track_id } = req.body;
 
-  const purchase = await Purchase.findOne({ where: { user_id: userId, track_id } });
-  if (!purchase) {
-    return factory.getStatusMessage(res, ErrorMessages.TRACK_NOT_PURCHASED.status, ErrorMessages.TRACK_NOT_PURCHASED.message);
+    const purchase = await Purchase.findOne({ where: { user_id: userId, track_id } });
+    if (!purchase) {
+      return factory.getStatusMessage(res, ErrorMessages.TRACK_NOT_PURCHASED.status, ErrorMessages.TRACK_NOT_PURCHASED.message);
+    }
+
+    next();
+  } catch (err) {
+    next(err);
   }
-  next();
 }
 
 /**
@@ -75,14 +84,19 @@ export async function checkTrackOwnership(req: Request, res: Response, next: Nex
  * @returns Risposta 409 se il brano è già presente nella playlist.
  */
 export async function checkTrackNotInPlaylist(req: Request, res: Response, next: NextFunction) {
-  const playlistId = parseInt(req.params.id, 10);
-  const { track_id } = req.body;
+  try {
+    const playlistId = parseInt(req.params.id, 10);
+    const { track_id } = req.body;
 
-  const existing = await PlaylistTrack.findOne({ where: { playlist_id: playlistId, track_id } });
-  if (existing) {
-    return factory.getStatusMessage(res, ErrorMessages.TRACK_ALREADY_IN_PLAYLIST.status, ErrorMessages.TRACK_ALREADY_IN_PLAYLIST.message);
+    const existing = await PlaylistTrack.findOne({ where: { playlist_id: playlistId, track_id } });
+    if (existing) {
+      return factory.getStatusMessage(res, ErrorMessages.TRACK_ALREADY_IN_PLAYLIST.status, ErrorMessages.TRACK_ALREADY_IN_PLAYLIST.message);
+    }
+
+    next();
+  } catch (err) {
+    next(err);
   }
-  next();
 }
 
 /**

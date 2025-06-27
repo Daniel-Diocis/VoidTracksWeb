@@ -1,3 +1,33 @@
+/**
+ * ArtistDetail.tsx
+ *
+ * Pagina di dettaglio per un artista musicale.
+ * Mostra informazioni biografiche e i brani associati, con possibilità di ascolto diretto.
+ *
+ * Funzionalità:
+ * - Recupera i dati di un artista tramite il parametro `nome` dalla rotta `/artists/byName/:nome`
+ * - Visualizza nome, genere, paese, descrizione e immagine profilo dell’artista
+ * - Elenca tutti i brani dell’artista con titolo, album e copertina
+ * - Permette di riprodurre i brani direttamente nella pagina con controlli play/pausa
+ * - Mostra un mini player fisso in basso quando un brano è in riproduzione
+ *
+ * Stato interno:
+ * - `artist`: oggetto artista con informazioni e lista brani
+ * - `currentTrack`: brano selezionato per la riproduzione
+ * - `isPlaying`: stato della riproduzione audio
+ *
+ * Contesto:
+ * - Utilizza `useParams` per recuperare il nome artista dalla URL
+ * - Mostra notifiche in caso di errore nel fetch
+ *
+ * Dipendenze:
+ * - Lettore audio HTML5 (`<audio>`) collegato tramite `ref`
+ * - URL pubblici delle risorse caricati da Supabase Storage
+ *
+ * UI:
+ * - Stile responsive, dark mode
+ * - Pulsanti play/pausa associati a ciascun brano
+ */
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { notify } from '../utils/toastManager';

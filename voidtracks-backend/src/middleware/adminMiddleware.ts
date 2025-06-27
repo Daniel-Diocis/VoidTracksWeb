@@ -18,12 +18,7 @@ const factory = new MessageFactory();
 export function validateRechargeInput(req: Request, res: Response, next: NextFunction) {
   const { username, tokens } = req.body;
 
-  if (
-    !username ||
-    typeof username !== "string" ||
-    typeof tokens !== "number" ||
-    tokens < 0
-  ) {
+  if (!username || typeof username !== "string" || typeof tokens !== "number" || tokens < 0) {
     return factory.getStatusMessage(res, ErrorMessages.INVALID_RECHARGE_INPUT.status, ErrorMessages.INVALID_RECHARGE_INPUT.message);
   }
 
@@ -44,11 +39,7 @@ export function validateTokenAmount(req: Request, res: Response, next: NextFunct
   const { tokensToAdd } = req.body;
 
   if (typeof tokensToAdd !== "number" || tokensToAdd < 0) {
-    return factory.getStatusMessage(
-      res,
-      ErrorMessages.INVALID_INPUT.status,
-      ErrorMessages.INVALID_INPUT.message
-    );
+    return factory.getStatusMessage(res, ErrorMessages.INVALID_INPUT.status, ErrorMessages.INVALID_INPUT.message);
   }
 
   next();

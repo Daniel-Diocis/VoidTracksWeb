@@ -1,3 +1,20 @@
+/**
+ * GlobalPlayer.tsx
+ *
+ * Componente globale del player audio.
+ * 
+ * Visualizza un player fisso in basso con:
+ * - Copertina del brano in riproduzione
+ * - Titolo e artista
+ * - Controlli: brano precedente, successivo, stop
+ * - Audio player nativo (senza download)
+ * 
+ * Logica:
+ * - Utilizza il contesto globale PlayerContext per controllare lo stato del player
+ * - Al termine del brano, passa automaticamente al successivo
+ * - Se si arriva all'ultimo brano, riparte dal primo
+ */
+
 import { useEffect } from "react";
 import { usePlayer } from "../context/PlayerContext";
 import { SkipBack, SkipForward } from "lucide-react";
@@ -5,6 +22,10 @@ import { SkipBack, SkipForward } from "lucide-react";
 const PUBLIC_URL =
   "https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public";
 
+/**
+ * Componente principale del player globale.
+ * Mostra i controlli di riproduzione se c'è un brano attivo.
+ */
 export default function GlobalPlayer() {
   const {
     currentTrack,
@@ -18,6 +39,7 @@ export default function GlobalPlayer() {
     setIsPlaying,
   } = usePlayer();
 
+  // Effetto: avvia o mette in pausa l'audio in base allo stato globale
   useEffect(() => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -28,6 +50,7 @@ export default function GlobalPlayer() {
     }
   }, [isPlaying, currentTrack]);
 
+  // Se non c'è un brano selezionato, il player non viene mostrato
   if (!currentTrack) return null;
 
   return (
@@ -64,12 +87,10 @@ export default function GlobalPlayer() {
             const isLast = currentIndex === tracks.length - 1;
 
             if (isLast) {
-              // Riparti dal primo brano
               const firstTrack = tracks[0];
               setCurrentTrack(firstTrack);
               setIsPlaying(true);
             } else {
-              // Vai al brano successivo
               playNext();
             }
           }}

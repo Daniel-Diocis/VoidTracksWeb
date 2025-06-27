@@ -24,7 +24,7 @@ const startServer = async () => {
     try {
         await sequelize.authenticate();
         console.log("Connessione al database stabilita con successo.");
-        // Sincronizza i modelli con il database (modifica le tabelle se necessario)
+        // Sincronizza i modelli con il database (alter modifica le tabelle se necessario)
         await sequelize.sync({ alter: true });
         // Avvia il server
         app_1.default.listen(PORT, () => {

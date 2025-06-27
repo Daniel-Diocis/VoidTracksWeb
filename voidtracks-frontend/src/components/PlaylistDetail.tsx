@@ -1,9 +1,34 @@
+/**
+ * PlaylistDetail.tsx
+ *
+ * Componente che visualizza i dettagli di una singola playlist.
+ * Permette di:
+ * - Rinominare la playlist
+ * - Aggiungere brani acquistati ma non presenti nella playlist
+ * - Rimuovere brani dalla playlist
+ * - Riprodurre i brani e impostarne uno come preferito
+ *
+ * Props:
+ * @param {number} playlistId - ID univoco della playlist da mostrare
+ * @param {(id: number, nuovoNome: string) => void} onRename - Callback per rinominare la playlist
+ *
+ * Funzionalità:
+ * - Recupera playlist e brani acquistati dall’API
+ * - Gestisce lo stato di editing del nome
+ * - Permette l’interazione con il PlayerContext per la riproduzione dei brani
+ */
+
 import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import type { PlaylistWithTracks, PurchaseWithTrack } from "../types";
 import { notify } from "../utils/toastManager";
 import { usePlayer } from "../context/PlayerContext";
 import type { Track } from "../types";
+
+/**
+ * Componente React per mostrare e modificare una playlist specifica.
+ * @component
+ */
 
 export default function PlaylistDetail({
   playlistId,
@@ -28,19 +53,20 @@ export default function PlaylistDetail({
     //playNext,
     //playPrevious,
     //tracks,
-    setTracks,
+    //setTracks,
     setIsPlaying
   } = usePlayer();
 
+  // Gestisce la riproduzione o pausa del brano selezionato
   const handlePlayPause = (track: Track) => {
     if (currentTrack?.id === track.id) {
       togglePlayPause();
     } else {
-      setTracks(playlist!.tracks);
       playTrack(track);
     }
   };
 
+  // Carica la playlist e gli acquisti dell'utente al montaggio
   useEffect(() => {
     if (!token) return;
 
@@ -84,12 +110,14 @@ export default function PlaylistDetail({
     fetchData();
   }, [token, playlistId]);
 
+  // Invia la richiesta di rinomina
   const handleRename = async () => {
     if (!newName.trim()) return;
     await onRename(playlistId, newName.trim());
     setEditing(false);
   };
 
+  // Aggiorna i dati della playlist dopo modifiche
   const refreshPlaylist = async () => {
     try {
       const res = await fetch(
@@ -113,6 +141,7 @@ export default function PlaylistDetail({
     }
   };
 
+  // Aggiunge un brano alla playlist
   const handleAddTrack = async (trackId: string) => {
     try {
       const res = await fetch(
@@ -140,6 +169,7 @@ export default function PlaylistDetail({
     }
   };
 
+  // Rimuove un brano dalla playlist
   const handleRemoveTrack = async (trackId: string) => {
     if (!window.confirm("Rimuovere questo brano?")) return;
     try {
@@ -168,6 +198,7 @@ export default function PlaylistDetail({
     }
   };
 
+  // Imposta un brano come preferito nella playlist
   const handleSetFavorite = async (trackId: string) => {
     try {
       const res = await fetch(

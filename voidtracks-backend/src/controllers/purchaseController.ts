@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import axios, { AxiosResponse } from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { Readable } from "stream";
@@ -27,7 +27,7 @@ const factory = new MessageFactory();
  * @param res - Risposta HTTP contenente ID acquisto e token di download.
  * @returns Risposta JSON con conferma acquisto e token.
  */
-export async function createPurchase(req: Request, res: Response) {
+export async function createPurchase(req: Request, res: Response, next: NextFunction) {
   try {
     const user = (req as any).userInstance;
     const track = (req as any).trackInstance;
@@ -51,8 +51,7 @@ export async function createPurchase(req: Request, res: Response) {
       download_token: purchase.download_token,
     });
   } catch (error) {
-    console.error("Errore nell'acquisto:", error);
-    factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    next(error);
   }
 }
 
@@ -65,7 +64,7 @@ export async function createPurchase(req: Request, res: Response) {
  * @param req - Richiesta HTTP con `purchaseInstance` popolato dal middleware.
  * @param res - Risposta HTTP con il file MP3 in streaming.
  */
-export async function downloadTrack(req: Request, res: Response) {
+export async function downloadTrack(req: Request, res: Response, next: NextFunction) {
   try {
     const purchase = (req as any).purchaseInstance;
 
@@ -82,9 +81,8 @@ export async function downloadTrack(req: Request, res: Response) {
     res.setHeader("Content-Type", "audio/mpeg");
 
     response.data.pipe(res);
-  } catch (error: any) {
-    console.error("Errore durante il download:", error);
-    factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -96,7 +94,7 @@ export async function downloadTrack(req: Request, res: Response) {
  * @param req - Richiesta HTTP contenente `user.id` e filtri opzionali tramite query string.
  * @param res - Risposta HTTP con l’elenco degli acquisti effettuati.
  */
-export async function getUserPurchases(req: Request, res: Response) {
+export async function getUserPurchases(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user.id;
     const { fromDate, toDate } = req.query;
@@ -121,8 +119,7 @@ export async function getUserPurchases(req: Request, res: Response) {
       data: purchases,
     });
   } catch (error) {
-    console.error("Errore nel recupero acquisti:", error);
-    factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    next(error);
   }
 }
 
@@ -134,7 +131,7 @@ export async function getUserPurchases(req: Request, res: Response) {
  * @param req - Richiesta HTTP contenente `purchaseInstance` fornito dal middleware.
  * @param res - Risposta HTTP con i dettagli del brano e il flag `canDownload`.
  */
-export async function getPurchaseDetails(req: Request, res: Response) {
+export async function getPurchaseDetails(req: Request, res: Response, next: NextFunction) {
   try {
     const purchase = (req as any).purchaseInstance;
 
@@ -149,7 +146,6 @@ export async function getPurchaseDetails(req: Request, res: Response) {
       canDownload,
     });
   } catch (error) {
-    console.error("Errore GET /purchase/:token", error);
-    factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    next(error);
   }
 }

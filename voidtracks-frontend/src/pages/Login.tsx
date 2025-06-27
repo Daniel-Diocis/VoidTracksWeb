@@ -1,3 +1,31 @@
+/**
+ * Login.tsx
+ *
+ * Pagina di autenticazione dell’utente tramite username e password.
+ *
+ * Funzionalità:
+ * - Invia una richiesta POST a `/auth/login` per ottenere il token JWT
+ * - Salva il token in `localStorage` per uso persistente
+ * - Effettua una seconda richiesta a `/auth/private` per ottenere i dati completi dell’utente (es. numero di token, ruolo, notifiche)
+ * - Mostra notifiche toast personalizzate per ogni notifica utente non letta
+ * - Segna le notifiche come lette una volta che sono state chiuse tutte
+ * - Salva le informazioni nel contesto `AuthContext` per uso globale nell’app
+ * - Reindirizza l’utente alla homepage dopo il login
+ *
+ * Stato interno:
+ * - `username`: valore del campo input utente
+ * - `password`: valore del campo input password
+ *
+ * Dipendenze:
+ * - `AuthContext` per gestire lo stato utente
+ * - `toastManager` per le notifiche
+ * - `react-router-dom` per la navigazione
+ *
+ * UI:
+ * - Form responsive con validazione minima
+ * - Mostra errori o conferme tramite toast
+ */
+
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';

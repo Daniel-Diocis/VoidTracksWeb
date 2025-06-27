@@ -37,11 +37,7 @@ const factory = new MessageFactory();
  * @param next - Funzione che richiama il middleware successivo.
  * @returns Risposta HTTP 401 in caso di assenza o invalidità del token.
  */
-export function authenticateToken(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export function authenticateToken(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 

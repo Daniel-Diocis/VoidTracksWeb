@@ -1,3 +1,27 @@
+/**
+ * PlaylistPage.tsx
+ *
+ * Pagina principale per la gestione delle playlist utente.
+ *
+ * Funzionalità:
+ * - Visualizza l’elenco delle playlist create dall’utente
+ * - Permette di creare, rinominare ed eliminare playlist
+ * - Mostra i dettagli della playlist selezionata tramite il componente `PlaylistDetail`
+ *
+ * Meccanismo:
+ * - Recupera le playlist dal backend autenticato tramite token JWT
+ * - Gestisce le operazioni CRUD tramite fetch verso le API REST
+ * - Aggiorna lo stato locale delle playlist in seguito a ogni azione dell’utente
+ *
+ * Composizione:
+ * - Usa i componenti `PlaylistList` e `PlaylistDetail`
+ * - Gestisce il token e il logout automatico in caso di errore 401
+ *
+ * UI:
+ * - Layout responsive (colonna singola su mobile, affiancato su desktop)
+ * - Form semplice per creare nuove playlist
+ */
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';

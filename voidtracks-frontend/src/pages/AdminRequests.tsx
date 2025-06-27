@@ -1,3 +1,33 @@
+/**
+ * AdminRequests.tsx
+ *
+ * Pagina amministrativa per la gestione delle richieste di nuovi brani.
+ * Gli amministratori possono visualizzare tutte le richieste in attesa, approvarle o rifiutarle.
+ * In caso di approvazione, possono assegnare un numero di token all'utente richiedente.
+ *
+ * Funzionalità:
+ * - Recupera tutte le richieste con stato 'waiting' dall'API `/admin/requests`
+ * - Mostra informazioni dettagliate su ogni richiesta: titolo, artista, utente, numero voti
+ * - Permette di approvare o rifiutare una richiesta tramite `/admin/requests/:id/approve` o `reject`
+ * - Assegna token all'utente richiedente in caso di approvazione
+ *
+ * Contesto:
+ * - Utilizza `AuthContext` per recuperare il token JWT
+ *
+ * Stato interno:
+ * - `requests`: array di richieste ricevute dal backend
+ * - `loading`: indica se è in corso il caricamento
+ * - `tokensToAdd`: mappa con quantità di token da assegnare per ogni richiesta
+ *
+ * Variabili d'ambiente:
+ * - `VITE_API_URL`: URL base dell'API
+ *
+ * UI:
+ * - Interfaccia dark mode responsive
+ * - Input per token, pulsanti Approva e Rifiuta
+ * - Ordinamento per numero di voti (decrescente)
+ */
+
 import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { notify } from '../utils/toastManager';

@@ -1,3 +1,26 @@
+/**
+ * PopularTracks.tsx
+ *
+ * Pagina che mostra i brani più acquistati dagli utenti.
+ *
+ * Funzionalità:
+ * - Recupera dal backend la lista dei brani ordinati per numero di acquisti
+ * - Mostra per ogni brano copertina, titolo, artista, album e numero di acquisti
+ *
+ * Meccanismo:
+ * - Effettua una chiamata `GET` all'endpoint `/tracks/popular` al primo render
+ * - Gestisce loading, errori e stato dei dati tramite `useState` e `useEffect`
+ *
+ * UI:
+ * - Layout responsive con elenco dei brani in stile card
+ * - Mostra un messaggio in caso di lista vuota o errore
+ *
+ * Dati utilizzati:
+ * - `track_id`: id del brano
+ * - `num_acquisti`: numero totale di acquisti
+ * - `Track`: oggetto contenente informazioni sul brano
+ */
+
 import { useEffect, useState } from 'react';
 import { notify } from '../utils/toastManager';
 

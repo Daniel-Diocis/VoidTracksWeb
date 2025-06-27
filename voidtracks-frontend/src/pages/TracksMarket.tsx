@@ -1,3 +1,29 @@
+/**
+ * TracksMarket.tsx
+ *
+ * Componente che rappresenta il market dei brani acquistabili.
+ *
+ * Funzionalità principali:
+ * - Recupera tutti i brani disponibili dal backend (con possibilità di ricerca)
+ * - Ordina i brani per artista e titolo
+ * - Evidenzia i brani aggiornati rispetto alla versione salvata localmente
+ * - Recupera la lista degli acquisti effettuati dall’utente autenticato
+ * - Permette l’acquisto di un brano con token e reindirizza alla pagina di download
+ * - Mostra pulsanti diversi in base allo stato del brano (non acquistato, acquistato, scaricabile)
+ * - Integra controlli di riproduzione tramite il player globale
+ *
+ * Meccanismo:
+ * - Due useEffect: uno per il fetch dei brani, l’altro per gli acquisti
+ * - Verifica timestamp aggiornamento brani tramite `loadLocalTimestamps` e `saveLocalTimestamps`
+ * - Usa il contesto `AuthContext` per autenticazione e token, `PlayerContext` per la riproduzione
+ * - Gestione acquisti con chiamata `POST /purchase` e aggiornamento download token
+ *
+ * UI:
+ * - Input per ricerca
+ * - Lista brani in formato card con copertina, titolo, artista, album, costo
+ * - Pulsanti dinamici per Acquista / Download / Riproduci
+ */
+
 import { useEffect, useState, useContext } from 'react';
 import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
 import { AuthContext } from '../context/AuthContext';

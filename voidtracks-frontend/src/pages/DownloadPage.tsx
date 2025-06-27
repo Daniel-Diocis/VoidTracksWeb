@@ -1,3 +1,31 @@
+/**
+ * DownloadPage.tsx
+ *
+ * Pagina dedicata al download sicuro di un brano acquistato dall'utente.
+ * Accessibile tramite un token temporaneo presente nell'URL.
+ *
+ * Funzionalità:
+ * - Recupera le informazioni del brano associato a un token tramite la rotta GET `/purchase/:download_token`
+ * - Verifica se il token è valido e se il brano è scaricabile (`canDownload`)
+ * - Mostra i dettagli del brano (titolo, artista, album, copertina)
+ * - Consente un singolo download sicuro tramite link temporaneo
+ * - Mostra messaggi di feedback all’utente tramite notifiche toast
+ *
+ * Stato interno:
+ * - `track`: dati del brano da scaricare
+ * - `loading`: stato di caricamento iniziale
+ * - `downloaded`: flag per disabilitare il download dopo l’avvio
+ *
+ * Dipendenze:
+ * - Utilizza Supabase Storage per caricare la copertina del brano
+ * - Utilizza `toastManager` per mostrare notifiche
+ * - I download vengono gestiti tramite apertura in una nuova finestra (evita blocchi del browser)
+ *
+ * UI:
+ * - Card centrale con dettagli brano e pulsante di download
+ * - Visual feedback differenziato per stato di download
+ */
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { notify } from '../utils/toastManager';

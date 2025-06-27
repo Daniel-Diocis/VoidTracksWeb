@@ -1,3 +1,25 @@
+/**
+ * TrackList.tsx
+ *
+ * Componente che mostra la lista completa dei brani musicali disponibili.
+ *
+ * Funzionalità:
+ * - Recupera tutti i brani dal backend (con ricerca facoltativa)
+ * - Ordina i brani per artista e titolo
+ * - Evidenzia se un brano è stato aggiornato rispetto alla versione salvata localmente
+ * - Permette di riprodurre o mettere in pausa una traccia tramite il player globale (usePlayer)
+ *
+ * Meccanismo:
+ * - Effettua fetch a `/tracks` con eventuale query `?q=`
+ * - Confronta i `updated_at` dei brani con i timestamp salvati localmente (localStorage)
+ * - Aggiorna la lista dei brani tramite `setTracks` fornito dal contesto `PlayerContext`
+ *
+ * UI:
+ * - Input per la ricerca per titolo, artista o album
+ * - Griglia responsiva di schede per ciascun brano (cover, titolo, artista, album)
+ * - Pulsante play/pause personalizzato con stato gestito globalmente
+ */
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';

@@ -44,12 +44,16 @@ export const validateAuthInput = [
  * @param next - Funzione per passare al middleware successivo.
  */
 export async function checkUserExists(req: Request, res: Response, next: NextFunction) {
-  const { username } = req.body;
-  const user = await User.findOne({ where: { username } });
-  if (user) {
-    return factory.getStatusMessage(res, ErrorMessages.USERNAME_ALREADY_EXISTS.status, ErrorMessages.USERNAME_ALREADY_EXISTS.message);
+  try {
+    const { username } = req.body;
+    const user = await User.findOne({ where: { username } });
+    if (user) {
+      return factory.getStatusMessage(res, ErrorMessages.USERNAME_ALREADY_EXISTS.status, ErrorMessages.USERNAME_ALREADY_EXISTS.message);
+    }
+    next();
+  } catch (err) {
+    next(err);
   }
-  next();
 }
 
 /**
@@ -64,19 +68,23 @@ export async function checkUserExists(req: Request, res: Response, next: NextFun
  * @param next - Funzione per passare al middleware successivo.
  */
 export async function checkUserCredentials(req: Request, res: Response, next: NextFunction) {
-  const { username, password } = req.body;
-  const user = await User.findOne({ where: { username } });
-  if (!user) {
-    return factory.getStatusMessage(res, ErrorMessages.INVALID_CREDENTIALS.status, ErrorMessages.INVALID_CREDENTIALS.message);
-  }
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ where: { username } });
+    if (!user) {
+      return factory.getStatusMessage(res, ErrorMessages.INVALID_CREDENTIALS.status, ErrorMessages.INVALID_CREDENTIALS.message);
+    }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-  if (!isPasswordValid) {
-    return factory.getStatusMessage(res, ErrorMessages.INVALID_CREDENTIALS.status, ErrorMessages.INVALID_CREDENTIALS.message);
-  }
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      return factory.getStatusMessage(res, ErrorMessages.INVALID_CREDENTIALS.status, ErrorMessages.INVALID_CREDENTIALS.message);
+    }
 
-  (req as any).userRecord = user;
-  next();
+    (req as any).userRecord = user;
+    next();
+  } catch (err) {
+    next(err);
+  }
 }
 
 /**
@@ -91,32 +99,36 @@ export async function checkUserCredentials(req: Request, res: Response, next: Ne
  * @param next - Funzione per passare al middleware successivo.
  */
 export async function dailyTokenBonus(req: Request, res: Response, next: NextFunction) {
-  const userPayload = (req as any).user;
-  if (!userPayload) {
-    return factory.getStatusMessage(res, ErrorMessages.NOT_AUTHENTICATED_USER.status, ErrorMessages.NOT_AUTHENTICATED_USER.message);
+  try {
+    const userPayload = (req as any).user;
+    if (!userPayload) {
+      return factory.getStatusMessage(res, ErrorMessages.NOT_AUTHENTICATED_USER.status, ErrorMessages.NOT_AUTHENTICATED_USER.message);
+    }
+
+    const user = await User.findByPk(userPayload.id);
+    if (!user) {
+      return factory.getStatusMessage(res, ErrorMessages.USER_NOT_FOUND.status, ErrorMessages.USER_NOT_FOUND.message);
+    }
+
+    const now = new Date();
+    const lastBonusDate = user.lastTokenBonusDate;
+
+    const lastBonusDay = lastBonusDate
+      ? format(toZonedTime(lastBonusDate, timeZone), "yyyy-MM-dd")
+      : null;
+    const today = format(toZonedTime(now, timeZone), "yyyy-MM-dd");
+
+    if (lastBonusDay !== today) {
+      user.tokens += 1;
+      user.lastTokenBonusDate = now;
+      await user.save();
+    }
+
+    (req as any).userRecord = user;
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  const user = await User.findByPk(userPayload.id);
-  if (!user) {
-    return factory.getStatusMessage(res, ErrorMessages.USER_NOT_FOUND.status, ErrorMessages.USER_NOT_FOUND.message);
-  }
-
-  const now = new Date();
-  const lastBonusDate = user.lastTokenBonusDate;
-
-  const lastBonusDay = lastBonusDate
-    ? format(toZonedTime(lastBonusDate, timeZone), "yyyy-MM-dd")
-    : null;
-  const today = format(toZonedTime(now, timeZone), "yyyy-MM-dd");
-
-  if (lastBonusDay !== today) {
-    user.tokens += 1;
-    user.lastTokenBonusDate = now;
-    await user.save();
-  }
-
-  (req as any).userRecord = user;
-  next();
 }
 
 /**
