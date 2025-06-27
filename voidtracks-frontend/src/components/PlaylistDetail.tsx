@@ -51,7 +51,7 @@ export default function PlaylistDetail({
     //playNext,
     //playPrevious,
     //tracks,
-    //setTracks,
+    setTracks,
     setIsPlaying
   } = usePlayer();
 
@@ -98,6 +98,7 @@ export default function PlaylistDetail({
         playlistData.tracks ??= [];
         setPlaylist(playlistData);
         setNewName(playlistData.playlist.nome);
+        setTracks(playlistData.tracks);
         setPurchasedTracks(purchasesData.data || []);
       } catch (err) {
         console.error("Errore fetch playlist:", err);
@@ -133,6 +134,7 @@ export default function PlaylistDetail({
 
       data.tracks ??= [];
       setPlaylist(data);
+      setTracks(data.tracks);
     } catch (err) {
       console.error("Errore refresh playlist:", err);
       notify.error("Errore di rete durante il refresh");
