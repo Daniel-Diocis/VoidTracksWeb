@@ -43,6 +43,10 @@ La seguente tabella mostra le rotte:
 
 ## Pattern utilizzati
 
+### M(V)C (Model-(View)-Controller) Pattern
+
+Il progetto segue un’architettura basata sul pattern Model-(View)-Controller (M(V)C), che prevede la separazione tra gestione dei dati (Model), logica applicativa (Controller) e interfaccia utente (View). In particolare, il backend sviluppato con Express si occupa delle componenti Model e Controller: i modelli, definiti tramite Sequelize, rappresentano le entità principali come utenti, brani, playlist e acquisti, mentre i controller gestiscono la logica applicativa e l’esposizione delle API RESTful. La View non è integrata direttamente nel backend, ma è sviluppata separatamente nel frontend React, che comunica con il backend attraverso chiamate HTTP. Questo approccio disaccoppiato consente una migliore organizzazione del progetto, favorendo la scalabilità, la manutenzione del codice e l’indipendenza nello sviluppo delle varie componenti.
+
 ### Singleton Pattern
 
 Il Singleton Pattern è un pattern creazionale che garantisce l’esistenza di una sola istanza di una determinata classe, fornendo un punto di accesso globale a tale istanza. È particolarmente utile quando si desidera evitare la creazione di oggetti multipli e non necessari, ad esempio per la connessione al database.
