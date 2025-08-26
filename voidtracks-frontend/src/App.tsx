@@ -9,6 +9,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute'; // supponendo che AdminRoute sia nello stesso file
 import { useContext } from 'react';
 import { AuthContext } from './context/AuthContext';
+import { usePlayer } from './context/PlayerContext'; // importa il tuo PlayerContext
 import Navbar from './components/Navbar';
 import TrackList from './pages/TrackList';
 import TrackDetail from './pages/TrackDetail';
@@ -33,6 +34,8 @@ import GlobalPlayer from './components/GlobalPlayer';
 function App() {
   const auth = useContext(AuthContext);
 
+  const { currentTrack } = usePlayer();
+
   // In caso di errore nel caricamento del contesto
   if (!auth) return <div>Errore: contesto Auth non disponibile</div>;
   // Mostra un messaggio durante l'inizializzazione
@@ -41,7 +44,7 @@ function App() {
   return (
     <>
       <Navbar />
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className={`max-w-7xl mx-auto px-4 py-6 transition-all duration-300 ${currentTrack ? 'pb-24' : ''}`}>
         <Routes>
           {/* Rotte pubbliche */}
           <Route path="/" element={<TrackList />} />

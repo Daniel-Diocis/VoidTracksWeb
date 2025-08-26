@@ -93,7 +93,7 @@ function TrackList() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-900 text-white px-4 py-6 max-w-7xl mx-auto pb-32">
+    <div className="min-h-screen bg-zinc-900 text-white px-4 py-6 max-w-7xl mx-auto">
       <input
         type="text"
         placeholder="Cerca titolo, artista o album..."

@@ -173,7 +173,7 @@ const TracksMarket = () => {
   };
 
   return (
-    <div className="max-w-4xl p-4 bg-zinc-900 text-white rounded mx-auto pb-40">
+    <div className="max-w-4xl p-4 bg-zinc-900 text-white rounded mx-auto">
       <h1 className="text-2xl font-bold mb-6">Market - Acquista brani</h1>
 
       <input

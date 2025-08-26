@@ -49,6 +49,46 @@ export default function GlobalPlayer() {
     }
   }, [isPlaying, currentTrack]);
 
+  useEffect(() => {
+    if (!currentTrack || !('mediaSession' in navigator)) return;
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentTrack.titolo,
+      artist: currentTrack.artista,
+      album: currentTrack.album,
+      artwork: [
+        {
+          src: `${COVER_URL}/${currentTrack.cover_path}`,
+          sizes: "512x512",
+          type: "image/png",
+        },
+      ],
+    });
+
+    navigator.mediaSession.setActionHandler("play", () => {
+      setIsPlaying(true);
+      audioRef.current?.play();
+    });
+
+    navigator.mediaSession.setActionHandler("pause", () => {
+      setIsPlaying(false);
+      audioRef.current?.pause();
+    });
+
+    navigator.mediaSession.setActionHandler("previoustrack", playPrevious);
+    navigator.mediaSession.setActionHandler("nexttrack", playNext);
+    navigator.mediaSession.setActionHandler("stop", stopPlayback);
+
+    return () => {
+      // Pulizia opzionale dei gestori quando il track cambia
+      navigator.mediaSession.setActionHandler("play", null);
+      navigator.mediaSession.setActionHandler("pause", null);
+      navigator.mediaSession.setActionHandler("previoustrack", null);
+      navigator.mediaSession.setActionHandler("nexttrack", null);
+      navigator.mediaSession.setActionHandler("stop", null);
+    };
+  }, [currentTrack, setIsPlaying, playNext, playPrevious, stopPlayback]);
+
   // Se non c'è un brano selezionato, il player non viene mostrato
   if (!currentTrack) return null;
 
