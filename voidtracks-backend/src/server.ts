@@ -1,16 +1,17 @@
 import dotenv from "dotenv";
 import { getSequelizeInstance } from "./db/sequelize";
-import "./db"; // Importa index.ts per eseguire le associazioni tra i modelli
-import app from "./app";
+import "./db"; // Importa index.ts per eseguire setup dei modelli + associazioni
+import app from "./app"; // Prende l'app Express con tutte le rotte collegate
 import { 
   syncTracksFromSupabase, 
   syncArtistsFromSupabase, 
   syncTrackArtistsFromSupabase 
 } from "./utils/syncSupabaseToLocal";
 
-// Carica le variabili d'ambiente da .env
+// Carica le variabili d'ambiente da .env in modo che siano disponibili in process.env
 dotenv.config();
 
+// Imposta la porta del server e l'istanza Sequelize
 const PORT = process.env.PORT || 3000;
 const sequelize = getSequelizeInstance();
 
@@ -24,13 +25,14 @@ const sequelize = getSequelizeInstance();
  */
 const startServer = async () => {
   try {
-    await sequelize.authenticate();
+    // Autenticazione al database
+    await sequelize.authenticate(); // Prova a connettersi al database con le credenziali fornite
     console.log("Connessione al database stabilita con successo.");
 
     // Sincronizza i modelli con il database (alter modifica le tabelle se necessario)
     await sequelize.sync({ alter: true });
 
-    // Avvia il server
+    // Avvia il server Express (app sta per Express())
     app.listen(PORT, () => {
       console.log(`Server avviato su http://localhost:${PORT}`);
     });

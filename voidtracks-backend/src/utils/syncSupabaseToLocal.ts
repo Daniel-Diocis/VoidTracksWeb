@@ -213,7 +213,7 @@ export async function syncTrackArtistsFromSupabase(tracksData: any[]) {
       // Se il brano non esiste, salta l'iterazione
       if (!track) continue;
 
-      // Pulisce il titolo e l'artista per evitare errori di formattazione
+      // Pulisce i nomi degli artisti e li converte in minuscolo
       const artistNames = supaTrack.artista.split(",").map((a: string) => a.trim().toLowerCase());
 
       // Trova gli artisti locali che corrispondono ai nomi degli artisti del brano

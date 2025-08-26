@@ -12,6 +12,7 @@ import artistsRouter from "./routes/artists";
 import requestRouter from "./routes/requests";
 import { errorHandler } from "./middleware/errorHandler";
 
+// Crea un'istanza di Express
 const app = express();
 
 // Abilita CORS per accettare richieste da origini diverse

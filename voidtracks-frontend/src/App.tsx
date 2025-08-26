@@ -52,7 +52,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/popular" element={<PopularTracks />} />
           <Route path="/artist/:nome" element={<ArtistDetail />} />
-          {/* Rotte protette - solo utenti loggati */}
+          {/* Rotta Not Authorizated*/}
           <Route path="/not-authorized" element={<NotAuthorized />} />
 
           {/* Rotte protette - solo utenti loggati */}

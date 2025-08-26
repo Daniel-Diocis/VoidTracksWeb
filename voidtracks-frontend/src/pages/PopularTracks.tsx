@@ -22,6 +22,8 @@
 import { useEffect, useState } from 'react';
 import { notify } from '../utils/toastManager';
 
+const COVER_URL = import.meta.env.VITE_COVER_URL;
+
 interface PopularTrack {
   track_id: number;
   num_acquisti: number;
@@ -69,7 +71,7 @@ function PopularTracks() {
               <li key={item.Track.id} className="border p-4 rounded shadow-sm flex gap-4">
                 {item.Track.cover_path && (
                   <img
-                    src={`https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public/cover/${item.Track.cover_path}`}
+                    src={`${COVER_URL}/${item.Track.cover_path}`}
                     alt="cover"
                       style={{
                       width: '150px',

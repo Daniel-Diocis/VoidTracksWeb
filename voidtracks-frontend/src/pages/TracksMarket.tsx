@@ -30,7 +30,8 @@ import { notify } from '../utils/toastManager';
 import { usePlayer } from '../context/PlayerContext';
 import type { Track } from '../types';
 
-const PUBLIC_URL = 'https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public';
+//const PUBLIC_URL = import.meta.env.PUBLIC_URL;
+const COVER_URL = import.meta.env.VITE_COVER_URL;
 
 const TracksMarket = () => {
   const [tracksFromDB, setTracksFromDB] = useState<Track[]>([]);
@@ -191,7 +192,7 @@ const TracksMarket = () => {
           return (
             <li key={track.id} className="market-item">
               <img
-                src={`${PUBLIC_URL}/cover/${track.cover_path}`}
+                src={`${COVER_URL}/${track.cover_path}`}
                 alt={`Cover di ${track.titolo}`}
                 className="market-cover"
               />

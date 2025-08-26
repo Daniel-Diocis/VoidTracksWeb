@@ -25,6 +25,8 @@
 import { useEffect, useState } from 'react';
 import { notify } from '../utils/toastManager';
 
+const COVER_URL = import.meta.env.VITE_COVER_URL;
+
 interface Purchase {
   id: number;
   purchased_at: string;
@@ -101,7 +103,7 @@ function MyPurchases() {
                 purchases.map((p) => (
                 <li key={p.id} className="border p-4 rounded shadow-sm flex gap-4">
                     {p.Track.cover_path && (
-                    <img src={`https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public/cover/${p.Track.cover_path}`} alt="cover" className="w-20 h-20 object-cover rounded" />
+                    <img src={`${COVER_URL}/${p.Track.cover_path}`} alt="cover" className="w-20 h-20 object-cover rounded" />
                     )}
                     <div>
                     <h3 className="text-lg font-semibold">{p.Track.titolo}</h3>

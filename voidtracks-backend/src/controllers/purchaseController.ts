@@ -71,7 +71,7 @@ export async function downloadTrack(req: Request, res: Response, next: NextFunct
     purchase.used_flag = true;
     await purchase.save();
 
-    const fileUrl = `${FILE_URL}${purchase.Track!.music_path}`;
+    const fileUrl = `${FILE_URL}/${purchase.Track!.music_path}`;
     const response: AxiosResponse<Readable> = await axios.get(fileUrl, { responseType: "stream" });
 
     res.setHeader(

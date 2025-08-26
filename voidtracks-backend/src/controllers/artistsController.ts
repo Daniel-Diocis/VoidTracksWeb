@@ -22,8 +22,7 @@ export async function getAllArtists(req: Request, res: Response, next: NextFunct
     const artists = await Artist.findAll();
     res.json(artists);
   } catch (error) {
-    console.error("Errore recupero artisti:", error);
-    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    next(error);
   }
 }
 
@@ -62,7 +61,6 @@ export async function getArtistByName(req: Request, res: Response, next: NextFun
 
     res.json(artist);
   } catch (error) {
-    console.error("Errore recupero artista per nome:", error);
-    return factory.getStatusMessage(res, ErrorMessages.INTERNAL_ERROR.status, ErrorMessages.INTERNAL_ERROR.message);
+    next(error);
   }
 }

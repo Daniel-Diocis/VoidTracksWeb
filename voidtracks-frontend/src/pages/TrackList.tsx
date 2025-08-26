@@ -25,7 +25,8 @@ import { notify } from '../utils/toastManager';
 import { usePlayer } from '../context/PlayerContext';
 import type { Track } from '../types';
 
-const PUBLIC_URL = 'https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public';
+//const PUBLIC_URL = import.meta.env.PUBLIC_URL;
+const COVER_URL = import.meta.env.VITE_COVER_URL;
 
 function TrackList() {
   const {
@@ -114,7 +115,7 @@ function TrackList() {
             <div key={track.id} className="track-card">
               <Link to={`/track/${track.music_path}`}>
                 <img
-                  src={`${PUBLIC_URL}/cover/${track.cover_path}`}
+                  src={`${COVER_URL}/${track.cover_path}`}
                   alt={`Cover ${track.titolo}`}
                   className="track-cover"
                 />

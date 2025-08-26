@@ -30,8 +30,10 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { notify } from '../utils/toastManager';
 
-const PUBLIC_URL =
-  "https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public";
+//const PUBLIC_URL = import.meta.env.PUBLIC_URL;
+const MUSIC_URL = import.meta.env.VITE_MUSIC_URL;
+const COVER_URL = import.meta.env.VITE_COVER_URL;
+const PROFILE_URL = import.meta.env.VITE_PROFILE_URL;
 
 type Track = {
   id: string;
@@ -93,7 +95,7 @@ export default function ArtistDetail() {
       <h2 className="text-2xl font-bold mb-4">{artist.nome}</h2>
       {artist.profile_path && (
         <img
-          src={`${PUBLIC_URL}/profile/${artist.profile_path}`}
+          src={`${PROFILE_URL}/${artist.profile_path}`}
           alt={`Foto di ${artist.nome}`}
           className="w-48 h-48 object-cover rounded-lg mb-4"
         />
@@ -119,7 +121,7 @@ export default function ArtistDetail() {
               className="flex items-center gap-4 bg-zinc-800 p-2 rounded"
             >
               <img
-                src={`${PUBLIC_URL}/cover/${track.cover_path}`}
+                src={`${COVER_URL}/${track.cover_path}`}
                 alt={`Cover ${track.titolo}`}
                 className="w-16 h-16 object-cover rounded"
               />
@@ -153,7 +155,7 @@ export default function ArtistDetail() {
         {currentTrack && (
         <div className="fixed bottom-0 left-0 right-0 bg-zinc-800 p-4 flex items-center gap-4">
             <img
-            src={`${PUBLIC_URL}/cover/${currentTrack.cover_path}`}
+            src={`${COVER_URL}/${currentTrack.cover_path}`}
             alt={`Cover ${currentTrack.titolo}`}
             className="w-16 h-16 object-cover rounded"
             />
@@ -165,7 +167,7 @@ export default function ArtistDetail() {
             ref={audioRef}
             controls
             controlsList="nodownload"
-            src={`${PUBLIC_URL}/music/${currentTrack.music_path}`}
+            src={`${MUSIC_URL}/${currentTrack.music_path}`}
             className="flex-grow"
             onEnded={() => {
                 setIsPlaying(false);

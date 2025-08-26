@@ -20,7 +20,9 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { notify } from '../utils/toastManager';
 
-const PUBLIC_URL = 'https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public';
+//const PUBLIC_URL = import.meta.env.PUBLIC_URL;
+const MUSIC_URL = import.meta.env.VITE_MUSIC_URL;
+const COVER_URL = import.meta.env.VITE_COVER_URL;
 
 type Track = {
   id: string;
@@ -69,11 +71,11 @@ export default function TrackDetail() {
       <h2 className="text-xl font-bold mb-2">{track.titolo}</h2>
       <p className="text-gray-400 mb-2">{track.artista} – {track.album}</p>
       <img
-        src={`${PUBLIC_URL}/cover/${track.cover_path}`}
+        src={`${COVER_URL}/${track.cover_path}`}
         alt={`Cover ${track.titolo}`}
         className="w-64 h-64 object-cover rounded-lg mb-4"
       />
-      <audio controls controlsList="nodownload" src={`${PUBLIC_URL}/music/${track.music_path}`} className="w-full mb-4" />
+      <audio controls controlsList="nodownload" src={`${MUSIC_URL}/${track.music_path}`} className="w-full mb-4" />
     </div>
   );
 }

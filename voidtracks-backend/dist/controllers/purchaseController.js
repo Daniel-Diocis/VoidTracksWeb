@@ -68,7 +68,7 @@ async function downloadTrack(req, res, next) {
         const purchase = req.purchaseInstance;
         purchase.used_flag = true;
         await purchase.save();
-        const fileUrl = `${FILE_URL}${purchase.Track.music_path}`;
+        const fileUrl = `${FILE_URL}/${purchase.Track.music_path}`;
         const response = await axios_1.default.get(fileUrl, { responseType: "stream" });
         res.setHeader("Content-Disposition", `attachment; filename="${purchase.Track.titolo.replace(/[^a-z0-9]/gi, "_")}.mp3"`);
         res.setHeader("Content-Type", "audio/mpeg");

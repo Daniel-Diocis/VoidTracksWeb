@@ -17,8 +17,9 @@ import { useEffect } from "react";
 import { usePlayer } from "../context/PlayerContext";
 import { SkipBack, SkipForward } from "lucide-react";
 
-const PUBLIC_URL =
-  "https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public";
+//const PUBLIC_URL = import.meta.env.PUBLIC_URL;
+const MUSIC_URL = import.meta.env.VITE_MUSIC_URL;
+const COVER_URL = import.meta.env.VITE_COVER_URL;
 
 /**
  * Componente principale del player globale.
@@ -54,7 +55,7 @@ export default function GlobalPlayer() {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-zinc-800 p-4 flex items-center gap-4 z-50">
       <img
-        src={`${PUBLIC_URL}/cover/${currentTrack.cover_path}`}
+        src={`${COVER_URL}/${currentTrack.cover_path}`}
         alt={`Cover ${currentTrack.album}`}
         className="w-16 h-16 object-cover rounded"
       />
@@ -76,7 +77,7 @@ export default function GlobalPlayer() {
           preload="auto"
           controls
           controlsList="nodownload"
-          src={`${PUBLIC_URL}/music/${currentTrack.music_path}`}
+          src={`${MUSIC_URL}/${currentTrack.music_path}`}
           className="flex-grow"
           onEnded={() => {
             const currentIndex = tracks.findIndex(

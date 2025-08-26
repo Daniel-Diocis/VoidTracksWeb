@@ -36,7 +36,8 @@ type TrackInfo = {
   canDownload: boolean;
 };
 
-const PUBLIC_URL = 'https://igohvppfcsipbmzpckei.supabase.co/storage/v1/object/public';
+//const PUBLIC_URL = import.meta.env.PUBLIC_URL;
+const COVER_URL = import.meta.env.VITE_COVER_URL;
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function DownloadPage() {
@@ -76,7 +77,7 @@ export default function DownloadPage() {
       <h1 className="text-xl font-bold mb-4">Download brano</h1>
       <div className="flex gap-4 items-center">
         <img
-          src={`${PUBLIC_URL}/cover/${track.cover_path}`}
+          src={`${COVER_URL}/${track.cover_path}`}
           alt={`Cover di ${track.titolo}`}
           className="w-32 h-32 object-cover rounded"
         />

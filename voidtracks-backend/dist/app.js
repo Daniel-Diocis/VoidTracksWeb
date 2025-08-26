@@ -15,6 +15,7 @@ const admin_1 = __importDefault(require("./routes/admin"));
 const artists_1 = __importDefault(require("./routes/artists"));
 const requests_1 = __importDefault(require("./routes/requests"));
 const errorHandler_1 = require("./middleware/errorHandler");
+// Crea un'istanza di Express
 const app = (0, express_1.default)();
 // Abilita CORS per accettare richieste da origini diverse
 app.use((0, cors_1.default)());

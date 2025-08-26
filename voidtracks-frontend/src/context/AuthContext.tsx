@@ -79,7 +79,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setToken(token);
     setTokens(tokensCount);
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData)); // ✅ salva come JSON stringa
+    localStorage.setItem('user', JSON.stringify(userData)); // salva come JSON stringa
     localStorage.setItem('tokens', tokensCount.toString());
   };
 
