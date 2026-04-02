@@ -37,13 +37,14 @@ interface PopularTrack {
 }
 
 function PopularTracks() {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
   const [tracks, setTracks] = useState<PopularTrack[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPopularTracks = async () => {
       try {
-        const response = await fetch('http://localhost:3000/tracks/popular');
+        const response = await fetch(`${API_URL}/tracks/popular`);
         const data = await response.json();
         setTracks(data);
       } catch (error) {

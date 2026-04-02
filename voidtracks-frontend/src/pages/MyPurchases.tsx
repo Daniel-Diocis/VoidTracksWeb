@@ -40,6 +40,7 @@ interface Purchase {
 
 function MyPurchases() {
   const token = localStorage.getItem('token');
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -52,7 +53,7 @@ function MyPurchases() {
             if (fromDate) query.append('fromDate', fromDate);
             if (toDate) query.append('toDate', toDate);
 
-            const response = await fetch(`http://localhost:3000/purchase?${query.toString()}`, {
+            const response = await fetch(`${API_URL}/purchase?${query.toString()}`, {
                 headers: {
                 Authorization: `Bearer ${token}`,
                 },
