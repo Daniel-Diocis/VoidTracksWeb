@@ -44,7 +44,7 @@ type RequestItem = {
 function AdminRequests() {
   const auth = useContext(AuthContext);
   const token = auth?.token;
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
 
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);

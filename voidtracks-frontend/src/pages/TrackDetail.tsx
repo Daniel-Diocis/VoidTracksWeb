@@ -38,7 +38,7 @@ export default function TrackDetail() {
   const [track, setTrack] = useState<Track | null>(null);
 
   useEffect(() => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const API_URL = import.meta.env.VITE_API_URL || '/api';
     fetch(`${API_URL}/tracks`)
       .then(async res => {
         if (!res.ok) throw new Error('Errore nel recupero dei brani');

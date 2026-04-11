@@ -43,7 +43,7 @@ export default function UserRequests() {
   const [artista, setArtista] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
 
   const fetchRequests = async () => {
     try {

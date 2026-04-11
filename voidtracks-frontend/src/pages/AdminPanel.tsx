@@ -30,7 +30,7 @@ function AdminPanel() {
 
   const auth = useContext(AuthContext);
   const token = auth?.token; // preso dal contesto
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
 
   const handleRecharge = async (e: React.FormEvent) => {
     e.preventDefault();

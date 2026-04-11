@@ -64,7 +64,7 @@ export default function ArtistDetail() {
   useEffect(() => {
     if (!nome) return;
 
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const API_URL = import.meta.env.VITE_API_URL || "/api";
 
     fetch(`${API_URL}/artists/byName/${encodeURIComponent(nome)}`)
       .then((res) => {

@@ -40,7 +40,7 @@ interface Purchase {
 
 function MyPurchases() {
   const token = localStorage.getItem('token');
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [purchases, setPurchases] = useState<Purchase[]>([]);

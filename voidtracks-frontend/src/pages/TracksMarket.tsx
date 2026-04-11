@@ -39,7 +39,7 @@ const TracksMarket = () => {
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [downloadMap, setDownloadMap] = useState<Record<string, string>>({});
   const auth = useContext(AuthContext);
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
   const navigate = useNavigate();
 
   const {

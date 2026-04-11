@@ -38,7 +38,7 @@ type TrackInfo = {
 
 //const PUBLIC_URL = import.meta.env.PUBLIC_URL;
 const COVER_URL = import.meta.env.VITE_COVER_URL;
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export default function DownloadPage() {
   const { download_token } = useParams();

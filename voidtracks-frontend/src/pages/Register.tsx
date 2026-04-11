@@ -28,7 +28,7 @@ function Register() {
   const navigate = useNavigate();
 
   const auth = useContext(AuthContext);
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
