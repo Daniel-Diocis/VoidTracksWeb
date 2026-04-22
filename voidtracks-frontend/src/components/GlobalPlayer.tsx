@@ -1,23 +1,21 @@
 /**
  * Componente globale del player audio.
- * 
- * Visualizza un player fisso in basso con:
- * - Copertina del brano in riproduzione
- * - Titolo e artista
- * - Controlli: brano precedente, successivo, stop
- * - Audio player nativo (senza download)
- * 
+ *
+ * Visualizza:
+ * - un mini player fisso in basso
+ * - una vista espansa full screen cliccando sulla cover
+ *
  * Logica:
- * - Utilizza il contesto globale PlayerContext per controllare lo stato del player
- * - Al termine del brano, passa automaticamente al successivo
- * - Se si arriva all'ultimo brano, riparte dal primo
+ * - utilizza un solo tag <audio> per evitare conflitti con audioRef
+ * - usa PlayerContext per gestire lo stato globale
+ * - supporta Media Session API
+ * - al termine del brano passa al successivo, oppure riparte dal primo
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePlayer } from "../context/PlayerContext";
-import { SkipBack, SkipForward } from "lucide-react";
+import { SkipBack, SkipForward, ChevronDown} from "lucide-react";
 
-//const PUBLIC_URL = import.meta.env.PUBLIC_URL;
 const MUSIC_URL = import.meta.env.VITE_MUSIC_URL;
 const COVER_URL = import.meta.env.VITE_COVER_URL;
 
@@ -38,7 +36,9 @@ export default function GlobalPlayer() {
     setIsPlaying,
   } = usePlayer();
 
-  // Effetto: avvia o mette in pausa l'audio in base allo stato globale
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Avvia o mette in pausa l'audio in base allo stato globale
   useEffect(() => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -47,10 +47,11 @@ export default function GlobalPlayer() {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, currentTrack, audioRef]);
 
+  // Media Session API
   useEffect(() => {
-    if (!currentTrack || !('mediaSession' in navigator)) return;
+    if (!currentTrack || !("mediaSession" in navigator)) return;
 
     navigator.mediaSession.metadata = new MediaMetadata({
       title: currentTrack.titolo,
@@ -87,69 +88,149 @@ export default function GlobalPlayer() {
       navigator.mediaSession.setActionHandler("nexttrack", null);
       navigator.mediaSession.setActionHandler("stop", null);
     };
-  }, [currentTrack, setIsPlaying, playNext, playPrevious, stopPlayback]);
+  }, [currentTrack, setIsPlaying, playNext, playPrevious, stopPlayback, audioRef]);
 
-  // Se non c'è un brano selezionato, il player non viene mostrato
+  const handleEnded = () => {
+    const currentIndex = tracks.findIndex((t) => t.id === currentTrack?.id);
+    const isLast = currentIndex === tracks.length - 1;
+
+    if (isLast) {
+      const firstTrack = tracks[0];
+      if (firstTrack) {
+        setCurrentTrack(firstTrack);
+        setIsPlaying(true);
+      }
+    } else {
+      playNext();
+    }
+  };
+
   if (!currentTrack) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-zinc-800 p-4 flex items-center gap-4 z-50">
-      <img
-        src={`${COVER_URL}/${currentTrack.cover_path}`}
-        alt={`Cover ${currentTrack.album}`}
-        className="w-16 h-16 object-cover rounded"
-      />
-      <div className="flex flex-col">
-        <span className="font-bold">{currentTrack.titolo}</span>
-        <span className="text-sm text-gray-400">{currentTrack.artista}</span>
-      </div>
+    <>
+      {/* PLAYER ESPANSO */}
+      {isExpanded && (
+        <div className="fixed inset-0 z-[60] bg-zinc-900 text-white flex flex-col">
+          <div className="flex items-center justify-between p-4">
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="text-white"
+              aria-label="Riduci player"
+            >
+              <ChevronDown size={30} />
+            </button>
 
-      <div className="flex items-center gap-3 ml-4 flex-grow">
+            <button
+              onClick={stopPlayback}
+              className="text-white text-sm"
+              aria-label="Chiudi player"
+            >
+              Close
+            </button>
+          </div>
+
+          <div className="flex-1 flex flex-col items-center justify-center px-6 pb-10">
+            <img
+              src={`${COVER_URL}/${currentTrack.cover_path}`}
+              alt={`Cover ${currentTrack.album}`}
+              className="w-full max-w-md aspect-square object-cover rounded-2xl shadow-2xl mb-8"
+            />
+
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold">{currentTrack.titolo}</h2>
+              <p className="text-zinc-300 mt-2">{currentTrack.artista}</p>
+              <p className="text-zinc-500 text-sm mt-1">{currentTrack.album}</p>
+            </div>
+
+            <div className="w-full max-w-4xl flex items-center gap-6 px-6">
+              <button
+                onClick={playPrevious}
+                className="text-white hover:text-zinc-300"
+                aria-label="Brano precedente"
+              >
+                <SkipBack size={34} />
+              </button>
+
+              <audio
+                ref={audioRef}
+                preload="auto"
+                controls
+                controlsList="nodownload"
+                src={`${MUSIC_URL}/${currentTrack.music_path}`}
+                className="flex-grow"
+                onEnded={handleEnded}
+              />
+
+              <button
+                onClick={playNext}
+                className="text-white hover:text-zinc-300"
+                aria-label="Brano successivo"
+              >
+                <SkipForward size={34} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MINI PLAYER */}
+      <div className="fixed bottom-0 left-0 right-0 bg-zinc-800 p-4 flex items-center gap-4 z-50">
         <button
-          onClick={playPrevious}
-          className="text-white"
-          aria-label="Brano precedente"
+          onClick={() => setIsExpanded(true)}
+          className="shrink-0"
+          aria-label="Apri player espanso"
         >
-          <SkipBack size={24} />
+          <img
+            src={`${COVER_URL}/${currentTrack.cover_path}`}
+            alt={`Cover ${currentTrack.album}`}
+            className="w-16 h-16 object-cover rounded cursor-pointer"
+          />
         </button>
-        <audio
-          ref={audioRef}
-          preload="auto"
-          controls
-          controlsList="nodownload"
-          src={`${MUSIC_URL}/${currentTrack.music_path}`}
-          className="flex-grow"
-          onEnded={() => {
-            const currentIndex = tracks.findIndex(
-              (t) => t.id === currentTrack.id
-            );
-            const isLast = currentIndex === tracks.length - 1;
 
-            if (isLast) {
-              const firstTrack = tracks[0];
-              setCurrentTrack(firstTrack);
-              setIsPlaying(true);
-            } else {
-              playNext();
-            }
-          }}
-        />
+        <div className="flex flex-col min-w-0">
+          <span className="font-bold truncate">{currentTrack.titolo}</span>
+          <span className="text-sm text-gray-400 truncate">
+            {currentTrack.artista}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3 ml-4 flex-grow">
+          <button
+            onClick={playPrevious}
+            className="text-white"
+            aria-label="Brano precedente"
+          >
+            <SkipBack size={24} />
+          </button>
+
+          <audio
+            ref={audioRef}
+            preload="auto"
+            controls
+            controlsList="nodownload"
+            src={`${MUSIC_URL}/${currentTrack.music_path}`}
+            className="flex-grow"
+            onEnded={handleEnded}
+          />
+
+          <button
+            onClick={playNext}
+            className="text-white"
+            aria-label="Brano successivo"
+          >
+            <SkipForward size={24} />
+          </button>
+        </div>
+
         <button
-          onClick={playNext}
-          className="text-white"
-          aria-label="Brano successivo"
+          onClick={stopPlayback}
+          className="ml-4 text-white"
+          aria-label="Chiudi player"
         >
-          <SkipForward size={24} />
+          Close
         </button>
       </div>
-
-      <button
-        onClick={stopPlayback}
-        className="ml-4 text-white"
-        aria-label="Chiudi player"
-      >
-        Close
-      </button>
-    </div>
+    </>
   );
 }
