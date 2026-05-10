@@ -9,6 +9,7 @@ import purchaseRouter from "./routes/purchase";
 import playlistRouter from "./routes/playlist";
 import adminRouter from "./routes/admin";
 import artistsRouter from "./routes/artists";
+import albumsRouter from "./routes/albums";
 import requestRouter from "./routes/requests";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -36,6 +37,7 @@ app.use("/purchase", purchaseRouter);
 app.use("/playlists", playlistRouter);
 app.use("/admin", adminRouter);
 app.use("/artists", artistsRouter);
+app.use("/albums", albumsRouter);
 app.use("/requests", requestRouter);
 
 // Middleware per la gestione centralizzata degli errori

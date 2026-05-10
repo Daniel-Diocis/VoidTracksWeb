@@ -23,6 +23,7 @@ import PlaylistsPage from './pages/PlaylistsPage';
 import AdminPanel from './pages/AdminPanel';
 import NotAuthorized from './pages/NotAuthorized';
 import ArtistDetail from './pages/ArtistDetail';
+import AlbumDetail from './pages/AlbumDetail';
 import UserRequests from "./pages/UserRequests";
 import AdminRequests from './pages/AdminRequests';
 import GlobalPlayer from './components/GlobalPlayer';
@@ -55,6 +56,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/popular" element={<PopularTracks />} />
           <Route path="/artist/:nome" element={<ArtistDetail />} />
+          <Route path="/album/:albumName" element={<AlbumDetail />} />
           {/* Rotta Not Authorizated*/}
           <Route path="/not-authorized" element={<NotAuthorized />} />
 

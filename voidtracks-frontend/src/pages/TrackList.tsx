@@ -135,7 +135,14 @@ function TrackList() {
                     );
                   })}
                 </p>
-                <p className="track-album">{track.album}</p>
+                <p className="track-album">
+                  <Link
+                    to={`/album/${encodeURIComponent(track.album)}`}
+                    className="text-blue-400 hover:underline"
+                  >
+                    {track.album}
+                  </Link>
+                </p>
               </div>
               <button
                 onClick={() => handlePlayPause(track)}
