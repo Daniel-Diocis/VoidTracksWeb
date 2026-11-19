@@ -8,10 +8,9 @@ import User from "../models/User";
 import Notification from "../models/Notification";
 import fs from "fs";
 
-const privateKey = fs.readFileSync(
-  process.env.PRIVATE_KEY_PATH || "./private.key",
-  "utf8"
-);
+const privateKey = process.env.JWT_PRIVATE_KEY_BASE64
+  ? Buffer.from(process.env.JWT_PRIVATE_KEY_BASE64, "base64").toString("utf8")
+  : fs.readFileSync(process.env.PRIVATE_KEY_PATH || "./private.key", "utf8");
 const factory = new MessageFactory();
 
 /**

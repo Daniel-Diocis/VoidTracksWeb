@@ -72,6 +72,8 @@ function Navbar() {
         {isLoggedIn && user?.role === 'admin' && (
           <>
             <Link to="/admin" className="px-4 py-2 hover:underline">Ricarica</Link>
+            <Link to="/admin/tracks/new" className="px-4 py-2 hover:underline">Aggiungi brano</Link>
+            <Link to="/admin/artists/new" className="px-4 py-2 hover:underline">Aggiungi artista</Link>
             <Link to="/admin/requests" className="px-4 py-2 hover:underline">Richieste</Link>
           </>
         )}

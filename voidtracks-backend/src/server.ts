@@ -38,9 +38,13 @@ const startServer = async () => {
     });
 
     // Esegue la sincronizzazione da Supabase in background
-    const supaTracks = await syncTracksFromSupabase();     // Restituisce i brani nuovi o aggiornati
-    await syncArtistsFromSupabase();                        // Sincronizza gli artisti
-    await syncTrackArtistsFromSupabase(supaTracks);         // Collega gli artisti ai brani
+    app.locals.catalogStartup = (async () => {
+      const supaTracks = await syncTracksFromSupabase();
+      await syncArtistsFromSupabase();
+      await syncTrackArtistsFromSupabase(supaTracks);
+    })().catch(() => {
+      console.error("Sincronizzazione iniziale del catalogo incompleta.");
+    });
   } catch (error) {
     console.error("Impossibile connettersi al database:", error);
   }

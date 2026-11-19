@@ -18,6 +18,9 @@ services:
     container_name: voidtracks-backend
     ports:
       - "3000:3000"
+    env_file:
+      - path: ./voidtracks-backend/.env
+        required: false
     environment:
       - NODE_ENV=production
       - JWT_SECRET=${JWT_SECRET}
@@ -27,8 +30,6 @@ services:
       - MUSIC_URL=${MUSIC_URL}
       - COVER_URL=${COVER_URL}
       - PROFILE_URL=${PROFILE_URL}
-    volumes:
-      - ./voidtracks-backend:/app
     depends_on:
       - postgres
     networks:

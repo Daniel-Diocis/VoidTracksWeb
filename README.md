@@ -47,6 +47,26 @@ La seguente tabella mostra le rotte:
 | PATCH  | /admin/recharge                | token (header Authorization), username, tokens |
 | PATCH  | /admin/requests/:id/approve    | token (header Authorization), id (route param), tokensToAdd |
 
+## Pubblicazione di un brano
+
+Accedi come amministratore e apri **Aggiungi brano**. Puoi preparare un MP3 da un link a un singolo video YouTube per cui hai diritto al download, oppure selezionare un MP3 già pronto. Conferma titolo, album, artista principale ed eventuali ospiti. Il form propone le copertine già presenti. Puoi creare un artista durante la pubblicazione oppure in anticipo dalla pagina **Aggiungi artista**. In entrambi i casi compila nome, genere, paese, descrizione e foto. Il backend converte le immagini in JPEG quadrati da 600 × 600.
+
+Per abilitare **Pubblica**, configura questi valori nel file locale `voidtracks-backend/.env`.
+
+| Variabile | Valore |
+|---|---|
+| `CATALOG_DATABASE_URL` | URI PostgreSQL da **Connect → Session pooler** in Supabase, con accesso in lettura e scrittura a `public.brani` e `public.artisti`. È separato da `DATABASE_URL`, che punta al PostgreSQL di VoidTracks. |
+| `CATALOG_R2_ENDPOINT` | Endpoint S3 mostrato nella dashboard R2. |
+| `CATALOG_R2_ACCESS_KEY_ID` e `CATALOG_R2_SECRET_ACCESS_KEY` | Coppia associata a un token R2 con permesso Object Read & Write sui bucket `music`, `cover` e `profile`. |
+| `JWT_PRIVATE_KEY_BASE64` e `JWT_PUBLIC_KEY_BASE64` | Coppia RSA dedicata all’installazione. Ogni variabile contiene il rispettivo file PEM codificato in Base64 su una riga. |
+| `ADMIN_INITIAL_PASSWORD` | Password per l’admin del seed, applicata se l’account viene creato o usa ancora la password di esempio. Deve avere almeno 12 caratteri e al massimo 72 byte. |
+
+Dalla root esegui `docker compose up -d --build`. Dopo la sostituzione della coppia JWT, effettua di nuovo il login. Il flusso richiede Compose 2.24 o successivo per il caricamento del file di configurazione del backend.
+
+Il backend usa il certificato pubblico [Supabase Root 2021 CA](https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt) per verificare la connessione TLS ai pooler Supabase.
+
+L’import da YouTube gestisce un video alla volta, fino a 15 minuti. Il limite per l’MP3 è 25 MB e per ciascuna immagine è 8 MB. Se l’import fallisce, puoi passare al caricamento manuale e mantenere i dati già compilati. Se la pubblicazione fallisce dopo un upload, riprova dallo stesso form. I file esistenti vengono riutilizzati quando corrispondono al contenuto già caricato.
+
 ## Pattern utilizzati
 
 ### M(V)C (Model-(View)-Controller) Pattern
