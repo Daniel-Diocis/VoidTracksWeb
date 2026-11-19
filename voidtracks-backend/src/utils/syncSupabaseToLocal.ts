@@ -11,7 +11,7 @@ interface SupabaseTrack {
   music_path: string;
   cover_path: string;
   costo: number;
-  created_at: string;
+  created_at?: string;
   updated_at: string;
 }
 
@@ -22,7 +22,7 @@ interface SupabaseArtist {
   paese?: string;
   descrizione?: string;
   profile_path?: string;
-  created_at: string;
+  created_at?: string;
   updated_at: string;
 }
 
@@ -94,7 +94,7 @@ export async function syncTracksFromSupabase() {
           music_path: supaTrack.music_path,
           cover_path: supaTrack.cover_path,
           costo: supaTrack.costo,
-          createdAt: new Date(supaTrack.created_at),
+          createdAt: new Date(supaTrack.created_at ?? supaTrack.updated_at),
           updatedAt: new Date(supaTrack.updated_at),
         });
         updatedOrNewTracks.push(supaTrack);
@@ -173,7 +173,7 @@ export async function syncArtistsFromSupabase() {
           paese: supaArtist.paese,
           descrizione: supaArtist.descrizione,
           profile_path: supaArtist.profile_path,
-          createdAt: new Date(supaArtist.created_at),
+          createdAt: new Date(supaArtist.created_at ?? supaArtist.updated_at),
           updatedAt: new Date(supaArtist.updated_at),
         });
         console.log(`Inserito nuovo artista ${supaArtist.nome} (${supaArtist.id})`);

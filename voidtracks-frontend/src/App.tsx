@@ -21,6 +21,8 @@ import MyPurchases from './pages/MyPurchases';
 import PopularTracks from './pages/PopularTracks';
 import PlaylistsPage from './pages/PlaylistsPage';
 import AdminPanel from './pages/AdminPanel';
+import AdminAddTrack from './pages/AdminAddTrack';
+import AdminAddArtist from './pages/AdminAddArtist';
 import NotAuthorized from './pages/NotAuthorized';
 import ArtistDetail from './pages/ArtistDetail';
 import AlbumDetail from './pages/AlbumDetail';
@@ -70,6 +72,8 @@ function App() {
           {/* Rotte admin */}
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/admin/tracks/new" element={<AdminAddTrack />} />
+            <Route path="/admin/artists/new" element={<AdminAddArtist />} />
             <Route path="/admin/requests" element={<AdminRequests />} />
           </Route>
 

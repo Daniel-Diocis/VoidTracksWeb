@@ -42,10 +42,15 @@ async function seed() {
     await waitForDatabase();      // Verifica che il DB sia pronto
     await sequelize.sync();       // Sincronizza i modelli con il DB
 
+    const adminPassword = process.env.ADMIN_INITIAL_PASSWORD;
+    if (adminPassword && (adminPassword.length < 12 || Buffer.byteLength(adminPassword) > 72)) {
+      throw new Error("ADMIN_INITIAL_PASSWORD deve avere almeno 12 caratteri e al massimo 72 byte.");
+    }
+
     const users = [
       {
         username: "admin",
-        password: "password0",
+        password: adminPassword || "password0",
         tokens: 100,
         role: "admin" as const,
       },
@@ -76,6 +81,10 @@ async function seed() {
         },
       });
 
+      if (!created && u.role === "admin" && user.role === "admin" && adminPassword &&
+          await bcrypt.compare("password0", user.password_hash)) {
+        await user.update({ password_hash: hashedPassword });
+      }
       console.log(created ? `Creato: ${u.username}` : `Esiste già: ${u.username}`);
     }
   } catch (err) {

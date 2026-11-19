@@ -13,7 +13,7 @@ import Purchase from "../models/Purchase";
 
 dotenv.config();
 
-const FILE_URL = process.env.FILE_URL;
+const FILE_URL = process.env.FILE_URL || process.env.MUSIC_URL;
 const factory = new MessageFactory();
 
 /**

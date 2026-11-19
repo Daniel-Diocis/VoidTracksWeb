@@ -4,6 +4,7 @@ import { MessageFactory } from "../utils/messageFactory";
 import jwt from "jsonwebtoken";
 import fs from "fs";
 import path from "path";
+import { createHash, createPublicKey } from "node:crypto";
 
 
 interface JwtPayload {
@@ -15,7 +16,15 @@ interface JwtPayload {
 
 // Legge la chiave pubblica da file
 const publicKeyPath = process.env.PUBLIC_KEY_PATH || "public.key";
-const publicKey = fs.readFileSync(path.resolve(publicKeyPath), "utf8");
+const publicKey = process.env.JWT_PUBLIC_KEY_BASE64
+  ? Buffer.from(process.env.JWT_PUBLIC_KEY_BASE64, "base64").toString("utf8")
+  : fs.readFileSync(path.resolve(publicKeyPath), "utf8");
+
+export function usesDemoSigningKey(): boolean {
+  const der = createPublicKey(publicKey).export({ type: "spki", format: "der" });
+  return createHash("sha256").update(der).digest("hex") ===
+    "19472f9acecf7d21a14ec664cca667c1640e04e422feabd004dcad14233d4c30";
+}
 
 const factory = new MessageFactory();
 
