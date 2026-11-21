@@ -8,6 +8,14 @@ body {
   @apply bg-[#121212] text-white font-sans antialiased;
 }
 
+html {
+  scroll-padding-bottom: calc(var(--player-dock-height, 0px) + 1rem);
+}
+
+.app-main {
+  padding-bottom: calc(1.5rem + var(--player-dock-height, 0px));
+}
+
 input, select, textarea {
   @apply bg-zinc-800 text-white border border-zinc-600 px-2 py-1 rounded;
 }
@@ -26,18 +34,35 @@ input, select, textarea {
   @apply bg-[#1e1e1e] p-4 rounded-xl shadow-md hover:shadow-lg transition;
 }
 
-.track-cover {
-  @apply w-full h-32 object-cover rounded-md mb-2 hover:opacity-80 transition-opacity;
-}
-
-/* index.css */
-
 .track-card {
-  @apply bg-zinc-800 rounded-xl p-3 shadow hover:shadow-lg transition-shadow flex flex-col items-center;
+  @apply min-w-0 bg-zinc-800 rounded-xl p-3 shadow hover:shadow-lg transition-shadow flex flex-col items-center;
 }
 
-.track-cover {
-  @apply w-[200px] h-[200px] object-cover rounded-md mb-2 hover:opacity-80 transition-opacity mx-auto;
+.track-cover-button {
+  @apply relative block shrink-0 overflow-hidden rounded-md;
+}
+
+.track-card .track-cover-button {
+  width: min(100%, 200px);
+  margin-bottom: 0.5rem;
+}
+
+.market-item .track-cover-button { width: clamp(3rem, 16vw, 100px); }
+
+.track-cover-button img {
+  @apply block w-full aspect-square object-cover;
+}
+
+.track-cover-action {
+  @apply absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full bg-black/75 text-white opacity-0;
+}
+
+.track-cover-button:hover .track-cover-action,
+.track-cover-button:focus-visible .track-cover-action,
+.track-cover-action[data-playing="true"] { opacity: 1; }
+
+@media (hover: none) {
+  .track-cover-action { opacity: 1; }
 }
 
 .track-audio {
@@ -45,7 +70,7 @@ input, select, textarea {
 }
 
 .track-text {
-  @apply text-sm text-center;
+  @apply w-full min-w-0 text-sm text-center;
 }
 
 .track-title {

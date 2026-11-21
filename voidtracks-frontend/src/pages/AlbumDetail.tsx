@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { notify } from "../utils/toastManager";
-import { usePlayer } from "../context/PlayerContext";
+import { usePlayer } from "../context/playerState";
 import type { Track } from "../types";
 
 const COVER_URL = import.meta.env.VITE_COVER_URL;
@@ -24,20 +24,16 @@ export default function AlbumDetail() {
   const [albumData, setAlbumData] = useState<AlbumResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const {
-    currentTrack,
-    isPlaying,
-    playTrack,
-    togglePlayPause,
-    setTracks,
-  } = usePlayer();
+  const { currentTrack, isPlaying, toggleTrack } = usePlayer();
 
   useEffect(() => {
     if (!albumName) return;
 
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const API_URL = import.meta.env.VITE_API_URL || "/api";
+    const controller = new AbortController();
+    setLoading(true);
 
-    fetch(`${API_URL}/albums/${encodeURIComponent(albumName)}`)
+    fetch(`${API_URL}/albums/${encodeURIComponent(albumName)}`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error("Album non trovato");
         return res.json();
@@ -52,20 +48,17 @@ export default function AlbumDetail() {
           tracks: orderedTracks,
         });
 
-        setTracks(orderedTracks);
-
-        if (orderedTracks.length > 0) {
-          playTrack(orderedTracks[0]);
-        }
       })
       .catch((err) => {
+        if (controller.signal.aborted) return;
         console.error("Errore nel caricamento album:", err);
         notify.error("Errore nel caricamento album");
         setAlbumData(null);
       })
       .finally(() => {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       });
+    return () => controller.abort();
   }, [albumName]);
 
   if (loading) return <p className="text-white">Caricamento album...</p>;
@@ -77,7 +70,7 @@ export default function AlbumDetail() {
   const firstTrack = albumData.tracks[0];
 
   return (
-    <div className="p-6 text-white max-w-3xl mx-auto pb-24">
+    <div className="p-6 text-white max-w-3xl mx-auto">
       <div className="flex flex-col md:flex-row gap-6 mb-8">
         <img
           src={`${COVER_URL}/${firstTrack.cover_path}`}
@@ -117,14 +110,7 @@ export default function AlbumDetail() {
             </div>
 
             <button
-              onClick={() => {
-                if (currentTrack?.id === track.id) {
-                  togglePlayPause();
-                } else {
-                  setTracks(albumData.tracks);
-                  playTrack(track);
-                }
-              }}
+              onClick={() => toggleTrack(track, albumData.tracks)}
               className="btn-play px-4 py-2 bg-cyan-600 rounded hover:bg-cyan-700"
             >
               {currentTrack?.id === track.id && isPlaying ? "Pause" : "Play"}

@@ -13,29 +13,21 @@
  *
  * UI:
  * - Visualizzazione del titolo, artista, album e copertina
- * - Player audio con `controls` e `nodownload` per limitarne l’utilizzo
+ * - Controllo di riproduzione condiviso con il player globale
  */
 
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { notify } from '../utils/toastManager';
+import { usePlayer } from '../context/playerState';
+import type { PlayableTrack } from '../types';
 
-//const PUBLIC_URL = import.meta.env.PUBLIC_URL;
-const MUSIC_URL = import.meta.env.VITE_MUSIC_URL;
 const COVER_URL = import.meta.env.VITE_COVER_URL;
-
-type Track = {
-  id: string;
-  titolo: string;
-  artista: string;
-  album: string;
-  music_path: string;
-  cover_path: string;
-};
 
 export default function TrackDetail() {
   const { music_path } = useParams();
-  const [track, setTrack] = useState<Track | null>(null);
+  const [track, setTrack] = useState<PlayableTrack | null>(null);
+  const { currentTrack, isPlaying, toggleTrack } = usePlayer();
 
   useEffect(() => {
     const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -44,7 +36,7 @@ export default function TrackDetail() {
         if (!res.ok) throw new Error('Errore nel recupero dei brani');
         return res.json();
       })
-      .then((tracks: Track[]) => {
+      .then((tracks: PlayableTrack[]) => {
         const trovato = tracks.find(t => t.music_path === music_path);
         if (!trovato) {
           notify.error('Traccia non trovata');
@@ -75,7 +67,10 @@ export default function TrackDetail() {
         alt={`Cover ${track.titolo}`}
         className="w-64 h-64 object-cover rounded-lg mb-4"
       />
-      <audio controls controlsList="nodownload" src={`${MUSIC_URL}/${track.music_path}`} className="w-full mb-4" />
+      <button type="button" className="btn-play px-4 py-2 bg-cyan-600 rounded hover:bg-cyan-700"
+        onClick={() => toggleTrack(track)}>
+        {currentTrack?.id === track.id && isPlaying ? "Pausa" : "Riproduci"}
+      </button>
     </div>
   );
 }

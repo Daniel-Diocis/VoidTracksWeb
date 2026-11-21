@@ -20,8 +20,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import type { PlaylistWithTracks, PurchaseWithTrack } from "../types";
 import { notify } from "../utils/toastManager";
-import { usePlayer } from "../context/PlayerContext";
-import type { Track } from "../types";
+import { usePlayer } from "../context/playerState";
 
 /**
  * Componente React per mostrare e modificare una playlist specifica.
@@ -43,26 +42,7 @@ export default function PlaylistDetail({
   const [editing, setEditing] = useState(false);
   const [newName, setNewName] = useState("");
 
-  const {
-    currentTrack,
-    isPlaying,
-    playTrack,
-    togglePlayPause,
-    //playNext,
-    //playPrevious,
-    //tracks,
-    setTracks,
-    setIsPlaying
-  } = usePlayer();
-
-  // Gestisce la riproduzione o pausa del brano selezionato
-  const handlePlayPause = (track: Track) => {
-    if (currentTrack?.id === track.id) {
-      togglePlayPause();
-    } else {
-      playTrack(track);
-    }
-  };
+  const { currentTrack, isPlaying, toggleTrack } = usePlayer();
 
   // Carica la playlist e gli acquisti dell'utente al montaggio
   useEffect(() => {
@@ -98,7 +78,6 @@ export default function PlaylistDetail({
         playlistData.tracks ??= [];
         setPlaylist(playlistData);
         setNewName(playlistData.playlist.nome);
-        setTracks(playlistData.tracks);
         setPurchasedTracks(purchasesData.data || []);
       } catch (err) {
         console.error("Errore fetch playlist:", err);
@@ -134,7 +113,6 @@ export default function PlaylistDetail({
 
       data.tracks ??= [];
       setPlaylist(data);
-      setTracks(data.tracks);
     } catch (err) {
       console.error("Errore refresh playlist:", err);
       notify.error("Errore di rete durante il refresh");
@@ -315,23 +293,12 @@ export default function PlaylistDetail({
                 {track.is_favorite && (
                   <span className="text-yellow-400 font-bold">★</span>
                 )}
-                {currentTrack?.id === track.id && isPlaying ? (
-                  <button
-                    onClick={() => setIsPlaying(false)}
-                    title="Pausa"
-                    className="text-green-400 hover:text-green-500"
-                  >
-                    Pause
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handlePlayPause(track)}
-                    title="Riproduci"
-                    className="text-green-400 hover:text-green-500"
-                  >
-                    Play
-                  </button>
-                )}
+                <button
+                  onClick={() => toggleTrack(track, playlist.tracks)}
+                  className="text-green-400 hover:text-green-500"
+                >
+                  {currentTrack?.id === track.id && isPlaying ? "Pausa" : "Riproduci"}
+                </button>
                 {track.is_favorite ? (
                   <span className="text-yellow-400 font-bold">★</span>
                 ) : (

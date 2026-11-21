@@ -1,236 +1,197 @@
-/**
- * Componente globale del player audio.
- *
- * Visualizza:
- * - un mini player fisso in basso
- * - una vista espansa full screen cliccando sulla cover
- *
- * Logica:
- * - utilizza un solo tag <audio> per evitare conflitti con audioRef
- * - usa PlayerContext per gestire lo stato globale
- * - supporta Media Session API
- * - al termine del brano passa al successivo, oppure riparte dal primo
- */
+import { Link } from "react-router-dom";
+import { useLayoutEffect, useRef, useState } from "react";
+import {
+  ChevronDown, ChevronUp, ListMusic, Music2, Pause, Play, SkipBack, SkipForward, Volume2, X,
+} from "lucide-react";
+import { usePlayer, usePlayerTimeline } from "../context/playerState";
+import type { PlayableTrack } from "../types";
+import { mediaUrl } from "../utils/mediaUrl";
+import "./GlobalPlayer.css";
 
-import { useEffect, useState } from "react";
-import { usePlayer } from "../context/PlayerContext";
-import { SkipBack, SkipForward, ChevronDown} from "lucide-react";
+function formatTime(value: number) {
+  const seconds = Math.floor(value);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
 
-const MUSIC_URL = import.meta.env.VITE_MUSIC_URL;
-const COVER_URL = import.meta.env.VITE_COVER_URL;
+function Artwork({ track, lazy }: { track: PlayableTrack; lazy?: boolean }) {
+  const src = track.cover_path ? mediaUrl(import.meta.env.VITE_COVER_URL, track.cover_path) : undefined;
+  const [failedSource, setFailedSource] = useState<string>();
+  return (
+    <span className="player-artwork" aria-hidden="true">
+      <Music2 />
+      {src && failedSource !== src && <img src={src} alt="" loading={lazy ? "lazy" : undefined} onError={() => setFailedSource(src)} />}
+    </span>
+  );
+}
 
-/**
- * Componente principale del player globale.
- * Mostra i controlli di riproduzione se c'è un brano attivo.
- */
+function Transport({ compact = false }: { compact?: boolean }) {
+  const { isPlaying, queueIndex, queue, togglePlayPause, playPrevious, playNext } = usePlayer();
+  const { position, duration } = usePlayerTimeline();
+  return (
+    <div className="player-transport">
+      <button type="button" className={`player-icon ${compact ? "player-compact-previous" : ""}`}
+        aria-label="Brano precedente" onClick={playPrevious} disabled={queueIndex === 0 && (!duration || position === 0)}>
+        <SkipBack aria-hidden="true" />
+      </button>
+      <button type="button" className="player-icon player-play" onClick={togglePlayPause}
+        aria-label={isPlaying ? "Pausa" : "Riproduci"}>
+        {isPlaying ? <Pause aria-hidden="true" fill="currentColor" /> : <Play aria-hidden="true" fill="currentColor" />}
+      </button>
+      <button type="button" className="player-icon" aria-label="Brano successivo" onClick={playNext}
+        disabled={queueIndex >= queue.length - 1}>
+        <SkipForward aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+function SeekBar() {
+  const { seek } = usePlayer();
+  const { position, duration } = usePlayerTimeline();
+  return (
+    <div className="player-seek">
+      <span aria-hidden="true">{formatTime(position)}</span>
+      <input type="range" min={0} max={duration || 1} step="any" value={Math.min(position, duration)}
+        disabled={!duration} aria-label="Posizione nel brano" aria-valuetext={`${formatTime(position)} di ${formatTime(duration)}`}
+        onChange={(event) => seek(event.currentTarget.valueAsNumber)} />
+      <span aria-hidden="true">{formatTime(duration)}</span>
+    </div>
+  );
+}
+
+function Volume() {
+  const { setVolume } = usePlayer();
+  const { volume } = usePlayerTimeline();
+  return (
+    <label className="player-volume">
+      <Volume2 aria-hidden="true" />
+      <input type="range" min={0} max={100} step={1} value={Math.round(volume * 100)}
+        aria-label="Volume" aria-valuetext={`${Math.round(volume * 100)}%`}
+        onChange={(event) => setVolume(event.currentTarget.valueAsNumber / 100)} />
+    </label>
+  );
+}
+
+function PlaybackStatus() {
+  const { buffering, error } = usePlayerTimeline();
+  if (error) return <p role="alert" className="player-message player-error">{error}</p>;
+  if (buffering) return <p role="status" className="player-message">Caricamento audio…</p>;
+  return null;
+}
+
+function Queue() {
+  const { queue, queueIndex, playAt } = usePlayer();
+  return (
+    <section className="player-queue" id="player-queue" aria-labelledby="player-queue-title">
+      <h3 id="player-queue-title">Coda</h3>
+      <ol>
+        {queue.slice(queueIndex).map((entry, index) => (
+          <li key={entry.id}>
+            <button type="button" aria-current={index === 0 ? "true" : undefined}
+              onClick={() => playAt(queueIndex + index)}>
+              <Artwork track={entry} lazy />
+              <span className="player-queue-info">
+                <strong>{entry.titolo}</strong>
+                <small>{entry.artista}</small>
+              </span>
+              {index === 0 ? <Music2 className="player-queue-current" aria-hidden="true" /> : <Play aria-hidden="true" />}
+            </button>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 export default function GlobalPlayer() {
-  const {
-    currentTrack,
-    isPlaying,
-    audioRef,
-    stopPlayback,
-    playNext,
-    playPrevious,
-    tracks,
-    setCurrentTrack,
-    setIsPlaying,
-  } = usePlayer();
+  const { currentTrack, stopPlayback } = usePlayer();
+  const { position, duration } = usePlayerTimeline();
+  const [queueOpen, setQueueOpen] = useState(false);
+  const dock = useRef<HTMLElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const hasTrack = Boolean(currentTrack);
 
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  // Avvia o mette in pausa l'audio in base allo stato globale
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play().catch(() => {});
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [isPlaying, currentTrack, audioRef]);
-
-  // Media Session API
-  useEffect(() => {
-    if (!currentTrack || !("mediaSession" in navigator)) return;
-
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: currentTrack.titolo,
-      artist: currentTrack.artista,
-      album: currentTrack.album,
-      artwork: [
-        {
-          src: `${COVER_URL}/${currentTrack.cover_path}`,
-          sizes: "512x512",
-          type: "image/png",
-        },
-      ],
-    });
-
-    navigator.mediaSession.setActionHandler("play", () => {
-      setIsPlaying(true);
-      audioRef.current?.play();
-    });
-
-    navigator.mediaSession.setActionHandler("pause", () => {
-      setIsPlaying(false);
-      audioRef.current?.pause();
-    });
-
-    navigator.mediaSession.setActionHandler("previoustrack", playPrevious);
-    navigator.mediaSession.setActionHandler("nexttrack", playNext);
-    navigator.mediaSession.setActionHandler("stop", stopPlayback);
-
+  useLayoutEffect(() => {
+    const element = dock.current;
+    if (!element) return;
+    const update = () => document.documentElement.style.setProperty("--player-dock-height", `${element.offsetHeight}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
     return () => {
-      // Pulizia opzionale dei gestori quando il track cambia
-      navigator.mediaSession.setActionHandler("play", null);
-      navigator.mediaSession.setActionHandler("pause", null);
-      navigator.mediaSession.setActionHandler("previoustrack", null);
-      navigator.mediaSession.setActionHandler("nexttrack", null);
-      navigator.mediaSession.setActionHandler("stop", null);
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--player-dock-height");
     };
-  }, [currentTrack, setIsPlaying, playNext, playPrevious, stopPlayback, audioRef]);
-
-  const handleEnded = () => {
-    const currentIndex = tracks.findIndex((t) => t.id === currentTrack?.id);
-    const isLast = currentIndex === tracks.length - 1;
-
-    if (isLast) {
-      const firstTrack = tracks[0];
-      if (firstTrack) {
-        setCurrentTrack(firstTrack);
-        setIsPlaying(true);
-      }
-    } else {
-      playNext();
-    }
-  };
+  }, [hasTrack]);
 
   if (!currentTrack) return null;
 
+  function openPlayer(withQueue = false) {
+    setQueueOpen(withQueue);
+    dialog.current?.showModal();
+  }
+
   return (
     <>
-      {/* PLAYER ESPANSO */}
-      {isExpanded && (
-        <div className="fixed inset-0 z-[60] bg-zinc-900 text-white flex flex-col">
-          <div className="flex items-center justify-between p-4">
-            <button
-              onClick={() => setIsExpanded(false)}
-              className="text-white"
-              aria-label="Riduci player"
-            >
-              <ChevronDown size={30} />
-            </button>
-
-            <button
-              onClick={stopPlayback}
-              className="text-white text-sm"
-              aria-label="Chiudi player"
-            >
-              Close
-            </button>
+      <section ref={dock} className="player-dock" aria-label="Player compatto">
+        <div className="player-dock-grid">
+          <button type="button" className="player-dock-track" onClick={() => openPlayer()}
+            aria-label={`Apri player: ${currentTrack.titolo}, ${currentTrack.artista}`}
+            aria-haspopup="dialog">
+            <Artwork track={currentTrack} />
+            <span className="player-dock-info">
+              <strong>{currentTrack.titolo}</strong>
+              <small>{currentTrack.artista}</small>
+            </span>
+            <ChevronUp aria-hidden="true" />
+          </button>
+          <div className="player-dock-center">
+            <Transport compact />
+            <SeekBar />
           </div>
-
-          <div className="flex-1 flex flex-col items-center justify-center px-6 pb-10">
-            <img
-              src={`${COVER_URL}/${currentTrack.cover_path}`}
-              alt={`Cover ${currentTrack.album}`}
-              className="w-full max-w-md aspect-square object-cover rounded-2xl shadow-2xl mb-8"
-            />
-
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold">{currentTrack.titolo}</h2>
-              <p className="text-zinc-300 mt-2">{currentTrack.artista}</p>
-              <p className="text-zinc-500 text-sm mt-1">{currentTrack.album}</p>
-            </div>
-
-            <div className="w-full max-w-4xl flex items-center gap-6 px-6">
-              <button
-                onClick={playPrevious}
-                className="text-white hover:text-zinc-300"
-                aria-label="Brano precedente"
-              >
-                <SkipBack size={34} />
-              </button>
-
-              <audio
-                ref={audioRef}
-                preload="auto"
-                controls
-                controlsList="nodownload"
-                src={`${MUSIC_URL}/${currentTrack.music_path}`}
-                className="flex-grow"
-                onEnded={handleEnded}
-              />
-
-              <button
-                onClick={playNext}
-                className="text-white hover:text-zinc-300"
-                aria-label="Brano successivo"
-              >
-                <SkipForward size={34} />
-              </button>
-            </div>
+          <div className="player-dock-actions">
+            <button type="button" className="player-icon" aria-label="Apri coda"
+              aria-haspopup="dialog" onClick={() => openPlayer(true)}><ListMusic aria-hidden="true" /></button>
+            <Volume />
           </div>
         </div>
-      )}
+        <PlaybackStatus />
+        <progress className="player-mini-progress" max={duration || 1} value={position} aria-hidden="true" />
+      </section>
 
-      {/* MINI PLAYER */}
-      <div className="fixed bottom-0 left-0 right-0 bg-zinc-800 p-4 flex items-center gap-4 z-50">
-        <button
-          onClick={() => setIsExpanded(true)}
-          className="shrink-0"
-          aria-label="Apri player espanso"
-        >
-          <img
-            src={`${COVER_URL}/${currentTrack.cover_path}`}
-            alt={`Cover ${currentTrack.album}`}
-            className="w-16 h-16 object-cover rounded cursor-pointer"
-          />
-        </button>
-
-        <div className="flex flex-col min-w-0">
-          <span className="font-bold truncate">{currentTrack.titolo}</span>
-          <span className="text-sm text-gray-400 truncate">
-            {currentTrack.artista}
-          </span>
+      <dialog ref={dialog} className="player-dialog" aria-labelledby="player-dialog-title"
+        onClose={() => setQueueOpen(false)}>
+        <div className="player-dialog-header">
+          <button type="button" className="player-icon" aria-label="Riduci player"
+            onClick={() => dialog.current?.close()}><ChevronDown aria-hidden="true" /></button>
+          <h2 id="player-dialog-title">In riproduzione</h2>
+          <button type="button" className="player-icon" aria-label="Ferma riproduzione" onClick={() => {
+            dialog.current?.close();
+            stopPlayback();
+          }}><X aria-hidden="true" /></button>
         </div>
-
-        <div className="flex items-center gap-3 ml-4 flex-grow">
-          <button
-            onClick={playPrevious}
-            className="text-white"
-            aria-label="Brano precedente"
-          >
-            <SkipBack size={24} />
-          </button>
-
-          <audio
-            ref={audioRef}
-            preload="auto"
-            controls
-            controlsList="nodownload"
-            src={`${MUSIC_URL}/${currentTrack.music_path}`}
-            className="flex-grow"
-            onEnded={handleEnded}
-          />
-
-          <button
-            onClick={playNext}
-            className="text-white"
-            aria-label="Brano successivo"
-          >
-            <SkipForward size={24} />
-          </button>
+        <div className={`player-dialog-body ${queueOpen ? "player-dialog-with-queue" : ""}`}>
+          <div className="player-now">
+            <div className="player-now-art"><Artwork track={currentTrack} /></div>
+            <div className="player-now-info">
+              <h3><Link className="hover:underline focus-visible:underline" to={`/track/${encodeURIComponent(currentTrack.music_path)}`}
+                onClick={() => dialog.current?.close()}>{currentTrack.titolo}</Link></h3>
+              <p>{currentTrack.artista}</p>
+              {currentTrack.album && <small>{currentTrack.album}</small>}
+            </div>
+            <SeekBar />
+            <Transport />
+            <div className="player-dialog-actions">
+              <button type="button" className="player-icon" aria-label="Coda" aria-expanded={queueOpen}
+                aria-controls={queueOpen ? "player-queue" : undefined}
+                onClick={() => setQueueOpen((open) => !open)}><ListMusic aria-hidden="true" /></button>
+              <Volume />
+            </div>
+            <PlaybackStatus />
+          </div>
+          {queueOpen && <Queue />}
         </div>
-
-        <button
-          onClick={stopPlayback}
-          className="ml-4 text-white"
-          aria-label="Chiudi player"
-        >
-          Close
-        </button>
-      </div>
+      </dialog>
     </>
   );
 }

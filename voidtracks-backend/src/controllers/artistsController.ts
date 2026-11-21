@@ -49,7 +49,7 @@ export async function getArtistByName(req: Request, res: Response, next: NextFun
       include: [
         {
           model: Track,
-          attributes: ["id", "titolo", "album", "music_path", "cover_path"],
+          attributes: ["id", "titolo", "artista", "album", "music_path", "cover_path"],
           through: { attributes: [] },
         },
       ],
