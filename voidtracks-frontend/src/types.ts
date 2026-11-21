@@ -21,6 +21,8 @@ export interface Track {
   isUpdated?: boolean;     // campo interno calcolato localmente
 }
 
+export type PlayableTrack = Pick<Track, "id" | "titolo" | "artista" | "album" | "cover_path" | "music_path">;
+
 /**
  * Rappresenta una playlist creata dall’utente.
  */

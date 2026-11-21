@@ -1,160 +1,234 @@
-/**
- * Contesto globale per la gestione del player musicale.
- * Fornisce:
- * - Stato del brano attuale, lista dei brani disponibili e controllo della riproduzione
- * - Riferimento all'elemento <audio> per controlli diretti
- * - Funzioni per play, pausa, stop, traccia successiva/precedente
- *
- * Questo contesto consente la riproduzione centralizzata e condivisa in tutta l'app.
- */
-
 import {
-  createContext,
-  useContext,
-  useState,
-  useRef,
-  type ReactNode,
-  type RefObject,
-  type Dispatch,
-  type SetStateAction,
+  useCallback, useEffect, useMemo, useRef, useState,
+  type ReactNode, type SyntheticEvent,
 } from "react";
-import type { Track } from '../types';
+import type { PlayableTrack } from "../types";
+import { mediaUrl } from "../utils/mediaUrl";
+import { PlayerContext, TimelineContext } from "./playerState";
 
+type Playback = { queue: readonly PlayableTrack[]; index: number };
+type Timeline = { position: number; duration: number };
 
-/** Tipo del contesto del player musicale */
-type PlayerContextType = {
-  currentTrack: Track | null;
-  setCurrentTrack: Dispatch<SetStateAction<Track | null>>;
-  isPlaying: boolean;
-  setIsPlaying: Dispatch<SetStateAction<boolean>>;
-  audioRef: RefObject<HTMLAudioElement>;
-  tracks: Track[];
-  setTracks: Dispatch<SetStateAction<Track[]>>;
-  playTrack: (track: Track) => void;
-  togglePlayPause: () => void;
-  stopPlayback: () => void;
-  playNext: () => void;
-  playPrevious: () => void;
-};
+const emptyTimeline = { position: 0, duration: 0 };
 
-/** Creazione del contesto */
-const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
-
-/**
- * PlayerProvider
- *
- * Provider React che gestisce il player musicale globale.
- * Mantiene lo stato del brano corrente, la lista dei brani, e i controlli di riproduzione.
- */
-export const PlayerProvider = ({ children }: { children: ReactNode }) => {
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+export function PlayerProvider({ children }: { children: ReactNode }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const playbackRef = useRef<Playback | null>(null);
+  // A rejected play promise from an earlier track must not change the current UI.
+  const request = useRef(0);
+  const [playback, setPlayback] = useState<Playback | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const audioRef = useRef<HTMLAudioElement>(null!);
+  const [timeline, setTimeline] = useState<Timeline>(emptyTimeline);
+  const [volume, updateVolume] = useState(1);
+  const [buffering, setBuffering] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const currentTrack = playback?.queue[playback.index] ?? null;
 
-  /**
-   * playTrack
-   *
-   * Imposta un nuovo brano da riprodurre e avvia la riproduzione.
-   */
-  const playTrack = (track: Track) => {
-    setCurrentTrack(track);
-    setIsPlaying(true);
-  };
+  const play = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || !playbackRef.current) return;
 
-  /**
-   * togglePlayPause
-   *
-   * Alterna tra stato di riproduzione e pausa.
-   */
-  const togglePlayPause = () => {
-    setIsPlaying((prev) => !prev);
-  };
+    const attempt = ++request.current;
+    setError(null);
+    if (audio.error) audio.load();
+    if (audio.ended) audio.currentTime = 0;
+    setBuffering(audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA);
+    void audio.play().catch((reason: unknown) => {
+      if (attempt !== request.current) return;
+      setIsPlaying(!audio.paused);
+      setBuffering(false);
+      if ((reason as DOMException | undefined)?.name !== "AbortError") {
+        setError("Riproduzione non riuscita. Premi Riproduci per riprovare.");
+      }
+    });
+  }, []);
 
-  /**
-   * stopPlayback
-   *
-   * Ferma la riproduzione e resetta il brano corrente.
-   */
-  const stopPlayback = () => {
+  const pause = useCallback(() => {
+    request.current++;
+    audioRef.current?.pause();
     setIsPlaying(false);
-    setCurrentTrack(null);
-  };
+    setBuffering(false);
+  }, []);
 
+  const togglePlayPause = useCallback(() => {
+    if (audioRef.current?.paused) play();
+    else pause();
+  }, [pause, play]);
 
-  /**
-   * playNext
-   *
-   * Passa al brano successivo nella lista, o torna al primo se alla fine.
-   */
-  const playNext = () => {
-    if (!currentTrack || tracks.length === 0) return;
-    const currentIndex = tracks.findIndex((t) => t.id === currentTrack.id);
-    const nextIndex = currentIndex + 1;
-
-    const nextTrack = tracks[nextIndex] || tracks[0]; // loop
-    setCurrentTrack(nextTrack);
-    setIsPlaying(true);
-  };
-
-
-  /**
-   * playPrevious
-   *
-   * Se il brano è iniziato da più di 3 secondi, lo riavvia.
-   * Altrimenti torna al brano precedente, o all'ultimo se siamo al primo.
-   */
-  const playPrevious = () => {
-    if (!currentTrack || tracks.length === 0 || !audioRef.current) return;
-
-    const currentIndex = tracks.findIndex((t) => t.id === currentTrack.id);
-    const currentTime = audioRef.current.currentTime;
-
-    if (currentTime > 3) {
-      // Riavvia il brano corrente
-      audioRef.current.currentTime = 0;
-      audioRef.current.play();
-    } else {
-      const newIndex =
-        currentIndex === 0 ? tracks.length - 1 : currentIndex - 1;
-      const prevTrack = tracks[newIndex];
-      setCurrentTrack(prevTrack);
-      setIsPlaying(true);
+  const stopPlayback = useCallback(() => {
+    pause();
+    playbackRef.current = null;
+    setPlayback(null);
+    setTimeline(emptyTimeline);
+    setError(null);
+    const audio = audioRef.current;
+    if (audio) {
+      audio.removeAttribute("src");
+      audio.load();
     }
-  };
+  }, [pause]);
+
+  const startTrack = useCallback((next: Playback) => {
+    const audio = audioRef.current;
+    const track = next.queue[next.index];
+    if (!audio || !track) return;
+
+    const previous = playbackRef.current;
+    const previousTrack = previous?.queue[previous.index];
+    playbackRef.current = next;
+    setPlayback(next);
+    if (track.id !== previousTrack?.id || track.music_path !== previousTrack.music_path) {
+      setIsPlaying(false);
+      setTimeline(emptyTimeline);
+      // Set the source within the user gesture so iOS Safari can start playback.
+      audio.src = mediaUrl(import.meta.env.VITE_MUSIC_URL, track.music_path);
+    }
+    play();
+  }, [play]);
+
+  const toggleTrack = useCallback((track: PlayableTrack, entries: readonly PlayableTrack[] = [track]) => {
+    const current = playbackRef.current;
+    if (current?.queue[current.index].id === track.id) {
+      togglePlayPause();
+      return;
+    }
+    const index = entries.findIndex((entry) => entry.id === track.id);
+    startTrack(index < 0 ? { queue: [track], index: 0 } : { queue: [...entries], index });
+  }, [startTrack, togglePlayPause]);
+
+  const playAt = useCallback((index: number) => {
+    const current = playbackRef.current;
+    if (!current?.queue[index]) return;
+    startTrack({ queue: current.queue, index });
+  }, [startTrack]);
+
+  const playNext = useCallback(() => {
+    const current = playbackRef.current;
+    if (current) playAt(current.index + 1);
+  }, [playAt]);
+
+  const seek = useCallback((seconds: number) => {
+    const audio = audioRef.current;
+    if (!audio || !Number.isFinite(audio.duration) || !Number.isFinite(seconds)) return;
+    audio.currentTime = Math.max(0, Math.min(audio.duration, seconds));
+    setTimeline({ position: audio.currentTime, duration: audio.duration });
+  }, []);
+
+  const playPrevious = useCallback(() => {
+    const current = playbackRef.current;
+    if (!current) return;
+    if (current.index === 0 || (audioRef.current?.currentTime ?? 0) > 3) seek(0);
+    else playAt(current.index - 1);
+  }, [playAt, seek]);
+
+  const setVolume = useCallback((value: number) => {
+    const audio = audioRef.current;
+    if (!audio || !Number.isFinite(value)) return;
+    audio.volume = Math.max(0, Math.min(1, value));
+    updateVolume(audio.volume);
+  }, []);
+
+  function syncTimeline(event: SyntheticEvent<HTMLAudioElement>) {
+    if (!playbackRef.current) return;
+    const { currentTime, duration } = event.currentTarget;
+    setTimeline({ position: currentTime, duration: Number.isFinite(duration) ? duration : 0 });
+  }
+
+  function handleEnded() {
+    const current = playbackRef.current;
+    if (!current) return;
+    if (!audioRef.current?.ended) return;
+    if (current.queue[current.index + 1]) playNext();
+    else {
+      setIsPlaying(false);
+      setBuffering(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!currentTrack || !("mediaSession" in navigator)) return;
+    const session = navigator.mediaSession;
+    if (typeof MediaMetadata !== "undefined") {
+      session.metadata = new MediaMetadata({
+        title: currentTrack.titolo, artist: currentTrack.artista, album: currentTrack.album,
+        artwork: currentTrack.cover_path
+          ? [{ src: mediaUrl(import.meta.env.VITE_COVER_URL, currentTrack.cover_path) }]
+          : [],
+      });
+    }
+
+    const actions: [MediaSessionAction, MediaSessionActionHandler][] = [
+      ["play", play], ["pause", pause], ["stop", stopPlayback],
+      ["previoustrack", playPrevious], ["nexttrack", playNext],
+      ["seekto", ({ seekTime }) => { if (seekTime !== undefined) seek(seekTime); }],
+      ["seekbackward", ({ seekOffset }) => seek((audioRef.current?.currentTime ?? 0) - (seekOffset ?? 10))],
+      ["seekforward", ({ seekOffset }) => seek((audioRef.current?.currentTime ?? 0) + (seekOffset ?? 10))],
+    ];
+    const registered = actions.filter(([action, handler]) => {
+      try { session.setActionHandler(action, handler); return true; }
+      catch { return false; }
+    });
+
+    return () => {
+      registered.forEach(([action]) => session.setActionHandler(action, null));
+      session.metadata = null;
+    };
+  }, [currentTrack, pause, play, playNext, playPrevious, seek, stopPlayback]);
+
+  useEffect(() => {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = currentTrack ? (isPlaying ? "playing" : "paused") : "none";
+    }
+  }, [currentTrack, isPlaying]);
+
+  useEffect(() => {
+    if (!("mediaSession" in navigator) || !navigator.mediaSession.setPositionState) return;
+    if (timeline.duration > 0) {
+      navigator.mediaSession.setPositionState({
+        duration: timeline.duration, position: Math.min(timeline.position, timeline.duration),
+      });
+    } else {
+      navigator.mediaSession.setPositionState();
+    }
+  }, [timeline]);
+
+  const player = useMemo(() => ({
+    currentTrack, queue: playback?.queue ?? [], queueIndex: playback?.index ?? -1,
+    isPlaying, toggleTrack, togglePlayPause, stopPlayback, playAt, playNext, playPrevious, seek, setVolume,
+  }), [currentTrack, playback, isPlaying, toggleTrack, togglePlayPause, stopPlayback, playAt, playNext, playPrevious, seek, setVolume]);
 
   return (
-    <PlayerContext.Provider
-      value={{
-        currentTrack,
-        setCurrentTrack,
-        isPlaying,
-        setIsPlaying,
-        audioRef,
-        tracks,
-        setTracks,
-        playTrack,
-        togglePlayPause,
-        stopPlayback,
-        playNext,
-        playPrevious,
-      }}
-    >
-      {children}
+    <PlayerContext.Provider value={player}>
+      <TimelineContext.Provider value={{ ...timeline, volume, buffering, error }}>
+        <audio
+          ref={audioRef}
+          data-voidtracks-audio
+          preload="metadata"
+          className="hidden"
+          onTimeUpdate={syncTimeline}
+          onLoadedMetadata={syncTimeline}
+          onDurationChange={syncTimeline}
+          onPlay={(event) => { if (!event.currentTarget.paused) setIsPlaying(true); }}
+          onPlaying={() => setBuffering(false)}
+          onWaiting={(event) => { if (!event.currentTarget.paused) setBuffering(true); }}
+          onPause={(event) => {
+            if (event.currentTarget.paused) {
+              setIsPlaying(false);
+              setBuffering(false);
+            }
+          }}
+          onVolumeChange={(event) => updateVolume(event.currentTarget.volume)}
+          onEnded={handleEnded}
+          onError={(event) => {
+            if (playbackRef.current && event.currentTarget.error) {
+              setIsPlaying(false);
+              setBuffering(false);
+              setError("Impossibile caricare il brano. Premi Riproduci per riprovare.");
+            }
+          }}
+        />
+        {children}
+      </TimelineContext.Provider>
     </PlayerContext.Provider>
   );
-};
-
-/**
- * usePlayer
- *
- * Hook personalizzato per accedere al contesto Player.
- * Solleva un errore se usato fuori dal PlayerProvider.
- */
-export const usePlayer = () => {
-  const context = useContext(PlayerContext);
-  if (!context) {
-    throw new Error("usePlayer must be used within a PlayerProvider");
-  }
-  return context;
-};
+}

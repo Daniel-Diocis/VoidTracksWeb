@@ -10,7 +10,7 @@
  * Meccanismo:
  * - Effettua fetch a `/tracks` con eventuale query `?q=`
  * - Confronta i `updated_at` dei brani con i timestamp salvati localmente (localStorage)
- * - Aggiorna la lista dei brani tramite `setTracks` fornito dal contesto `PlayerContext`
+ * - Imposta la coda del player quando viene selezionato un brano
  *
  * UI:
  * - Input per la ricerca per titolo, artista o album
@@ -22,24 +22,14 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
 import { notify } from '../utils/toastManager';
-import { usePlayer } from '../context/PlayerContext';
+import { usePlayer } from '../context/playerState';
 import type { Track } from '../types';
 
-//const PUBLIC_URL = import.meta.env.PUBLIC_URL;
-const COVER_URL = import.meta.env.VITE_COVER_URL;
+import TrackCoverButton from '../components/TrackCoverButton';
 
 function TrackList() {
-  const {
-    currentTrack,
-    isPlaying,
-    playTrack,
-    togglePlayPause,
-    //playNext,
-    //playPrevious,
-    tracks,
-    setTracks,
-  } = usePlayer();
-
+  const { currentTrack, isPlaying, toggleTrack } = usePlayer();
+  const [tracks, setTracks] = useState<Track[]>([]);
   const [query, setQuery] = useState('');
 
   useEffect(() => {
@@ -50,7 +40,7 @@ function TrackList() {
 
     fetch(url)
       .then(res => res.json())
-      .then(data => {
+      .then((data: Track[]) => {
         const ordinati = [...data].sort((a, b) => {
           const artistaA = a.artista.split(',')[0].trim().toLowerCase();
           const artistaB = b.artista.split(',')[0].trim().toLowerCase();
@@ -84,14 +74,6 @@ function TrackList() {
       });
   }, [query]);
 
-  const handlePlayPause = (track: Track) => {
-    if (currentTrack?.id === track.id) {
-      togglePlayPause();
-    } else {
-      playTrack(track);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-zinc-900 text-white px-4 py-6 max-w-7xl mx-auto">
       <input
@@ -109,20 +91,17 @@ function TrackList() {
       ) : (
         <div
           className="grid gap-4"
-          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}
+          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))' }}
         >
           {tracks.map(track => (
             <div key={track.id} className="track-card">
-              <Link to={`/track/${track.music_path}`}>
-                <img
-                  src={`${COVER_URL}/${track.cover_path}`}
-                  alt={`Cover ${track.titolo}`}
-                  className="track-cover"
-                />
-              </Link>
+              <TrackCoverButton track={track} playing={currentTrack?.id === track.id && isPlaying}
+                onToggle={() => toggleTrack(track, tracks)} />
               <div className="track-text">
-                <p className="track-title">{track.titolo}</p>
-                <p className="track-artist">
+                <p className="track-title">
+                  <Link className="hover:underline" to={`/track/${encodeURIComponent(track.music_path)}`}>{track.titolo}</Link>
+                </p>
+                <p className="track-artist" title={track.artista}>
                   {track.artista.split(',').map((artistName, index, arr) => {
                     const trimmedName = artistName.trim();
                     return (
@@ -144,12 +123,6 @@ function TrackList() {
                   </Link>
                 </p>
               </div>
-              <button
-                onClick={() => handlePlayPause(track)}
-                className="btn-play"
-              >
-                {currentTrack?.id === track.id && isPlaying ? 'Pause' : 'Play'}
-              </button>
             </div>
           ))}
         </div>

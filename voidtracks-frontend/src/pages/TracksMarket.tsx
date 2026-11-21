@@ -27,11 +27,10 @@ import { loadLocalTimestamps, saveLocalTimestamps } from '../utils/storage';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { notify } from '../utils/toastManager';
-import { usePlayer } from '../context/PlayerContext';
+import { usePlayer } from '../context/playerState';
 import type { Track } from '../types';
 
-//const PUBLIC_URL = import.meta.env.PUBLIC_URL;
-const COVER_URL = import.meta.env.VITE_COVER_URL;
+import TrackCoverButton from '../components/TrackCoverButton';
 
 const TracksMarket = () => {
   const [tracksFromDB, setTracksFromDB] = useState<Track[]>([]);
@@ -42,16 +41,7 @@ const TracksMarket = () => {
   const API_URL = import.meta.env.VITE_API_URL || '/api';
   const navigate = useNavigate();
 
-  const {
-    currentTrack,
-    isPlaying,
-    playTrack,
-    togglePlayPause,
-    //playNext,
-    //playPrevious,
-    //tracks,
-    setTracks
-  } = usePlayer();
+  const { currentTrack, isPlaying, toggleTrack } = usePlayer();
 
   useEffect(() => {
     const url = query ? `${API_URL}/tracks?q=${encodeURIComponent(query)}` : `${API_URL}/tracks`;
@@ -86,7 +76,6 @@ const TracksMarket = () => {
         });
 
         saveLocalTimestamps({ ...localTimestamps, ...newTimestamps });
-        setTracks(aggiornati);
         setTracksFromDB(aggiornati);
       })
       .catch(err => console.error('Errore nel fetch:', err));
@@ -112,14 +101,6 @@ const TracksMarket = () => {
         .catch(err => console.error('Errore nel fetch acquisti:', err));
     }
   }, [auth]);
-
-  const handlePlayPause = (track: Track) => {
-    if (currentTrack?.id === track.id) {
-      togglePlayPause();
-    } else {
-      playTrack(track);
-    }
-  };
 
   const handleAcquista = async (track: Track) => {
     if (!auth || !auth.token) {
@@ -191,14 +172,11 @@ const TracksMarket = () => {
 
           return (
             <li key={track.id} className="market-item">
-              <img
-                src={`${COVER_URL}/${track.cover_path}`}
-                alt={`Cover di ${track.titolo}`}
-                className="market-cover"
-              />
+              <TrackCoverButton track={track} playing={currentTrack?.id === track.id && isPlaying}
+                onToggle={() => toggleTrack(track, tracksFromDB)} />
               <div className="market-info">
                 <p className="market-title line-clamp-2 break-words text-ellipsis overflow-hidden">
-                  {track.titolo}{' '}
+                  <Link to={`/track/${encodeURIComponent(track.music_path)}`} className="hover:underline">{track.titolo}</Link>{' '}
                   {track.isUpdated && (
                     <span className="text-yellow-400 text-xs ml-2">(Nuovo!)</span>
                   )}
@@ -240,12 +218,6 @@ const TracksMarket = () => {
                     Acquista
                   </button>
                 )}
-                <button
-                  onClick={() => handlePlayPause(track)}
-                  className="btn-play ml-4"
-                >
-                  {currentTrack?.id === track.id && isPlaying ? 'Pause' : 'Play'}
-                </button>
               </div>
             </li>
           );

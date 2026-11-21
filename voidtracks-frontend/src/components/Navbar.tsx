@@ -40,7 +40,7 @@ function Navbar() {
     <nav className="flex justify-between items-center p-4 bg-zinc-900 text-white max-w-7xl mx-auto">
       <div className="flex items-center gap-2 font-bold text-2xl flex-shrink-0 min-w-0">
         <Link to="/" className="flex items-center gap-2 hover:underline">
-          <img src={icon} alt="Icon" className="w-8 h-8 object-contain" />
+          <img src={icon} alt="" width={32} height={32} className="w-8 h-8 shrink-0 object-contain" />
           VoidTracks
         </Link>
         {isLoggedIn && tokens !== undefined && (
